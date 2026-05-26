@@ -243,7 +243,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
     <div class="sbox">
       <div class="sbox-hdr">
         <div class="sbox-title">部員ステータス</div>
-        <div class="sbox-meta" id="recentDateLabel">—</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="sbox-meta">稽古日を選択：</span>
+          <select id="practiceSelect" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;color:var(--ink);background:var(--surface);outline:none;cursor:pointer">
+            <option value="">— データを収集してください —</option>
+          </select>
+        </div>
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="statusTable">
@@ -395,10 +400,18 @@ function latestPerMember(rows){
   return out;
 }
 
-// 直近稽古日を自動検出（振り返り・宣言を含む全データから最新の稽古日）
+// 直近稽古日を自動検出
+// 振り返りがある最新日を優先。なければ宣言のみの最新日
 function latestPracticeDate(){
-  const dates = [...store.d,...store.r].map(getDate).filter(Boolean).sort();
-  return dates.length ? dates[dates.length-1] : '';
+  const rDates = store.r.map(getDate).filter(Boolean).sort();
+  if(rDates.length) return rDates[rDates.length-1];
+  const dDates = store.d.map(getDate).filter(Boolean).sort();
+  return dDates.length ? dDates[dDates.length-1] : '';
+}
+
+// 全稽古日一覧（降順）
+function allPracticeDates(){
+  return [...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort().reverse();
 }
 
 function setWeekRange(){
@@ -456,6 +469,9 @@ document.addEventListener('click', function(e){
 
 document.getElementById('dateFrom').addEventListener('change', renderAllCards);
 document.getElementById('dateTo').addEventListener('change', renderAllCards);
+document.getElementById('practiceSelect').addEventListener('change', function(){
+  renderRecent(this.value);
+});
 
 // ===================================================
 //  JSONP データ取得
@@ -494,15 +510,24 @@ async function collectAll(){
 // ===================================================
 //  直近の稽古タブ
 // ===================================================
-function renderRecent(){
-  const latest = latestPracticeDate();
+function renderRecent(selectedDate){
+  const latest = selectedDate || latestPracticeDate();
   if(!latest){ return; }
+
+  // 稽古日セレクター更新
+  const sel = document.getElementById('practiceSelect');
+  if(sel){
+    const dates = allPracticeDates();
+    if(dates.length){
+      sel.innerHTML = dates.map(d=>
+        `<option value="${d}" ${d===latest?'selected':''}>${d}${store.r.some(r=>getDate(r)===d)?' ✓':' （宣言のみ）'}</option>`
+      ).join('');
+    }
+  }
 
   // 直近稽古日のデータを取得
   const dLatest = store.d.filter(r=>getDate(r)===latest);
   const rLatest = store.r.filter(r=>getDate(r)===latest);
-
-  document.getElementById('recentDateLabel').textContent = latest + ' の稽古';
   document.getElementById('k-declare').textContent = dLatest.length;
   document.getElementById('k-declare-date').textContent = latest;
   document.getElementById('k-reflect').textContent = rLatest.length;
