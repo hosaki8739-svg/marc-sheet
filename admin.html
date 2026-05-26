@@ -803,6 +803,20 @@ function showPage(id, el) {
   document.getElementById('page-' + id).classList.add('active');
   if(el) el.classList.add('active');
   document.getElementById('topbarTitle').textContent = TITLES[id] || id;
+
+  // モバイルナビ同期
+  document.querySelectorAll('.mnav-item').forEach(mi => {
+    const oc = mi.getAttribute('onclick') || '';
+    const m = oc.match(/'([^']+)'/);
+    mi.classList.toggle('active', m && m[1] === id);
+  });
+  // サイドバー同期
+  document.querySelectorAll('.nav-item').forEach(ni => {
+    const oc = ni.getAttribute('onclick') || '';
+    const m = oc.match(/'([^']+)'/);
+    ni.classList.toggle('active', m && m[1] === id);
+  });
+
   if(id==='challenge')  renderChallengeList();
   if(id==='reflection') renderReflect();
   if(id==='profile')    renderProfileList();
@@ -1171,16 +1185,16 @@ function clearDate(id) { document.getElementById(id).value = ''; }
 <!-- モバイルナビゲーション -->
 <nav class="mobile-nav">
   <div class="mobile-nav-inner">
-    <div class="mnav-item active" onclick="showPage('overview',this);syncMobileNav(this)">
+    <div class="mnav-item active" onclick="showPage('overview',this)">
       <span class="mnav-icon">📊</span>概観
     </div>
-    <div class="mnav-item" onclick="showPage('challenge',this);syncMobileNav(this)">
+    <div class="mnav-item" onclick="showPage('challenge',this)">
       <span class="mnav-icon">✊</span>宣言
     </div>
-    <div class="mnav-item" onclick="showPage('reflection',this);syncMobileNav(this)">
+    <div class="mnav-item" onclick="showPage('reflection',this)">
       <span class="mnav-icon">🔍</span>振り返り
     </div>
-    <div class="mnav-item" onclick="showPage('profile',this);syncMobileNav(this)">
+    <div class="mnav-item" onclick="showPage('profile',this)">
       <span class="mnav-icon">👤</span>自己理解
     </div>
   </div>
