@@ -1143,14 +1143,16 @@
     <div id="logInputArea">
 
       <!-- 稽古日（先頭）-->
-      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;">
-        <div style="flex:1;">
+      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;">
         </div>
         <div style="flex-shrink:0;text-align:right;">
-          <div style="font-size:10px;color:var(--ink-muted);margin-bottom:2px;letter-spacing:.06em;">記録数</div>
-          <div id="logCount" style="font-size:16px;font-weight:700;color:var(--primary);">— 件</div>
+          <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
+          <div id="logUserName" style="font-size:13px;font-weight:700;color:var(--primary);">—</div>
+          <div style="font-size:10px;color:var(--ink-muted);margin-top:4px;letter-spacing:.06em;">記録数</div>
+          <div id="logCount" style="font-size:14px;font-weight:700;color:var(--primary);">— 件</div>
         </div>
       </div>
 
@@ -1614,22 +1616,7 @@
   }
 
   // initial tournament rows
-  (function() {
-    var months = ['4月','6月','8月','11月','2月'];
-    var labels = { '4月':'春季地区大会','6月':'県総体（個人）','8月':'合宿・練習試合','11月':'秋季大会','2月':'新人戦' };
-    var goals  = { '4月':'ベスト4','6月':'ベスト16','8月':'弱点集中強化','11月':'ベスト8','2月':'入賞' };
-    var tbody = document.getElementById('tournamentPlan');
-    if (!tbody) return;
-    months.forEach(function(m) {
-      var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td><input type="text" value="' + m + '" style="font-size:12px;padding:6px 8px;width:70px"></td>' +
-        '<td><input type="text" value="' + labels[m] + '" placeholder="大会名"></td>' +
-        '<td><input type="text" value="' + goals[m] + '" placeholder="目標"></td>' +
-        '<td><button class="del-btn" onclick="this.closest(\'tr\').remove()">×</button></td>';
-      tbody.appendChild(tr);
-    });
-  })();
+  // （大会スケジュール：削除済み）
 
   // ===== SECTION TOGGLE =====
   function toggleSection(header) {
@@ -1640,17 +1627,7 @@
   }
 
   // ===== ADD ROWS =====
-  function addTournamentRow() {
-    const tbody = document.getElementById('tournamentPlan');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="month" style="font-size:12px;padding:6px 8px"></td>
-      <td><input type="text" placeholder="県総体 個人戦"></td>
-      <td><input type="text" placeholder="ベスト8入賞"></td>
-      <td><button class="del-btn" onclick="this.closest('tr').remove()">×</button></td>`;
-    tbody.appendChild(tr);
-    tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
+
 
 
 
@@ -1661,10 +1638,7 @@
     if (el) el.textContent = this.value.length + ' / 200文字';
   });
 
-  function charCount(el) {
-    const countEl = el.id === 'coachMsg' ? document.getElementById('coachMsgCount') : null;
-    if (countEl) countEl.textContent = el.value.length + ' / 300文字';
-  }
+  function charCount(el) { /* 未使用 */ }
 
   // ===== PROGRESS =====
   function updateProgress() {
@@ -1724,45 +1698,15 @@
   function applyPrevData(data) {
     const v = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
 
-    // ID指定フィールド（全項目）
-    v('coachMsg',         data['コーチへのメッセージ']);
-    v('nayami',           data['今の悩み']);
-    v('kendoReki',        data['剣道歴']);
-    v('monthSkill',       data['月次スキル']);
-    v('monthChallenge',   data['月次チャレンジ']);
-    v('nextMonthChallenge', data['来月チャレンジ']);
-    v('gijutsuKadai',   data['技術課題']);
-    v('shutokunWaza',   data['習得目標技']);
-    v('kokoroMokuhyo',  data['精神目標']);
-    v('jakuten',        data['克服する弱点']);
-    v('physicalKadai',  data['体力課題']);
-    v('suuchiMokuhyo',  data['数値目標']);
-
-    // placeholder指定フィールド
-    const pMap = [
-      ['チーム最重要目標', '[placeholder="インターハイ 県予選 優勝"]'],
-      ['個人最重要目標',   '[placeholder="個人戦 県ベスト16 / 一本勝ち率 60%以上"]'],
-      ['一言宣言',         '[placeholder*="先を取り"]'],
-    ];
-    pMap.forEach(([key, sel]) => {
-      if (!data[key]) return;
-      const el = document.querySelector(sel);
-      if (el) el.value = data[key];
-    });
+    v('kendoReki',    data['剣道歴']);
+    v('kadaikan',     data['今の課題感']);
+    v('kojinMokuhyo', data['個人目標']);
+    v('kumiInput',    data['組']);
 
     // 学年
     if (data['学年']) {
       const sel = document.getElementById('gakuNenSelect');
       if (sel) sel.value = data['学年'];
-    }
-
-    // 覚悟レベル
-    if (data['覚悟レベル']) {
-      const range = document.querySelector('input[type=range]');
-      if (range) {
-        range.value = data['覚悟レベル'];
-        document.getElementById('commitVal').textContent = data['覚悟レベル'] + '/10';
-      }
     }
 
     // 得意技
@@ -1773,161 +1717,57 @@
       });
     }
 
-    v('kadaikan',      data['今の課題感']);
-    v('kojinMokuhyo',  data['個人目標']);
-
     // BARS自己評価 復元
     ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(key => {
       if (data['自己評価_' + key]) setBarsValue(key, data['自己評価_' + key]);
     });
 
-    // 先月のチャレンジを表示（前回の来月チャレンジ）
-    const lastChallenge = data['来月チャレンジ'] || data['月次チャレンジ'] || '';
-    const lastEl = document.getElementById('lastMonthChallenge');
-    if (lastEl && lastChallenge) lastEl.textContent = lastChallenge;
-
-    // 難易度スライダー復元
-    if (data['月次難易度']) {
-      const flowVal = parseInt(data['月次難易度']) || 5;
-      const flowEl = document.getElementById('flowLevel');
-      if (flowEl) { flowEl.value = flowVal; updateFlowLabel(flowVal); }
-    }
-
     updateProgress();
   }
 
-  // ===== データ収集 =====
+  // ===== データ収集（現在のフォームのみ）=====
   function collectFormData() {
     const v = id => (document.getElementById(id)?.value || '').trim();
 
     // 得意技
-    const waza = [...document.querySelectorAll('#wazaSelector .rank-btn.active')].map(b => b.textContent).join('・');
+    const waza = [...document.querySelectorAll('#wazaSelector .rank-btn.active')]
+      .map(b => b.textContent.trim()).join('・');
 
-    // 週間稽古
-    const weekly = [];
-    document.querySelectorAll('#weeklyPlan tr').forEach(tr => {
-      const cells = tr.querySelectorAll('select, input');
-      if (cells.length >= 4) weekly.push([cells[0].value, cells[1].value, cells[2].value, cells[3].value].join('/'));
-    });
+    // 段位・利き手（select要素）
+    const selects = document.querySelectorAll('.section-body select');
+    const grade    = selects[0]?.value || '';
+    const stance   = selects[2]?.value || '';
 
-    // 大会スケジュール
-    const tournaments = [];
-    document.querySelectorAll('#tournamentPlan tr').forEach(tr => {
-      const cells = tr.querySelectorAll('input');
-      if (cells.length >= 3) tournaments.push([cells[0].value, cells[1].value, cells[2].value].join('/'));
-    });
+    // 記入日
+    const dateInputs = document.querySelectorAll('.section-body input[type="date"]');
+    const recordDate = dateInputs[0]?.value || '';
 
-    // 月次振り返り（フロー理論）
     return {
-      timestamp:        new Date().toLocaleString('ja-JP'),
-      記録種別:         '自己理解',
-      氏名:             v('nameInput'),
-      学年:             document.getElementById('gakuNenSelect')?.value || '',
-      得意技:           waza,
-      剣道歴:           v('kendoReki'),
-      チーム最重要目標: document.querySelector('[placeholder="インターハイ 県予選 優勝"]')?.value || '',
-      個人最重要目標:   document.querySelector('[placeholder="個人戦 県ベスト16 / 一本勝ち率 60%以上"]')?.value || '',
-      技術課題:         v('gijutsuKadai'),
-      習得目標技:       v('shutokunWaza'),
-      精神目標:         v('kokoroMokuhyo'),
-      克服する弱点:     v('jakuten'),
-      体力課題:         v('physicalKadai'),
-      数値目標:         v('suuchiMokuhyo'),
+      timestamp:   new Date().toLocaleString('ja-JP'),
+      記録種別:    '自己理解',
+      氏名:        v('nameInput'),
+      学年:        document.getElementById('gakuNenSelect')?.value || '',
+      組:          v('kumiInput'),
+      段位級:      grade,
+      剣道歴:      v('kendoReki'),
+      利き手構え:  stance,
+      記入日:      recordDate,
+      得意技:      waza,
       ...getBarsValues(),
-      今の課題感:       v('kadaikan'),
-      個人目標:         v('kojinMokuhyo'),
-      大会スケジュール: tournaments.join(' | '),
-      コーチへのメッセージ: v('coachMsg'),
-      今の悩み:         v('nayami'),
-      稽古外の取り組み: v('jishuren'),
-      覚悟レベル:       document.querySelector('input[type=range]')?.value || '',
-      一言宣言:         document.querySelector('[placeholder*="先を取り"]')?.value || '',
-      振り返り月:       new Date().getMonth() + 1 + '月',
-      月次スキル:       v('monthSkill') || '',
-      月次チャレンジ:   v('monthChallenge') || '',
-      来月チャレンジ:   v('nextMonthChallenge') || '',
-      月次難易度:       (document.getElementById('flowLevel')?.value || '5') + '/10（' + (document.getElementById('flowLabel')?.textContent || '') + '）',
+      今の課題感:  v('kadaikan'),
+      個人目標:    v('kojinMokuhyo'),
     };
   }
 
-  // ===== SUBMIT（GAS送信） =====
-  async function submitForm() {
-    const required = document.querySelectorAll('[data-required]');
-    let ok = true;
-    required.forEach(el => {
-      if (!el.closest('#tab-log') && !el.value.trim()) {
-        el.style.borderColor = 'var(--red)';
-        el.style.boxShadow = '0 0 0 3px rgba(192,57,43,0.15)';
-        ok = false;
-        setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 3000);
-      }
-    });
-    if (!ok) { showToast('⚠ 必須項目を記入してください'); return; }
-
-    if (GAS_URL === 'ここにGASのウェブアプリURLを貼り付ける') {
-      showToast('⚠ GAS_URL を設定してください（設定手順書を参照）');
-      return;
-    }
-
-    // ボタンをローディング状態に
-    const btn = document.querySelector('.submit-btn');
-    const orig = btn.textContent;
-    btn.textContent = '送信中…';
-    btn.disabled = true;
-
-    try {
-      const data = collectFormData();
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      // no-corsのため成功/失敗を判定できないが、GAS側でエラーなければOK
-      localStorage.removeItem('kendo_draft'); // 下書きクリア
-      showToast('✦ 自己理解シートを提出しました');
-      btn.textContent = '✓ 提出済み';
-      btn.style.background = 'linear-gradient(135deg,#2d6a4f,#1b4332)';
-    } catch (e) {
-      showToast('⚠ 送信に失敗しました。ネット接続を確認してください');
-      btn.textContent = orig;
-      btn.disabled = false;
-    }
-  }
-
-  // ===== 一時保存（GASに送信・必須チェックなし）=====
-  async function tempSave() {
-    if (GAS_URL === 'ここにGASのウェブアプリURLを貼り付ける') {
-      showToast('⚠ GAS_URL を設定してください');
-      return;
-    }
-
+  // ===== 一時保存（localStorageのみ・GASには送信しない）=====
+  function tempSave() {
+    const data = collectFormData();
+    localStorage.setItem('kendo_draft', JSON.stringify(data));
+    showToast('📋 一時保存しました。次回は氏名を入力すると復元されます');
     const btn = document.querySelector('.save-btn');
     const orig = btn.textContent;
-    btn.textContent = '保存中…';
-    btn.disabled = true;
-
-    try {
-      const data = collectFormData();
-      // 一時保存フラグを追加
-      data['保存種別'] = '一時保存';
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      showToast('📋 一時保存しました。次回は氏名を入力すると復元されます');
-      btn.textContent = '✓ 保存済み';
-      setTimeout(() => {
-        btn.textContent = orig;
-        btn.disabled = false;
-      }, 3000);
-    } catch(e) {
-      showToast('⚠ 保存に失敗しました');
-      btn.textContent = orig;
-      btn.disabled = false;
-    }
+    btn.textContent = '✓ 保存済み';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
   }
 
   // ===== 下書き復元 =====
@@ -1948,19 +1788,7 @@
     } catch(e) {}
   }
 
-  // 振り返り月を自動表示（先月・今月・来月）
-  (function() {
-    const now   = new Date();
-    const thisM = now.getMonth() + 1;
-    const lastM = thisM === 1 ? 12 : thisM - 1;
-    const nextM = thisM === 12 ? 1 : thisM + 1;
-    const el1 = document.getElementById('lastMonthLabel');
-    const el2 = document.getElementById('thisMonthLabel');
-    const el3 = document.getElementById('nextMonthLabel');
-    if (el1) el1.textContent = lastM + '月のチャレンジ（前回）';
-    if (el2) el2.textContent = thisM + '月のチャレンジ';
-    if (el3) el3.textContent = nextM + '月のチャレンジ（予定）';
-  })();
+  // （月次ラベル：削除済み）
 
   updateProgress();
   setTimeout(loadDraft, 300);
@@ -1995,7 +1823,14 @@
       restoreName();
       restoreIntentDraft();
       renderHistory();
+      // 記録者名を表示
+      const nameEl = document.getElementById('logUserName');
+      if (nameEl) {
+        const stored = localStorage.getItem(LS_NAME);
+        nameEl.textContent = stored || '（未設定）';
+        nameEl.style.color = stored ? 'var(--primary)' : 'var(--red)';
       }
+    }
     if (tab === 'profile') restoreName();
   }
 
@@ -2032,8 +1867,8 @@
   // ===== 稽古ログ提出 =====
   async function submitLog() {
     const v = id => (document.getElementById(id)?.value || '').trim();
-    const name = v('logName') || localStorage.getItem(LS_NAME) || '';
-    if (!name)         { showToast('⚠ 氏名を入力してください'); return; }
+    const name = localStorage.getItem(LS_NAME) || '';
+    if (!name) { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
     if (!v('logDate')) { showToast('⚠ 稽古日を入力してください'); return; }
     if (!v('logScene')){ showToast('⚠ ①の場面を入力してください'); return; }
     if (!v('logWhy'))  { showToast('⚠ ②の理由を入力してください'); return; }
@@ -2169,9 +2004,7 @@
     const d = document.getElementById('logDate');
     const savedDate = localStorage.getItem('marc_log_date_draft');
     if (d) d.value = savedDate || new Date().toISOString().slice(0, 10);
-    // 稽古ログタブの名前入力にイベント追加
-    const logNameEl = document.getElementById('logName');
-    if (logNameEl) logNameEl.addEventListener('input', e => saveName(e.target.value));
+    // 名前はlocalStorageで管理（自己理解タブから共有）
   });
   </script>
 </body>
