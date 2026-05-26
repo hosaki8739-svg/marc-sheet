@@ -232,10 +232,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div class="kpi-label">平均達成感</div>
         <div class="kpi-sub">/ 5.0</div>
       </div>
-      <div class="kpi red">
-        <div class="kpi-icon">⚠</div>
+      <div class="kpi" id="k-missing-card" style="border-top-color:var(--red)">
+        <div class="kpi-icon" id="k-missing-icon">⚠</div>
         <div class="kpi-val" id="k-missing">—</div>
-        <div class="kpi-label">振り返り未提出</div>
+        <div class="kpi-label" id="k-missing-label">振り返り未提出</div>
         <div class="kpi-sub" id="k-missing-names" style="font-size:10px;line-height:1.4;word-break:break-all"></div>
       </div>
     </div>
@@ -540,15 +540,47 @@ function renderRecent(selectedDate){
   const declaredSet = new Set(dLatest.map(getName));
   const reflectedSet = new Set(rLatest.map(getName));
   const missing = allMemberNames.filter(n=>declaredSet.has(n)&&!reflectedSet.has(n));
+  const card = document.getElementById('k-missing-card');
+  const icon = document.getElementById('k-missing-icon');
+  const label = document.getElementById('k-missing-label');
+  const namesEl = document.getElementById('k-missing-names');
   document.getElementById('k-missing').textContent = missing.length;
-  document.getElementById('k-missing-names').textContent = missing.join('・');
+  if(missing.length === 0 && rLatest.length > 0){
+    // 全員提出済み
+    card.style.borderTopColor = 'var(--green)';
+    card.style.background = 'var(--green-pale)';
+    icon.textContent = '🎉';
+    document.getElementById('k-missing').style.color = 'var(--green)';
+    label.textContent = '全員が振り返り提出！';
+    namesEl.textContent = '素晴らしいサイクルです';
+    namesEl.style.color = 'var(--green)';
+  } else if(missing.length > 0){
+    card.style.borderTopColor = 'var(--red)';
+    card.style.background = '';
+    icon.textContent = '⚠';
+    document.getElementById('k-missing').style.color = 'var(--red)';
+    label.textContent = '振り返り未提出';
+    namesEl.textContent = missing.join('・');
+    namesEl.style.color = '';
+  } else {
+    // 宣言者なし
+    card.style.borderTopColor = 'var(--border)';
+    card.style.background = '';
+    icon.textContent = '📋';
+    document.getElementById('k-missing').textContent = '—';
+    document.getElementById('k-missing').style.color = 'var(--ink-muted)';
+    label.textContent = '振り返り未提出';
+    namesEl.textContent = 'まだ宣言がありません';
+    namesEl.style.color = 'var(--ink-muted)';
+  }
   document.getElementById('k-reflect-rate').textContent =
     dLatest.length ? '提出率 '+Math.round(rLatest.length/dLatest.length*100)+'%' : '提出率 —%';
 
   // ステータステーブル
-  // 前回稽古日（latestの1つ前）を取得
-  const allDates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort();
-  const prevDate = allDates.length>=2 ? allDates[allDates.length-2] : '';
+  // 前回稽古日：振り返りがある稽古日の中でlatestの1つ前
+  const reflectDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort();
+  const latestIdx = reflectDates.indexOf(latest);
+  const prevDate = latestIdx > 0 ? reflectDates[latestIdx-1] : '';
   const rPrev = prevDate ? store.r.filter(r=>getDate(r)===prevDate) : [];
   const prevScoreMap={};
   rPrev.forEach(r=>{ prevScoreMap[getName(r)]=getScore(r); });
