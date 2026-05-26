@@ -4,28 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MARC 顧問ダッシュボード</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
-  // モバイルナビとサイドバーの同期
-  function syncMobileNav(el) {
-    document.querySelectorAll('.mnav-item').forEach(i=>i.classList.remove('active'));
-    el.classList.add('active');
-  }
-
-  // showPageのオーバーライド（サイドバーとモバイルナビを同期）
-  const _origShowPage = showPage;
-  // サイドバーnavクリックで自動同期
-  document.querySelectorAll('.nav-item').forEach(ni=>{
-    ni.addEventListener('click', ()=>{
-      const page = ni.getAttribute('onclick').match(/'([^']+)'/)?.[1];
-      if(!page) return;
-      document.querySelectorAll('.mnav-item').forEach(mi=>{
-        const miPage = mi.getAttribute('onclick').match(/'([^']+)'/)?.[1];
-        mi.classList.toggle('active', miPage===page);
-      });
-    });
-  });
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=DM+Mono:wght@400;500&display=swap');
 
@@ -1069,15 +1048,29 @@ function buildReflectCard(row, fL) {
   const w=row.why||row['なぜそうなったか']||'—';
   const i=row.intent||row['試したいこと']||'';
   const f=parseInt(String(row.fulfillment||row['充実度']||'').replace('/5',''))||0;
+  const fColors=['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
+  const fBg=['','#FEE2E2','#FEF3C7','#FEF9C3','#DCFCE7','#BBF7D0'];
   return `<div class="c-card">
     <div class="c-card-header green">
       <div class="c-av">${n.charAt(0)}</div>
-      <div><div class="c-name">${n}</div><div class="c-meta">${dt}${f?' &nbsp;<span style="background:rgba(255,255,255,.2);padding:1px 7px;border-radius:999px;">'+(fL[f]||'')+'</span>':''}</div></div>
+      <div style="flex:1;"><div class="c-name">${n}</div><div class="c-meta">${dt}</div></div>
+      ${f?`<div style="background:${fBg[f]};color:${fColors[f]};padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;">${fL[f]}</div>`:''}
     </div>
     <div class="c-body">
-      ${i?'<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">✊ 宣言</div><div class="challenge-box">'+i+'</div></div>':''}
-      <div style="margin-bottom:6px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">① 場面</div><div class="scene-box">${s}</div></div>
-      <div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">② なぜ</div><div class="why-box">${w}</div></div>
+      ${i?`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed var(--border-lt);">
+        <div style="display:flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:5px;">
+          ✊ チャレンジ宣言（稽古前）
+        </div>
+        <div class="challenge-box">${i}</div>
+      </div>`:''}
+      <div style="margin-bottom:6px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">① 印象に残った場面</div>
+        <div class="scene-box">${s}</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">② なぜそうなったか</div>
+        <div class="why-box">${w}</div>
+      </div>
     </div>
   </div>`;
 }
