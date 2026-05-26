@@ -757,11 +757,24 @@ body {
     <div class="page" id="page-reflection">
       <div class="filter-bar">
         <div>
-          <label class="f-label">稽古日で絞り込む</label>
-          <input type="date" class="f-input" id="reflectDate">
+          <label class="f-label">開始日</label>
+          <input type="date" class="f-input" id="reflectDateFrom" onchange="renderReflect()">
         </div>
-        <button class="f-btn f-btn-today" onclick="setToday('reflectDate'); renderReflect();">今日</button>
-        <button class="f-btn f-btn-all"   onclick="clearDate('reflectDate'); renderReflect();">全件</button>
+        <div style="display:flex;align-items:flex-end;padding-bottom:1px;color:var(--ink-muted);font-weight:700;">〜</div>
+        <div>
+          <label class="f-label">終了日</label>
+          <input type="date" class="f-input" id="reflectDateTo" onchange="renderReflect()">
+        </div>
+        <button class="f-btn f-btn-today" onclick="setRangeToday(); renderReflect();">今日</button>
+        <button class="f-btn" style="background:var(--navy-pale);color:var(--navy-mid);border:1px solid var(--navy-pale);" onclick="setRangeWeek(); renderReflect();">今週</button>
+        <button class="f-btn f-btn-all"   onclick="clearRange(); renderReflect();">全件</button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+          <label style="font-size:11px;font-weight:700;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="latestOnly" checked onchange="renderReflect()"
+              style="width:16px;height:16px;accent-color:var(--navy-lt);cursor:pointer;">
+            最新のみ
+          </label>
+        </div>
       </div>
       <div style="padding:16px 0;">
         <div class="cards-grid" id="reflectCards">
@@ -984,15 +997,19 @@ function showChallengeDetail(name, el) {
 
 // ── 振り返りカード ──
 function renderReflect() {
-  const dateRaw = document.getElementById('reflectDate').value; // YYYY-MM-DD
+  const dateFrom = document.getElementById('reflectDateFrom').value;
+  const dateTo   = document.getElementById('reflectDateTo').value;
   let rows = store.reflects;
-  if(dateRaw) {
+
+  // 日付を正規化してYYYY-MM-DDに統一
+  function normDate(v) { return String(v||'').replace(/\//g,'-').slice(0,10); }
+
+  if(dateFrom || dateTo) {
     rows = rows.filter(r=>{
-      // 日付フィールドを取得してYYYY-MM-DDに正規化して比較
-      const d = String(r.date || r['稽古日'] || '');
-      // "2026-05-19" / "2026/05/19" / "05/19/2026" など複数形式に対応
-      const normalized = d.replace(/\//g,'-').slice(0,10);
-      return normalized === dateRaw;
+      const d = normDate(r.date || r['稽古日']);
+      if(dateFrom && d < dateFrom) return false;
+      if(dateTo   && d > dateTo)   return false;
+      return true;
     });
   }
   const el = document.getElementById('reflectCards');
@@ -1003,6 +1020,17 @@ function renderReflect() {
     const db = String(b.date||b['稽古日']||'').replace(/\//g,'-').slice(0,10);
     return db.localeCompare(da);
   });
+
+  // 「最新のみ」チェック時：部員ごとに最新1件だけ残す
+  const latestOnly = document.getElementById('latestOnly')?.checked;
+  if(latestOnly) {
+    const seen = new Set();
+    rows = rows.filter(r=>{
+      const n = r['氏名']||r.name||'';
+      if(seen.has(n)) return false;
+      seen.add(n); return true;
+    });
+  }
 
   const fL=['','できなかった','少しできた','まあまあ','かなり','完全に'];
   const fC=['','1','1','1','1','1'];
@@ -1092,6 +1120,9 @@ function showProfileDetail(name, el) {
 // ── ユーティリティ ──
 function setToday(id) { document.getElementById(id).value = new Date().toISOString().slice(0,10); }
 function clearDate(id) { document.getElementById(id).value = ''; }
+  function setRangeToday(){const t=new Date().toISOString().slice(0,10);document.getElementById('reflectDateFrom').value=t;document.getElementById('reflectDateTo').value=t;}
+  function setRangeWeek(){const today=new Date(),day=today.getDay();const mon=new Date(today);mon.setDate(today.getDate()-(day===0?6:day-1));document.getElementById('reflectDateFrom').value=mon.toISOString().slice(0,10);document.getElementById('reflectDateTo').value=today.toISOString().slice(0,10);}
+  function clearRange(){document.getElementById('reflectDateFrom').value='';document.getElementById('reflectDateTo').value='';}
 </script>
 
 <!-- モバイルナビゲーション -->
