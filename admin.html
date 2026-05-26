@@ -6,899 +6,976 @@
 <title>MARC 顧問ダッシュボード</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=DM+Mono:wght@400;500&display=swap');
 
-  :root {
-    --navy:      #0d1f3c;
-    --navy-lt:   #1a3a6b;
-    --navy-pale: #e8eef7;
-    --gold:      #c9a227;
-    --gold-pale: #fdf6dc;
-    --green:     #059669;
-    --green-pale:#ecfdf5;
-    --red:       #dc2626;
-    --red-pale:  #fef2f2;
-    --amber:     #d97706;
-    --amber-pale:#fffbeb;
-    --ink:       #0d1f3c;
-    --ink-soft:  #4a5568;
-    --ink-muted: #94a3b8;
-    --bg:        #f0f4f8;
-    --surface:   #ffffff;
-    --border:    #e2e8f0;
-    --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-    --r:         12px;
-  }
+:root {
+  --navy:       #0f2044;
+  --navy-mid:   #1a3560;
+  --navy-lt:    #2a5298;
+  --navy-pale:  #e8eef8;
+  --gold:       #c8952a;
+  --gold-pale:  #fdf3dc;
+  --green:      #0a7c5c;
+  --green-pale: #e6f5f0;
+  --red:        #c0392b;
+  --red-pale:   #fdecea;
+  --amber:      #c07000;
+  --amber-pale: #fff3e0;
+  --ink:        #0f2044;
+  --ink-soft:   #3d5278;
+  --ink-muted:  #7a8ea8;
+  --bg:         #f2f5fa;
+  --surface:    #ffffff;
+  --surface-2:  #f8fafd;
+  --border:     #dde4f0;
+  --border-lt:  #edf0f7;
+  --sidebar-w:  220px;
+  --header-h:   56px;
+  --shadow-sm:  0 1px 3px rgba(15,32,68,0.06), 0 1px 8px rgba(15,32,68,0.04);
+  --shadow-md:  0 4px 16px rgba(15,32,68,0.10);
+  --shadow-lg:  0 12px 40px rgba(15,32,68,0.16);
+  --r:          10px;
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:14px; }
+body {
+  font-family:'Noto Sans JP',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  display:flex;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
 
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ── SIDEBAR ── */
+.sidebar {
+  width:var(--sidebar-w);
+  flex-shrink:0;
+  background:var(--navy);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0; left:0; bottom:0;
+  z-index:100;
+  box-shadow:2px 0 16px rgba(15,32,68,0.25);
+}
+.sidebar-logo {
+  padding:20px 20px 16px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo-mark {
+  font-family:'Noto Serif JP',serif;
+  font-size:20px; font-weight:900;
+  color:#fff; letter-spacing:.06em;
+}
+.sidebar-logo-mark span { color:var(--gold); }
+.sidebar-logo-sub {
+  font-size:9px; letter-spacing:.18em;
+  color:rgba(255,255,255,0.35);
+  margin-top:3px; text-transform:uppercase;
+}
 
-  /* ── HEADER ── */
-  .header {
-    background: var(--navy);
-    padding: 0 24px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 200;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.2);
-  }
-  .header-logo {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 18px;
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: .08em;
-    flex: 1;
-  }
-  .header-logo span { color: var(--gold); }
-  .header-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: .2em;
-  }
-  .header-btn {
-    padding: 7px 16px;
-    border-radius: 999px;
-    border: none;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .btn-collect {
-    background: var(--gold);
-    color: var(--navy);
-  }
-  .btn-collect:hover { filter: brightness(1.1); transform: translateY(-1px); }
-  .btn-collect:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-  .btn-print {
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.8);
-    border: 1px solid rgba(255,255,255,0.15);
-  }
-  .btn-print:hover { background: rgba(255,255,255,0.18); }
-  .last-update {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: rgba(255,255,255,0.35);
-    letter-spacing: .1em;
-  }
+.sidebar-section-label {
+  font-size:9px; font-weight:700;
+  letter-spacing:.18em; text-transform:uppercase;
+  color:rgba(255,255,255,0.3);
+  padding:16px 20px 6px;
+}
 
-  /* ── LAYOUT ── */
-  .page { padding: 20px 20px 60px; max-width: 1100px; margin: 0 auto; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px;
+  color:rgba(255,255,255,0.6);
+  cursor:pointer;
+  transition:all .18s;
+  border-left:3px solid transparent;
+  font-size:13px; font-weight:500;
+  user-select:none;
+}
+.nav-item:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.9); }
+.nav-item.active {
+  background:rgba(255,255,255,0.1);
+  color:#fff;
+  border-left-color:var(--gold);
+}
+.nav-item .nav-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
+.nav-badge {
+  margin-left:auto;
+  font-size:10px; font-weight:700;
+  background:var(--red); color:#fff;
+  padding:1px 7px; border-radius:999px;
+  font-family:'DM Mono',monospace;
+}
+.nav-badge.amber { background:var(--amber); }
+.nav-badge.green { background:var(--green); }
 
-  /* ── TABS ── */
-  .tabs {
-    display: flex;
-    gap: 4px;
-    background: var(--surface);
-    border-radius: var(--r);
-    padding: 5px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-  }
-  .tab {
-    flex: 1;
-    padding: 9px 12px;
-    border-radius: 8px;
-    border: none;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .2s;
-    color: var(--ink-muted);
-    background: transparent;
-    letter-spacing: .03em;
-  }
-  .tab.active { background: var(--navy); color: #fff; box-shadow: 0 2px 8px rgba(13,31,60,0.25); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+.sidebar-footer {
+  margin-top:auto;
+  padding:16px 20px;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+.collect-btn {
+  width:100%; padding:10px;
+  background:var(--gold);
+  color:var(--navy);
+  border:none; border-radius:var(--r);
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:12px; font-weight:700;
+  cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.collect-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
+.collect-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.last-update {
+  font-size:10px; font-family:'DM Mono',monospace;
+  color:rgba(255,255,255,0.25);
+  text-align:center; margin-top:8px;
+}
 
-  /* ── KPI CARDS ── */
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .kpi-card {
-    background: var(--surface);
-    border-radius: var(--r);
-    padding: 18px 20px;
-    box-shadow: var(--shadow);
-    border-top: 3px solid var(--navy);
-    position: relative;
-    overflow: hidden;
-  }
-  .kpi-card.gold  { border-top-color: var(--gold); }
-  .kpi-card.green { border-top-color: var(--green); }
-  .kpi-card.amber { border-top-color: var(--amber); }
-  .kpi-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--ink-muted);
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  .kpi-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--navy);
-    line-height: 1;
-  }
-  .kpi-card.gold  .kpi-val { color: var(--gold); }
-  .kpi-card.green .kpi-val { color: var(--green); }
-  .kpi-card.amber .kpi-val { color: var(--amber); }
-  .kpi-sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
-  .kpi-icon {
-    position: absolute;
-    right: 16px; top: 16px;
-    font-size: 22px;
-    opacity: .15;
-  }
+/* ── MAIN ── */
+.main {
+  margin-left:var(--sidebar-w);
+  flex:1; display:flex; flex-direction:column;
+  min-height:100vh;
+}
 
-  /* ── SECTION ── */
-  .section { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .section-title { font-size: 13px; font-weight: 700; color: var(--navy); letter-spacing: .04em; flex: 1; }
-  .section-meta { font-size: 11px; color: var(--ink-muted); }
-  .section-body { padding: 16px 20px; }
+/* ── TOPBAR ── */
+.topbar {
+  height:var(--header-h);
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center;
+  padding:0 24px;
+  gap:16px;
+  position:sticky; top:0; z-index:50;
+  box-shadow:var(--shadow-sm);
+}
+.topbar-title {
+  font-family:'Noto Serif JP',serif;
+  font-size:16px; font-weight:700;
+  color:var(--navy); letter-spacing:.04em;
+  flex:1;
+}
+.topbar-date {
+  font-size:11px; font-family:'DM Mono',monospace;
+  color:var(--ink-muted);
+}
+.print-btn {
+  padding:6px 14px; border-radius:999px;
+  background:transparent;
+  border:1px solid var(--border);
+  font-size:11px; font-weight:600;
+  color:var(--ink-soft); cursor:pointer;
+  transition:all .18s;
+}
+.print-btn:hover { background:var(--bg); }
 
-  /* ── FILTER BAR ── */
-  .filter-bar {
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    padding: 12px 20px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-  .filter-group { display: flex; flex-direction: column; gap: 4px; }
-  .filter-label { font-size: 9px; font-weight: 700; color: var(--ink-muted); letter-spacing: .12em; text-transform: uppercase; }
-  .filter-select, .filter-input {
-    padding: 7px 10px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 12px;
-    color: var(--ink);
-    background: var(--surface);
-    outline: none;
-    transition: border-color .2s;
-  }
-  .filter-select:focus, .filter-input:focus { border-color: var(--navy-lt); }
-  .filter-today {
-    padding: 7px 14px;
-    background: var(--gold-pale);
-    color: var(--gold);
-    border: 1.5px solid var(--gold);
-    border-radius: 8px;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-  }
+/* ── ALERT BANNER ── */
+.alert-bar {
+  background:linear-gradient(135deg,#c0392b,#e74c3c);
+  padding:10px 24px;
+  display:flex; align-items:center; gap:12px;
+  color:#fff; font-size:12px; font-weight:600;
+}
+.alert-bar.amber { background:linear-gradient(135deg,#c07000,#e67e00); }
+.alert-bar.hidden { display:none; }
 
-  /* ── MATRIX ── */
-  .matrix-wrap { overflow-x: auto; }
-  .matrix-table { border-collapse: collapse; width: 100%; min-width: 500px; }
-  .matrix-table th {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--ink-muted);
-    letter-spacing: .1em;
-    padding: 8px 6px;
-    text-align: center;
-    border-bottom: 2px solid var(--border);
-    white-space: nowrap;
-  }
-  .matrix-table th.name-col { text-align: left; padding-left: 12px; min-width: 90px; }
-  .matrix-table td { padding: 5px 4px; text-align: center; }
-  .matrix-table td.name-cell {
-    text-align: left;
-    padding-left: 12px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--navy);
-    white-space: nowrap;
-    border-right: 1px solid var(--border);
-  }
-  .matrix-table tr:hover td { background: rgba(26,58,107,0.02); }
-  .cell-dot {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 700;
-  }
-  .dot-1  { background: #FEE2E2; color: #DC2626; }
-  .dot-2  { background: #FEF3C7; color: #D97706; }
-  .dot-3  { background: #FEF9C3; color: #A16207; }
-  .dot-4  { background: #DCFCE7; color: #16A34A; }
-  .dot-5  { background: #BBF7D0; color: #15803D; }
-  .dot-ok { background: var(--navy-pale); color: var(--navy-lt); }  /* 宣言のみ */
-  .dot-none { background: var(--border); color: var(--ink-muted); border-radius: 6px; }
+/* ── CONTENT AREA ── */
+.content { padding:20px 24px 48px; flex:1; }
 
-  /* ── CARDS GRID ── */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
-  }
-  .member-card {
-    border-radius: var(--r);
-    overflow: hidden;
-    border: 1px solid var(--border);
-    transition: box-shadow .2s, transform .2s;
-  }
-  .member-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-  .mc-header {
-    background: var(--navy);
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .mc-header.green { background: linear-gradient(135deg, var(--green), #047857); }
-  .mc-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .mc-name { font-size: 14px; font-weight: 700; color: #fff; }
-  .mc-meta { font-size: 10px; color: rgba(255,255,255,.6); margin-top: 1px; }
-  .mc-body { padding: 12px 14px; background: var(--surface); }
-  .mc-field { margin-bottom: 8px; }
-  .mc-field:last-child { margin-bottom: 0; }
-  .mc-field-label { font-size: 9px; font-weight: 700; color: var(--ink-muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 3px; }
-  .mc-field-val { font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
-  .intent-chip {
-    display: block;
-    padding: 7px 10px;
-    background: var(--navy-pale);
-    border-left: 3px solid var(--navy-lt);
-    border-radius: 0 6px 6px 0;
-    font-size: 12px;
-    color: var(--navy);
-    font-weight: 500;
-    line-height: 1.5;
-  }
-  .scene-chip {
-    display: block;
-    padding: 7px 10px;
-    background: #f8fafc;
-    border-left: 3px solid var(--border);
-    border-radius: 0 6px 6px 0;
-    font-size: 12px;
-    color: var(--ink-soft);
-    line-height: 1.5;
-    margin-bottom: 6px;
-  }
-  .why-chip {
-    display: block;
-    padding: 7px 10px;
-    background: var(--gold-pale);
-    border-left: 3px solid var(--gold);
-    border-radius: 0 6px 6px 0;
-    font-size: 12px;
-    color: var(--ink-soft);
-    line-height: 1.5;
-  }
-  .achieve-pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-  .ap-1 { background:#FEE2E2; color:#DC2626; }
-  .ap-2 { background:#FEF3C7; color:#D97706; }
-  .ap-3 { background:#FEF9C3; color:#A16207; }
-  .ap-4 { background:#DCFCE7; color:#16A34A; }
-  .ap-5 { background:#BBF7D0; color:#15803D; }
+/* ── KPI ROW ── */
+.kpi-row {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:20px;
+}
+.kpi-card {
+  background:var(--surface);
+  border-radius:var(--r);
+  padding:16px 18px;
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border-lt);
+  position:relative; overflow:hidden;
+}
+.kpi-card::after {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; height:3px;
+  background:var(--navy-lt);
+}
+.kpi-card.gold::after  { background:var(--gold); }
+.kpi-card.green::after { background:var(--green); }
+.kpi-card.red::after   { background:var(--red); }
+.kpi-icon { font-size:20px; margin-bottom:8px; opacity:.7; }
+.kpi-val {
+  font-family:'DM Mono',monospace;
+  font-size:30px; font-weight:500; color:var(--navy);
+  line-height:1;
+}
+.kpi-card.gold  .kpi-val { color:var(--gold); }
+.kpi-card.green .kpi-val { color:var(--green); }
+.kpi-card.red   .kpi-val { color:var(--red); }
+.kpi-label {
+  font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-muted);
+  margin-top:4px;
+}
+.kpi-delta {
+  font-size:10px; color:var(--ink-muted); margin-top:2px;
+}
 
-  /* ── CHART ── */
-  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .chart-box { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px 20px; }
-  .chart-title { font-size: 12px; font-weight: 700; color: var(--navy); letter-spacing: .04em; margin-bottom: 12px; }
-  .chart-canvas { max-height: 200px; }
+/* ── MASTER-DETAIL ── */
+.master-detail {
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:16px;
+}
 
-  /* ── EMPTY / LOADING ── */
-  .state-box { text-align: center; padding: 48px 20px; color: var(--ink-muted); }
-  .state-icon { font-size: 40px; margin-bottom: 10px; }
-  .state-text { font-size: 13px; line-height: 1.8; }
-  .spinner {
-    width: 28px; height: 28px;
-    border: 3px solid var(--border);
-    border-top-color: var(--navy);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    margin: 0 auto 12px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+.member-list {
+  background:var(--surface);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border-lt);
+  overflow:hidden;
+}
+.member-list-header {
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:11px; font-weight:700;
+  color:var(--ink-soft); letter-spacing:.08em; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+}
+.member-list-header input {
+  flex:1; padding:5px 8px;
+  border:1px solid var(--border); border-radius:6px;
+  font-size:12px; outline:none;
+  font-family:'Noto Sans JP',sans-serif;
+  color:var(--ink);
+}
+.member-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 16px;
+  cursor:pointer; transition:background .15s;
+  border-bottom:1px solid var(--border-lt);
+}
+.member-item:last-child { border-bottom:none; }
+.member-item:hover { background:var(--surface-2); }
+.member-item.active { background:var(--navy-pale); }
+.m-avatar {
+  width:32px; height:32px; border-radius:50%; flex-shrink:0;
+  background:var(--navy-lt);
+  color:#fff; font-size:13px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+.m-name { font-size:13px; font-weight:600; color:var(--ink); flex:1; }
+.m-grade { font-size:10px; color:var(--ink-muted); }
+.m-status {
+  width:8px; height:8px; border-radius:50%; flex-shrink:0;
+}
+.status-done    { background:var(--green); }
+.status-partial { background:var(--gold); }
+.status-none    { background:var(--border); }
+.status-alert   { background:var(--red); }
 
-  /* ── SELF-UNDERSTANDING ── */
-  .bars-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 10px;
-  }
-  .bars-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-  }
-  .bars-name { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-  .bars-meta { font-size: 10px; color: var(--ink-muted); margin-bottom: 10px; }
-  .bars-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-  .bars-item-label { font-size: 10px; color: var(--ink-soft); width: 68px; flex-shrink: 0; }
-  .bars-bar-wrap { flex: 1; background: var(--border); border-radius: 999px; height: 5px; }
-  .bars-bar-fill { height: 5px; border-radius: 999px; background: var(--navy); transition: width .6s; }
-  .bars-val { font-size: 9px; font-weight: 700; color: var(--ink-muted); width: 20px; text-align: right; }
-  .kadai-text { font-size: 11px; color: var(--ink-soft); line-height: 1.6; padding: 8px; background: var(--bg); border-radius: 6px; margin-top: 8px; }
+/* ── DETAIL PANEL ── */
+.detail-panel {
+  background:var(--surface);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border-lt);
+  overflow:hidden;
+}
+.detail-header {
+  background:var(--navy);
+  padding:16px 20px;
+  display:flex; align-items:center; gap:14px;
+}
+.detail-avatar {
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(255,255,255,0.15);
+  color:#fff; font-size:18px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.detail-name { font-size:17px; font-weight:700; color:#fff; }
+.detail-meta { font-size:11px; color:rgba(255,255,255,.5); margin-top:2px; }
+.detail-status-pills { margin-left:auto; display:flex; gap:6px; }
+.pill {
+  font-size:10px; font-weight:700; padding:3px 10px;
+  border-radius:999px; letter-spacing:.05em;
+}
+.pill-green { background:var(--green-pale); color:var(--green); }
+.pill-amber { background:var(--amber-pale); color:var(--amber); }
+.pill-red   { background:var(--red-pale);   color:var(--red); }
+.pill-navy  { background:var(--navy-pale);  color:var(--navy-mid); }
 
-  /* ── PRINT ── */
-  @media print {
-    .header .btn-collect, .header .btn-print, .tabs, .filter-bar { display: none !important; }
-    body { background: white; }
-    .section, .kpi-card, .member-card, .chart-box, .bars-card { box-shadow: none; border: 1px solid #ddd; }
-    .page { padding: 0; }
-    .header { position: static; }
-    .tab-panel { display: block !important; }
-  }
+.detail-body { padding:20px; }
+.detail-section { margin-bottom:20px; }
+.detail-section:last-child { margin-bottom:0; }
+.detail-section-title {
+  font-size:10px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-muted);
+  margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.detail-section-title::after {
+  content:''; flex:1; height:1px; background:var(--border-lt);
+}
 
-  @media (max-width: 700px) {
-    .kpi-row { grid-template-columns: repeat(2, 1fr); }
-    .chart-row { grid-template-columns: 1fr; }
-    .cards-grid { grid-template-columns: 1fr; }
-  }
+.challenge-box {
+  padding:10px 14px;
+  background:var(--navy-pale);
+  border-left:3px solid var(--navy-lt);
+  border-radius:0 6px 6px 0;
+  font-size:13px; color:var(--navy-mid);
+  font-weight:500; line-height:1.6;
+}
+.scene-box {
+  padding:10px 14px;
+  background:var(--surface-2);
+  border-left:3px solid var(--border);
+  border-radius:0 6px 6px 0;
+  font-size:12px; color:var(--ink-soft);
+  line-height:1.65; margin-bottom:8px;
+}
+.why-box {
+  padding:10px 14px;
+  background:var(--gold-pale);
+  border-left:3px solid var(--gold);
+  border-radius:0 6px 6px 0;
+  font-size:12px; color:var(--ink-soft);
+  line-height:1.65;
+}
+
+.achieve-display {
+  display:flex; gap:6px; margin-top:8px;
+}
+.achieve-cell {
+  flex:1; padding:8px 4px;
+  border-radius:6px; text-align:center;
+  font-size:10px; font-weight:600;
+  border:1.5px solid var(--border);
+  color:var(--ink-muted);
+  transition:all .2s;
+}
+.achieve-cell.sel-1 { background:#FEE2E2; border-color:#EF4444; color:#DC2626; }
+.achieve-cell.sel-2 { background:#FEF3C7; border-color:#F59E0B; color:#D97706; }
+.achieve-cell.sel-3 { background:#FEF9C3; border-color:#EAB308; color:#A16207; }
+.achieve-cell.sel-4 { background:#DCFCE7; border-color:#4ADE80; color:#16A34A; }
+.achieve-cell.sel-5 { background:#BBF7D0; border-color:#22C55E; color:#15803D; }
+
+/* BARSバーグラフ */
+.bars-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.bars-row2 {
+  display:flex; align-items:center; gap:8px;
+}
+.bars-label2 { font-size:10px; color:var(--ink-soft); width:60px; flex-shrink:0; }
+.bars-track {
+  flex:1; background:var(--border-lt);
+  border-radius:999px; height:5px;
+}
+.bars-fill {
+  height:5px; border-radius:999px;
+  background:var(--navy-lt);
+  transition:width .6s cubic-bezier(.22,1,.36,1);
+}
+.bars-num {
+  font-size:9px; font-family:'DM Mono',monospace;
+  color:var(--ink-muted); width:18px; text-align:right;
+}
+
+/* ── OVERVIEW CHARTS ── */
+.chart-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:20px;
+}
+.chart-box {
+  background:var(--surface);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border-lt);
+  padding:16px 18px;
+}
+.chart-title {
+  font-size:11px; font-weight:700;
+  color:var(--ink-soft); letter-spacing:.06em;
+  text-transform:uppercase; margin-bottom:12px;
+}
+.chart-canvas { max-height:180px; }
+
+/* ── MATRIX ── */
+.matrix-wrap { overflow-x:auto; }
+.matrix-table { border-collapse:collapse; min-width:500px; width:100%; }
+.matrix-table th {
+  font-size:9px; font-weight:700; letter-spacing:.1em;
+  color:var(--ink-muted); text-align:center;
+  padding:8px 4px; border-bottom:2px solid var(--border);
+  white-space:nowrap; text-transform:uppercase;
+}
+.matrix-table th.name-col { text-align:left; padding-left:12px; }
+.matrix-table td { padding:4px 3px; text-align:center; }
+.matrix-table td.name-cell {
+  text-align:left; padding-left:12px;
+  font-size:12px; font-weight:600; color:var(--navy);
+  white-space:nowrap;
+  border-right:1px solid var(--border-lt);
+}
+.matrix-table tr:hover td { background:rgba(15,32,68,0.02); }
+.m-cell {
+  width:28px; height:24px; border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; margin:0 auto;
+}
+.mc-1 { background:#FEE2E2; color:#DC2626; }
+.mc-2 { background:#FEF3C7; color:#D97706; }
+.mc-3 { background:#FEF9C3; color:#A16207; }
+.mc-4 { background:#DCFCE7; color:#16A34A; }
+.mc-5 { background:#BBF7D0; color:#15803D; }
+.mc-ok  { background:var(--navy-pale); color:var(--navy-lt); }
+.mc-nil { background:var(--border-lt); color:var(--ink-muted); }
+
+/* ── SECTION BOX ── */
+.section-box {
+  background:var(--surface);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-sm);
+  border:1px solid var(--border-lt);
+  overflow:hidden;
+  margin-bottom:16px;
+}
+.section-box-header {
+  padding:12px 16px;
+  border-bottom:1px solid var(--border-lt);
+  display:flex; align-items:center; gap:10px;
+}
+.section-box-title {
+  font-size:11px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-soft); flex:1;
+}
+.section-box-meta { font-size:11px; color:var(--ink-muted); }
+.section-box-body { padding:16px; }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;
+  padding:10px 16px; background:var(--surface-2);
+  border-bottom:1px solid var(--border-lt);
+}
+.f-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-muted); display:block; margin-bottom:4px; }
+.f-input, .f-select {
+  padding:6px 10px; border:1px solid var(--border);
+  border-radius:6px; font-size:12px; color:var(--ink);
+  font-family:'Noto Sans JP',sans-serif; outline:none;
+  background:var(--surface);
+}
+.f-btn {
+  padding:6px 12px; border-radius:6px;
+  font-size:11px; font-weight:700; cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.f-btn-today { background:var(--gold-pale); color:var(--gold); border:1px solid var(--gold); }
+.f-btn-all   { background:var(--navy-pale); color:var(--navy-mid); border:1px solid var(--navy-pale); }
+
+/* ── CARDS GRID ── */
+.cards-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:12px;
+}
+.c-card {
+  border-radius:var(--r); overflow:hidden;
+  border:1px solid var(--border-lt);
+  transition:box-shadow .2s, transform .2s;
+}
+.c-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+.c-card-header {
+  padding:10px 14px; background:var(--navy);
+  display:flex; align-items:center; gap:10px;
+}
+.c-card-header.green { background:linear-gradient(135deg,var(--green),#047857); }
+.c-av {
+  width:32px; height:32px; border-radius:50%;
+  background:rgba(255,255,255,0.15); color:#fff;
+  font-size:13px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+.c-name { font-size:13px; font-weight:700; color:#fff; }
+.c-meta { font-size:10px; color:rgba(255,255,255,.5); margin-top:1px; }
+.c-body { padding:12px 14px; background:var(--surface); }
+
+/* ── EMPTY / LOADING ── */
+.state { text-align:center; padding:48px 20px; color:var(--ink-muted); }
+.state-icon { font-size:36px; margin-bottom:10px; }
+.state-text { font-size:12px; line-height:1.8; }
+.spinner {
+  width:24px; height:24px;
+  border:2px solid var(--border);
+  border-top-color:var(--navy-lt);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  margin:0 auto 10px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── PAGE VISIBILITY ── */
+.page { display:none; }
+.page.active { display:block; }
+
+/* ── PRINT ── */
+@media print {
+  .sidebar, .topbar .print-btn, .filter-bar { display:none !important; }
+  .main { margin-left:0; }
+  body { background:white; }
+  .c-card, .section-box, .kpi-card, .chart-box, .member-list, .detail-panel { box-shadow:none; border:1px solid #ddd; }
+}
+
+@media (max-width:900px) {
+  .sidebar { transform:translateX(-100%); }
+  .main { margin-left:0; }
+  .kpi-row { grid-template-columns:repeat(2,1fr); }
+  .master-detail { grid-template-columns:1fr; }
+  .chart-row { grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <div class="header-logo">⚔ <span>MARC</span> ダッシュボード</div>
-    <div class="header-badge">COACH DASHBOARD</div>
-  </div>
-  <div class="last-update" id="lastUpdate">未収集</div>
-  <button class="header-btn btn-collect" id="collectBtn" onclick="collectAll()">
-    🔄 データを収集
-  </button>
-  <button class="header-btn btn-print" onclick="window.print()">🖨 印刷</button>
-</div>
-
-<div class="page">
-
-  <!-- タブ -->
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('overview', this)">📊 概観</button>
-    <button class="tab" onclick="switchTab('challenge', this)">🎯 チャレンジ宣言</button>
-    <button class="tab" onclick="switchTab('reflection', this)">🔍 振り返り</button>
-    <button class="tab" onclick="switchTab('profile', this)">👤 自己理解</button>
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">⚔ <span>MARC</span></div>
+    <div class="sidebar-logo-sub">Coach Dashboard</div>
   </div>
 
-  <!-- ===== 概観タブ ===== -->
-  <div class="tab-panel active" id="tab-overview">
-    <div class="kpi-row">
-      <div class="kpi-card">
-        <div class="kpi-icon">🎯</div>
-        <div class="kpi-label">チャレンジ宣言</div>
-        <div class="kpi-val" id="kpi-declare">—</div>
-        <div class="kpi-sub">件（全期間）</div>
-      </div>
-      <div class="kpi-card green">
-        <div class="kpi-icon">🔍</div>
-        <div class="kpi-label">振り返り提出</div>
-        <div class="kpi-val" id="kpi-reflect">—</div>
-        <div class="kpi-sub">件（全期間）</div>
-      </div>
-      <div class="kpi-card gold">
-        <div class="kpi-icon">⭐</div>
-        <div class="kpi-label">平均達成感</div>
-        <div class="kpi-val" id="kpi-achieve">—</div>
-        <div class="kpi-sub">/ 5.0</div>
-      </div>
-      <div class="kpi-card amber">
-        <div class="kpi-icon">👤</div>
-        <div class="kpi-label">登録部員数</div>
-        <div class="kpi-val" id="kpi-members">—</div>
-        <div class="kpi-sub">名</div>
-      </div>
-    </div>
+  <div class="sidebar-section-label">メニュー</div>
+  <div class="nav-item active" onclick="showPage('overview',this)">
+    <span class="nav-icon">📊</span> 概観
+  </div>
+  <div class="nav-item" onclick="showPage('challenge',this)">
+    <span class="nav-icon">🎯</span> チャレンジ宣言
+    <span class="nav-badge green" id="badge-challenge">—</span>
+  </div>
+  <div class="nav-item" onclick="showPage('reflection',this)">
+    <span class="nav-icon">🔍</span> 振り返り
+    <span class="nav-badge green" id="badge-reflect">—</span>
+  </div>
+  <div class="nav-item" onclick="showPage('profile',this)">
+    <span class="nav-icon">👤</span> 自己理解
+    <span class="nav-badge amber" id="badge-profile">—</span>
+  </div>
 
-    <div class="chart-row">
-      <div class="chart-box">
-        <div class="chart-title">達成感の分布（振り返り全件）</div>
-        <canvas id="achieveChart" class="chart-canvas"></canvas>
-      </div>
-      <div class="chart-box">
-        <div class="chart-title">部員別 振り返り件数</div>
-        <canvas id="memberChart" class="chart-canvas"></canvas>
-      </div>
-    </div>
+  <div class="sidebar-footer">
+    <button class="collect-btn" id="collectBtn" onclick="collectAll()">
+      🔄 データを収集
+    </button>
+    <div class="last-update" id="lastUpdate">未収集</div>
+  </div>
+</nav>
 
-    <!-- 部員マトリクス -->
-    <div class="section">
-      <div class="section-header">
-        <div class="section-title">📋 部員マトリクス（直近の記録）</div>
-        <div class="section-meta">セル色 = 達成感スコア / ✓ = 宣言のみ / — = 未記録</div>
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">概観</div>
+    <div class="topbar-date" id="topbarDate"></div>
+    <button class="print-btn" onclick="window.print()">🖨 印刷</button>
+  </div>
+
+  <!-- アラートバー -->
+  <div class="alert-bar hidden" id="alertBar"></div>
+
+  <div class="content">
+
+    <!-- ===== 概観 ===== -->
+    <div class="page active" id="page-overview">
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-val" id="k-declare">—</div>
+          <div class="kpi-label">チャレンジ宣言</div>
+          <div class="kpi-delta">全期間の合計</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-icon">🔍</div>
+          <div class="kpi-val" id="k-reflect">—</div>
+          <div class="kpi-label">振り返り提出</div>
+          <div class="kpi-delta">全期間の合計</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-icon">⭐</div>
+          <div class="kpi-val" id="k-achieve">—</div>
+          <div class="kpi-label">平均達成感</div>
+          <div class="kpi-delta">/ 5.0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">👤</div>
+          <div class="kpi-val" id="k-members">—</div>
+          <div class="kpi-label">登録部員数</div>
+          <div class="kpi-delta">名</div>
+        </div>
       </div>
-      <div class="section-body">
-        <div class="matrix-wrap" id="matrixWrap">
-          <div class="state-box"><div class="state-icon">📊</div><div class="state-text">「データを収集」ボタンを押してください</div></div>
+
+      <div class="chart-row">
+        <div class="chart-box">
+          <div class="chart-title">達成感の分布</div>
+          <canvas id="achieveChart" class="chart-canvas"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">部員別 振り返り件数</div>
+          <canvas id="memberChart" class="chart-canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <div class="section-box-header">
+          <div class="section-box-title">部員マトリクス（直近の記録）</div>
+          <div class="section-box-meta">セル = 達成感スコア / ✓ = 宣言のみ</div>
+        </div>
+        <div class="section-box-body">
+          <div class="matrix-wrap" id="matrixWrap">
+            <div class="state"><div class="state-icon">📋</div><div class="state-text">「データを収集」を押してください</div></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ===== チャレンジ宣言タブ ===== -->
-  <div class="tab-panel" id="tab-challenge">
-    <div class="filter-bar">
-      <div class="filter-group">
-        <div class="filter-label">稽古日で絞り込む</div>
-        <input type="date" class="filter-input" id="challengeDateFilter">
+    <!-- ===== チャレンジ宣言 ===== -->
+    <div class="page" id="page-challenge">
+      <div class="master-detail">
+        <div class="member-list" id="challengeMemberList">
+          <div class="member-list-header">部員一覧</div>
+          <div class="state"><div class="state-icon">🎯</div><div class="state-text">データを収集してください</div></div>
+        </div>
+        <div class="detail-panel" id="challengeDetail">
+          <div class="state" style="padding:60px 20px;"><div class="state-icon">👈</div><div class="state-text">左の部員を選択してください</div></div>
+        </div>
       </div>
-      <button class="filter-today" onclick="setToday('challengeDateFilter')">今日</button>
-      <button class="filter-today" style="background:var(--navy-pale);color:var(--navy-lt);border-color:var(--navy-lt);" onclick="clearDate('challengeDateFilter')">全件</button>
     </div>
-    <div class="section-body" id="challengeCards" style="padding:16px 0 0;">
-      <div class="state-box"><div class="state-icon">🎯</div><div class="state-text">「データを収集」ボタンを押してください</div></div>
-    </div>
-  </div>
 
-  <!-- ===== 振り返りタブ ===== -->
-  <div class="tab-panel" id="tab-reflection">
-    <div class="filter-bar">
-      <div class="filter-group">
-        <div class="filter-label">稽古日で絞り込む</div>
-        <input type="date" class="filter-input" id="reflectDateFilter">
+    <!-- ===== 振り返り ===== -->
+    <div class="page" id="page-reflection">
+      <div class="filter-bar">
+        <div>
+          <label class="f-label">稽古日で絞り込む</label>
+          <input type="date" class="f-input" id="reflectDate">
+        </div>
+        <button class="f-btn f-btn-today" onclick="setToday('reflectDate'); renderReflect();">今日</button>
+        <button class="f-btn f-btn-all"   onclick="clearDate('reflectDate'); renderReflect();">全件</button>
       </div>
-      <button class="filter-today" onclick="setToday('reflectDateFilter')">今日</button>
-      <button class="filter-today" style="background:var(--navy-pale);color:var(--navy-lt);border-color:var(--navy-lt);" onclick="clearDate('reflectDateFilter')">全件</button>
+      <div style="padding:16px 0;">
+        <div class="cards-grid" id="reflectCards">
+          <div class="state" style="grid-column:1/-1;"><div class="state-icon">🔍</div><div class="state-text">データを収集してください</div></div>
+        </div>
+      </div>
     </div>
-    <div class="section-body" id="reflectCards" style="padding:16px 0 0;">
-      <div class="state-box"><div class="state-icon">🔍</div><div class="state-text">「データを収集」ボタンを押してください</div></div>
-    </div>
-  </div>
 
-  <!-- ===== 自己理解タブ ===== -->
-  <div class="tab-panel" id="tab-profile">
-    <div class="section-body" id="profileCards" style="padding:16px 0 0;">
-      <div class="state-box"><div class="state-icon">👤</div><div class="state-text">「データを収集」ボタンを押してください</div></div>
+    <!-- ===== 自己理解（マスター・ディテール）===== -->
+    <div class="page" id="page-profile">
+      <div class="master-detail">
+        <div class="member-list" id="profileMemberList">
+          <div class="member-list-header">部員一覧</div>
+          <div class="state"><div class="state-icon">👤</div><div class="state-text">データを収集してください</div></div>
+        </div>
+        <div class="detail-panel" id="profileDetail">
+          <div class="state" style="padding:60px 20px;"><div class="state-icon">👈</div><div class="state-text">左の部員を選択してください</div></div>
+        </div>
+      </div>
     </div>
-  </div>
 
-</div><!-- /page -->
+  </div><!-- /content -->
+</div><!-- /main -->
 
 <script>
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
+const TITLES = { overview:'概観', challenge:'チャレンジ宣言', reflection:'振り返り', profile:'自己理解' };
 
-  // ===== データストア =====
-  let store = { declares: [], reflects: [], profiles: [] };
-  let charts = {};
+let store = { declares:[], reflects:[], profiles:[] };
+let charts = {};
 
-  // ===== タブ切り替え =====
-  function switchTab(id, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + id).classList.add('active');
-    btn.classList.add('active');
-    if (id === 'challenge') renderChallengeCards();
-    if (id === 'reflection') renderReflectCards();
-    if (id === 'profile')   renderProfileCards();
+// 日付
+document.getElementById('topbarDate').textContent =
+  new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+// ── ページ切り替え ──
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topbarTitle').textContent = TITLES[id] || id;
+  if(id==='challenge')  renderChallengeList();
+  if(id==='reflection') renderReflect();
+  if(id==='profile')    renderProfileList();
+}
+
+// ── JSONP ──
+function fetchGAS(params) {
+  return new Promise((resolve, reject) => {
+    const cb  = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const sc  = document.createElement('script');
+    let   url = GAS_URL + '?callback=' + cb;
+    Object.entries(params).forEach(([k,v]) => url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    const timer = setTimeout(() => {
+      if(window[cb]) delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
+      reject('timeout');
+    }, 15000);
+    window[cb] = json => {
+      clearTimeout(timer); delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
+      json.status === 'ok' ? resolve(json.rows||[]) : reject(json.message||'error');
+    };
+    sc.onerror = () => { clearTimeout(timer); delete window[cb]; try { document.head.removeChild(sc); } catch(e) {} reject('load error'); };
+    sc.src = url;
+    document.head.appendChild(sc);
+  });
+}
+
+// ── 収集 ──
+async function collectAll() {
+  const btn = document.getElementById('collectBtn');
+  btn.disabled = true; btn.textContent = '⏳ 収集中…';
+  try {
+    const d = await fetchGAS({ action:'getAll', type:'チャレンジ宣言' });
+    const r = await fetchGAS({ action:'getAll', type:'稽古ログ' });
+    const p = await fetchGAS({ action:'getAll', type:'自己理解' });
+    store = { declares:d, reflects:r, profiles:p };
+
+    const now = new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lastUpdate').textContent = now + ' 収集';
+    document.getElementById('badge-challenge').textContent = d.length;
+    document.getElementById('badge-reflect').textContent   = r.length;
+    document.getElementById('badge-profile').textContent   = p.length;
+
+    renderOverview();
+    renderChallengeList();
+    renderReflect();
+    renderProfileList();
+    renderAlerts();
+  } catch(e) {
+    alert('取得失敗: ' + e);
   }
+  btn.disabled = false; btn.textContent = '🔄 データを収集';
+}
 
-  // ===== JSONP取得 =====
-  function fetchGAS(params) {
-    return new Promise((resolve, reject) => {
-      const cb  = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      const sc  = document.createElement('script');
-      let   url = GAS_URL + '?callback=' + cb;
-      Object.entries(params).forEach(([k,v]) => url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(v));
+// ── アラート ──
+function renderAlerts() {
+  const r = store.reflects;
+  const lowScores = r.filter(x => {
+    const f = parseInt(String(x.fulfillment||'').replace('/5',''));
+    return f > 0 && f <= 2;
+  });
+  const bar = document.getElementById('alertBar');
+  if(lowScores.length > 0) {
+    bar.className = 'alert-bar amber';
+    bar.textContent = '⚠ 達成感スコアが低い部員がいます（' + lowScores.length + '件）。チャレンジ設定の難易度を確認してください。';
+  } else {
+    bar.className = 'alert-bar hidden';
+  }
+}
 
-      // 15秒タイムアウト
-      const timer = setTimeout(() => {
-        if (window[cb]) { delete window[cb]; }
-        try { document.head.removeChild(sc); } catch(e) {}
-        reject('timeout');
-      }, 15000);
+// ── 概観 ──
+function renderOverview() {
+  const d = store.declares, r = store.reflects, p = store.profiles;
+  document.getElementById('k-declare').textContent  = d.length;
+  document.getElementById('k-reflect').textContent  = r.length;
+  const scores = r.map(x=>parseInt(String(x.fulfillment||'').replace('/5',''))).filter(n=>n>0);
+  document.getElementById('k-achieve').textContent  = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
+  const allNames = new Set([...d,...r,...p].map(x=>x['氏名']||x.name||'').filter(Boolean));
+  document.getElementById('k-members').textContent  = allNames.size;
 
-      window[cb] = json => {
-        clearTimeout(timer);
-        delete window[cb];
-        try { document.head.removeChild(sc); } catch(e) {}
-        json.status === 'ok' ? resolve(json.rows || []) : reject(json.message || 'error');
-      };
-      sc.onerror = () => {
-        clearTimeout(timer);
-        delete window[cb];
-        try { document.head.removeChild(sc); } catch(e) {}
-        reject('script load error');
-      };
-      sc.src = url;
-      document.head.appendChild(sc);
+  // 達成感分布
+  const dist = [0,0,0,0,0];
+  scores.forEach(n=>{ if(n>=1&&n<=5) dist[n-1]++; });
+  const ac = document.getElementById('achieveChart');
+  if(charts.achieve) charts.achieve.destroy();
+  charts.achieve = new Chart(ac, {
+    type:'bar',
+    data:{ labels:['1','2','3','4','5'], datasets:[{ data:dist, backgroundColor:['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'], borderRadius:6, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}}, x:{ticks:{font:{size:10}},grid:{display:false}} } }
+  });
+
+  // 部員別件数
+  const byName={};
+  r.forEach(x=>{ const n=x['氏名']||x.name||'—'; byName[n]=(byName[n]||0)+1; });
+  const entries=Object.entries(byName).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const mc = document.getElementById('memberChart');
+  if(charts.member) charts.member.destroy();
+  charts.member = new Chart(mc, {
+    type:'bar',
+    data:{ labels:entries.map(e=>e[0]), datasets:[{ data:entries.map(e=>e[1]), backgroundColor:'#1a3560', borderRadius:6, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}}, scales:{ x:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}}, y:{ticks:{font:{size:10}},grid:{display:false}} } }
+  });
+
+  renderMatrix();
+}
+
+// ── マトリクス ──
+function renderMatrix() {
+  const r = store.reflects, d = store.declares;
+  const wrap = document.getElementById('matrixWrap');
+  if(!r.length && !d.length) { wrap.innerHTML='<div class="state"><div class="state-icon">📋</div><div class="state-text">データがありません</div></div>'; return; }
+  const dates = [...new Set([...r,...d].map(x=>x.date||x['稽古日']||'').filter(Boolean))].sort().reverse().slice(0,8);
+  const names = [...new Set([...r,...d].map(x=>x['氏名']||x.name||'').filter(Boolean))].sort();
+  const rMap={}, dMap={};
+  r.forEach(x=>{ const n=x['氏名']||x.name||'',dt=x.date||x['稽古日']||''; const f=parseInt(String(x.fulfillment||'').replace('/5',''))||0; if(!rMap[n])rMap[n]={}; rMap[n][dt]=f; });
+  d.forEach(x=>{ const n=x['氏名']||x.name||'',dt=x.date||x['稽古日']||''; if(!dMap[n])dMap[n]={}; dMap[n][dt]=true; });
+  let h='<table class="matrix-table"><thead><tr><th class="name-col">部員</th>';
+  dates.forEach(dt=>{ h+='<th>'+dt.slice(5)+'</th>'; });
+  h+='</tr></thead><tbody>';
+  names.forEach(name=>{
+    h+='<tr><td class="name-cell">'+name+'</td>';
+    dates.forEach(dt=>{
+      const s=rMap[name]?.[dt], dk=dMap[name]?.[dt];
+      if(s) h+='<td><div class="m-cell mc-'+s+'">'+s+'</div></td>';
+      else if(dk) h+='<td><div class="m-cell mc-ok">✓</div></td>';
+      else h+='<td><div class="m-cell mc-nil">—</div></td>';
     });
-  }
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  wrap.innerHTML=h;
+}
 
-  // ===== 全収集 =====
-  async function collectAll() {
-    const btn = document.getElementById('collectBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ 収集中…';
-    document.getElementById('lastUpdate').textContent = '収集中…';
+// ── チャレンジ一覧（マスター・ディテール）──
+function renderChallengeList() {
+  const el = document.getElementById('challengeMemberList');
+  const d = store.declares;
+  if(!d.length) { el.innerHTML='<div class="member-list-header">部員一覧</div><div class="state"><div class="state-icon">🎯</div><div class="state-text">データがありません</div></div>'; return; }
+  const byName={};
+  d.forEach(x=>{ const n=x['氏名']||x.name||''; if(!byName[n]) byName[n]=[]; byName[n].push(x); });
+  let h='<div class="member-list-header">チャレンジ宣言 '+'<span style="color:var(--green);font-weight:700;">'+d.length+'件</span></div>';
+  Object.keys(byName).sort().forEach(name=>{
+    const rows=byName[name]; const latest=rows[0];
+    h+=`<div class="member-item" onclick="showChallengeDetail('${name}',this)">
+      <div class="m-avatar">${name.charAt(0)}</div>
+      <div><div class="m-name">${name}</div><div class="m-grade">${rows.length}件 / 最新: ${(latest.date||latest['稽古日']||'').slice(5)}</div></div>
+      <div class="m-status status-done"></div>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
 
-    try {
-      // 順次実行（JSONP競合を避けるため）
-      const d = await fetchGAS({ action: 'getAll', type: 'チャレンジ宣言' });
-      const r = await fetchGAS({ action: 'getAll', type: '稽古ログ' });
-      const p = await fetchGAS({ action: 'getAll', type: '自己理解' });
-      store.declares = d;
-      store.reflects = r;
-      store.profiles = p;
+function showChallengeDetail(name, el) {
+  document.querySelectorAll('#challengeMemberList .member-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  const rows = store.declares.filter(x=>(x['氏名']||x.name||'')===name);
+  const det = document.getElementById('challengeDetail');
+  let items = rows.map(r=>`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border-lt);">
+    <div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;font-family:'DM Mono',monospace;">${r.date||r['稽古日']||'—'}</div>
+    <div class="challenge-box">${r['試したいこと']||r.intent||'—'}</div>
+  </div>`).join('');
+  det.innerHTML=`
+    <div class="detail-header">
+      <div class="detail-avatar">${name.charAt(0)}</div>
+      <div><div class="detail-name">${name}</div><div class="detail-meta">${rows.length}件のチャレンジ宣言</div></div>
+    </div>
+    <div class="detail-body">${items}</div>`;
+}
 
-      const now = new Date().toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
-      document.getElementById('lastUpdate').textContent = '最終収集 ' + now;
+// ── 振り返りカード ──
+function renderReflect() {
+  const date = document.getElementById('reflectDate').value;
+  let rows = store.reflects;
+  if(date) rows = rows.filter(r=>(r.date||r['稽古日']||'').startsWith(date));
+  const el = document.getElementById('reflectCards');
+  if(!rows.length) { el.innerHTML='<div class="state" style="grid-column:1/-1;"><div class="state-icon">🔍</div><div class="state-text">該当データがありません</div></div>'; return; }
+  const fL=['','できなかった','少しできた','まあまあ','かなり','完全に'];
+  const fC=['','1','1','1','1','1'];
+  el.innerHTML = rows.map(row=>{
+    const n=row['氏名']||row.name||'—', dt=row.date||row['稽古日']||'—';
+    const s=row.scene||row['印象に残った場面']||'—';
+    const w=row.why||row['なぜそうなったか']||'—';
+    const i=row.intent||row['試したいこと']||'';
+    const f=parseInt(String(row.fulfillment||row['充実度']||'').replace('/5',''))||0;
+    return `<div class="c-card">
+      <div class="c-card-header green">
+        <div class="c-av">${n.charAt(0)}</div>
+        <div><div class="c-name">${n}</div><div class="c-meta">${dt}${f?' &nbsp;<span style="background:rgba(255,255,255,.2);padding:1px 7px;border-radius:999px;">'+fL[f]+'</span>':''}</div></div>
+      </div>
+      <div class="c-body">
+        ${i?'<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">🎯 宣言</div><div class="challenge-box">'+i+'</div></div>':''}
+        <div style="margin-bottom:6px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">① 場面</div><div class="scene-box">${s}</div></div>
+        <div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">② なぜ</div><div class="why-box">${w}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-      renderOverview();
-      renderChallengeCards();
-      renderReflectCards();
-      renderProfileCards();
-    } catch(e) {
-      const msg = String(e);
-      document.getElementById('cardsContainer') && (document.getElementById('cardsContainer').innerHTML =
-        '<div class="state-box"><div class="state-icon">⚠</div><div class="state-text">取得エラー: ' + msg + '<br><br>GASの再デプロイを確認してください。</div></div>');
-      alert('データ取得に失敗しました。\nエラー: ' + msg);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '🔄 データを収集';
-    }
-  }
+// ── 自己理解（マスター・ディテール）──
+function renderProfileList() {
+  const el = document.getElementById('profileMemberList');
+  const p = store.profiles;
+  if(!p.length) { el.innerHTML='<div class="member-list-header">部員一覧</div><div class="state"><div class="state-icon">👤</div><div class="state-text">データがありません</div></div>'; return; }
+  const latest={};
+  p.forEach(r=>{ latest[r['氏名']||''] = r; });
+  let h='<div class="member-list-header">自己理解シート <span style="color:var(--gold);font-weight:700;">'+Object.keys(latest).length+'名</span></div>';
+  Object.keys(latest).sort().forEach(name=>{
+    const r=latest[name];
+    h+=`<div class="member-item" onclick="showProfileDetail('${name}',this)">
+      <div class="m-avatar">${name.charAt(0)}</div>
+      <div><div class="m-name">${name}</div><div class="m-grade">${r['学年']||''} ${r['段位級']||''}</div></div>
+      <div class="m-status status-partial"></div>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
 
-  // ===== 概観 =====
-  function renderOverview() {
-    const d = store.declares, r = store.reflects, p = store.profiles;
+function showProfileDetail(name, el) {
+  document.querySelectorAll('#profileMemberList .member-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  const latest={};
+  store.profiles.forEach(r=>{ latest[r['氏名']||'']=r; });
+  const r=latest[name]; if(!r) return;
+  const barsKeys=[
+    {k:'自己評価_kire',lb:'打突の冴え'},{k:'自己評価_tenouchi',lb:'手の内'},{k:'自己評価_zanshin',lb:'残心'},
+    {k:'自己評価_maai',lb:'間合い'},{k:'自己評価_seme',lb:'攻め'},{k:'自己評価_kikai',lb:'機会'},
+    {k:'自己評価_footwork',lb:'足さばき'},{k:'自己評価_shiai',lb:'試合運び'},
+    {k:'自己評価_kisei',lb:'気勢'},{k:'自己評価_mental',lb:'精神力'}
+  ];
+  const barsHtml = '<div class="bars-grid">'+barsKeys.map(b=>{
+    const v=parseInt(r[b.k])||0;
+    return `<div class="bars-row2"><div class="bars-label2">${b.lb}</div><div class="bars-track"><div class="bars-fill" style="width:${v/5*100}%"></div></div><div class="bars-num">${v}/5</div></div>`;
+  }).join('')+'</div>';
+  const det = document.getElementById('profileDetail');
+  det.innerHTML=`
+    <div class="detail-header">
+      <div class="detail-avatar">${name.charAt(0)}</div>
+      <div>
+        <div class="detail-name">${name}</div>
+        <div class="detail-meta">${r['学年']||''} / ${r['段位級']||''} / 剣道歴${r['剣道歴']||'—'} / 得意技：${r['得意技']||'—'}</div>
+      </div>
+      <div class="detail-status-pills">
+        <span class="pill pill-navy">${r['利き手構え']||''}</span>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-title">自己評価（BARS）</div>
+        ${barsHtml}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">課題感</div>
+        <div class="why-box">${r['今の課題感']||'—'}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">個人目標</div>
+        <div class="challenge-box">🎯 ${r['個人目標']||'—'}</div>
+      </div>
+    </div>`;
+}
 
-    // KPI
-    document.getElementById('kpi-declare').textContent  = d.length;
-    document.getElementById('kpi-reflect').textContent  = r.length;
-    const scores = r.map(x => parseInt(String(x.fulfillment || x['充実度'] || '').replace('/5',''))).filter(n => n > 0);
-    const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
-    document.getElementById('kpi-achieve').textContent  = avg;
-    const allNames = new Set([...d,...r,...p].map(x => x['氏名'] || x.name || '').filter(Boolean));
-    document.getElementById('kpi-members').textContent  = allNames.size;
-
-    // 達成感チャート
-    const dist = [0,0,0,0,0];
-    scores.forEach(n => { if(n>=1&&n<=5) dist[n-1]++; });
-    drawAchieveChart(dist);
-
-    // 部員別件数
-    const byName = {};
-    r.forEach(x => {
-      const n = x['氏名'] || x.name || '—';
-      byName[n] = (byName[n]||0) + 1;
-    });
-    drawMemberChart(byName);
-
-    // マトリクス
-    renderMatrix();
-  }
-
-  function drawAchieveChart(dist) {
-    const ctx = document.getElementById('achieveChart');
-    if (charts.achieve) charts.achieve.destroy();
-    charts.achieve = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['できなかった', '少しできた', 'まあまあ', 'かなり', '完全に'],
-        datasets: [{
-          data: dist,
-          backgroundColor: ['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'],
-          borderRadius: 6,
-          borderSkipped: false,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f4f8' } },
-          x: { ticks: { font: { size: 9 } }, grid: { display: false } }
-        }
-      }
-    });
-  }
-
-  function drawMemberChart(byName) {
-    const ctx = document.getElementById('memberChart');
-    if (charts.member) charts.member.destroy();
-    const entries = Object.entries(byName).sort((a,b)=>b[1]-a[1]).slice(0,12);
-    charts.member = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: entries.map(e=>e[0]),
-        datasets: [{
-          data: entries.map(e=>e[1]),
-          backgroundColor: '#1a3a6b',
-          borderRadius: 6,
-          borderSkipped: false,
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f4f8' } },
-          y: { ticks: { font: { size: 10 } }, grid: { display: false } }
-        }
-      }
-    });
-  }
-
-  // ===== マトリクス =====
-  function renderMatrix() {
-    const r = store.reflects, d = store.declares;
-    if (!r.length && !d.length) {
-      document.getElementById('matrixWrap').innerHTML = '<div class="state-box"><div class="state-icon">📋</div><div class="state-text">振り返りデータがありません</div></div>';
-      return;
-    }
-
-    // 日付一覧（最新8件）
-    const allDates = [...new Set([...r,...d].map(x => x.date || x['稽古日'] || '').filter(Boolean))].sort().reverse().slice(0,8);
-    // 部員一覧
-    const names = [...new Set([...r,...d].map(x => x['氏名'] || x.name || '').filter(Boolean))].sort();
-
-    // データをマップ化
-    const rMap = {}, dMap = {};
-    r.forEach(x => {
-      const n = x['氏名']||x.name||'', dt = x.date||x['稽古日']||'';
-      const f = parseInt(String(x.fulfillment||x['充実度']||'').replace('/5','')) || 0;
-      if (!rMap[n]) rMap[n] = {};
-      rMap[n][dt] = f;
-    });
-    d.forEach(x => {
-      const n = x['氏名']||x.name||'', dt = x.date||x['稽古日']||'';
-      if (!dMap[n]) dMap[n] = {};
-      dMap[n][dt] = true;
-    });
-
-    let html = '<table class="matrix-table"><thead><tr>';
-    html += '<th class="name-col">部員</th>';
-    allDates.forEach(dt => { html += '<th>' + dt.slice(5) + '</th>'; });
-    html += '</tr></thead><tbody>';
-
-    names.forEach(name => {
-      html += '<tr><td class="name-cell">' + name + '</td>';
-      allDates.forEach(dt => {
-        const score = rMap[name]?.[dt];
-        const declared = dMap[name]?.[dt];
-        if (score) {
-          html += '<td><div class="cell-dot dot-' + score + '">' + score + '</div></td>';
-        } else if (declared) {
-          html += '<td><div class="cell-dot dot-ok">✓</div></td>';
-        } else {
-          html += '<td><div class="cell-dot dot-none" style="width:28px;height:28px;margin:0 auto;"></div></td>';
-        }
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('matrixWrap').innerHTML = html;
-  }
-
-  // ===== チャレンジ宣言カード =====
-  function renderChallengeCards() {
-    const date = document.getElementById('challengeDateFilter').value;
-    let rows = store.declares;
-    if (date) rows = rows.filter(r => (r.date||r['稽古日']||'').startsWith(date));
-
-    const el = document.getElementById('challengeCards');
-    if (!rows.length) {
-      el.innerHTML = '<div class="state-box"><div class="state-icon">🎯</div><div class="state-text">該当するデータがありません</div></div>';
-      return;
-    }
-
-    const grid = document.createElement('div');
-    grid.className = 'cards-grid';
-    rows.forEach(row => {
-      const name   = row['氏名'] || row.name || '—';
-      const date   = row.date || row['稽古日'] || '—';
-      const intent = row['試したいこと'] || row.intent || '—';
-      const ts     = (row.timestamp || '').slice(0,16);
-      grid.innerHTML += `
-        <div class="member-card">
-          <div class="mc-header">
-            <div class="mc-avatar">${name.charAt(0)}</div>
-            <div>
-              <div class="mc-name">${name}</div>
-              <div class="mc-meta">${date} &nbsp;${ts}</div>
-            </div>
-          </div>
-          <div class="mc-body">
-            <div class="mc-field">
-              <div class="mc-field-label">🎯 チャレンジ宣言</div>
-              <span class="intent-chip">${intent}</span>
-            </div>
-          </div>
-        </div>`;
-    });
-    el.innerHTML = '';
-    el.appendChild(grid);
-  }
-
-  // ===== 振り返りカード =====
-  function renderReflectCards() {
-    const date = document.getElementById('reflectDateFilter').value;
-    let rows = store.reflects;
-    if (date) rows = rows.filter(r => (r.date||r['稽古日']||'').startsWith(date));
-
-    const el = document.getElementById('reflectCards');
-    if (!rows.length) {
-      el.innerHTML = '<div class="state-box"><div class="state-icon">🔍</div><div class="state-text">該当するデータがありません</div></div>';
-      return;
-    }
-
-    const fLabels = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
-    const grid = document.createElement('div');
-    grid.className = 'cards-grid';
-    rows.forEach(row => {
-      const name   = row['氏名'] || row.name || '—';
-      const date   = row.date || row['稽古日'] || '—';
-      const scene  = row.scene || row['印象に残った場面'] || '—';
-      const why    = row.why   || row['なぜそうなったか'] || '—';
-      const intent = row.intent|| row['試したいこと'] || '';
-      const f = parseInt(String(row.fulfillment||row['充実度']||'').replace('/5','')) || 0;
-      grid.innerHTML += `
-        <div class="member-card">
-          <div class="mc-header green">
-            <div class="mc-avatar">${name.charAt(0)}</div>
-            <div>
-              <div class="mc-name">${name}</div>
-              <div class="mc-meta">${date}&nbsp;&nbsp;${f ? '<span class="achieve-pill ap-'+f+'">'+fLabels[f]+'</span>' : ''}</div>
-            </div>
-          </div>
-          <div class="mc-body">
-            ${intent ? '<div class="mc-field"><div class="mc-field-label">🎯 宣言内容</div><span class="intent-chip">' + intent + '</span></div>' : ''}
-            <div class="mc-field">
-              <div class="mc-field-label">① 印象に残った場面</div>
-              <span class="scene-chip">${scene}</span>
-            </div>
-            <div class="mc-field">
-              <div class="mc-field-label">② なぜそうなったか</div>
-              <span class="why-chip">${why}</span>
-            </div>
-          </div>
-        </div>`;
-    });
-    el.innerHTML = '';
-    el.appendChild(grid);
-  }
-
-  // ===== 自己理解カード =====
-  function renderProfileCards() {
-    const rows = store.profiles;
-    const el   = document.getElementById('profileCards');
-    if (!rows.length) {
-      el.innerHTML = '<div class="state-box"><div class="state-icon">👤</div><div class="state-text">自己理解データがありません</div></div>';
-      return;
-    }
-
-    const barsKeys = [
-      {key:'自己評価_kire',    label:'打突の冴え'},
-      {key:'自己評価_tenouchi',label:'手の内'},
-      {key:'自己評価_zanshin', label:'残心'},
-      {key:'自己評価_maai',    label:'間合い'},
-      {key:'自己評価_seme',    label:'攻め'},
-      {key:'自己評価_kikai',   label:'機会'},
-      {key:'自己評価_footwork',label:'足さばき'},
-      {key:'自己評価_shiai',   label:'試合運び'},
-      {key:'自己評価_kisei',   label:'気勢'},
-      {key:'自己評価_mental',  label:'精神力'},
-    ];
-
-    // 部員ごとに最新1件
-    const latest = {};
-    rows.forEach(r => { latest[r['氏名']||''] = r; });
-
-    const grid = document.createElement('div');
-    grid.className = 'bars-row';
-    Object.entries(latest).forEach(([name, row]) => {
-      let barsHtml = barsKeys.map(b => {
-        const val = parseInt(row[b.key]) || 0;
-        const pct = (val / 5 * 100).toFixed(0);
-        return `<div class="bars-item">
-          <div class="bars-item-label">${b.label}</div>
-          <div class="bars-bar-wrap"><div class="bars-bar-fill" style="width:${pct}%"></div></div>
-          <div class="bars-val">${val}/5</div>
-        </div>`;
-      }).join('');
-      const kadai  = row['今の課題感'] || '—';
-      const mokuhyo = row['個人目標'] || '—';
-      const waza   = row['得意技'] || '—';
-      const grade  = row['学年'] || '';
-      grid.innerHTML += `
-        <div class="bars-card">
-          <div class="bars-name">${name} <span style="font-size:11px;color:var(--ink-muted);font-weight:400;">${grade}</span></div>
-          <div class="bars-meta">得意技：${waza}</div>
-          ${barsHtml}
-          <div class="kadai-text">📌 ${kadai}</div>
-          <div style="margin-top:5px;font-size:10px;color:var(--green);font-weight:600;">🎯 ${mokuhyo}</div>
-        </div>`;
-    });
-    el.innerHTML = '';
-    el.appendChild(grid);
-  }
-
-  // ===== ユーティリティ =====
-  function setToday(inputId) {
-    document.getElementById(inputId).value = new Date().toISOString().slice(0,10);
-    if (inputId === 'challengeDateFilter') renderChallengeCards();
-    if (inputId === 'reflectDateFilter')  renderReflectCards();
-  }
-  function clearDate(inputId) {
-    document.getElementById(inputId).value = '';
-    if (inputId === 'challengeDateFilter') renderChallengeCards();
-    if (inputId === 'reflectDateFilter')  renderReflectCards();
-  }
+// ── ユーティリティ ──
+function setToday(id) { document.getElementById(id).value = new Date().toISOString().slice(0,10); }
+function clearDate(id) { document.getElementById(id).value = ''; }
 </script>
 </body>
 </html>
