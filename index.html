@@ -1038,7 +1038,7 @@
       <div class="grid-2">
         <div class="field-group">
           <label class="field-label">段位・級</label>
-          <select>
+          <select id="dankyuSelect">
             <option value="">選択</option>
             <option>無段</option>
             <option>初段</option><option>二段</option><option>三段</option>
@@ -1051,7 +1051,7 @@
         </div>
         <div class="field-group">
           <label class="field-label">利き手・構え</label>
-          <select>
+          <select id="kikiteSelect">
             <option value="">選択</option>
             <option>右利き（上段）</option>
             <option>右利き（中段）</option>
@@ -1709,6 +1709,16 @@
       if (sel) sel.value = data['学年'];
     }
 
+    // 段位・利き手
+    if (data['段位級']) {
+      const d = document.getElementById('dankyuSelect');
+      if (d) d.value = data['段位級'];
+    }
+    if (data['利き手構え']) {
+      const k = document.getElementById('kikiteSelect');
+      if (k) k.value = data['利き手構え'];
+    }
+
     // 得意技
     if (data['得意技']) {
       const wazaList = data['得意技'].split('・');
@@ -1733,10 +1743,9 @@
     const waza = [...document.querySelectorAll('#wazaSelector .rank-btn.active')]
       .map(b => b.textContent.trim()).join('・');
 
-    // 段位・利き手（select要素）
-    const selects = document.querySelectorAll('.section-body select');
-    const grade    = selects[0]?.value || '';
-    const stance   = selects[2]?.value || '';
+    // 段位・利き手（ID指定）
+    const grade  = document.getElementById('dankyuSelect')?.value || '';
+    const stance = document.getElementById('kikiteSelect')?.value || '';
 
     // 記入日
     const dateInputs = document.querySelectorAll('.section-body input[type="date"]');
@@ -2001,10 +2010,17 @@
     restoreName();
     renderHistory();
     updateLogCount();
+    restoreIntentDraft();
     const d = document.getElementById('logDate');
     const savedDate = localStorage.getItem('marc_log_date_draft');
     if (d) d.value = savedDate || new Date().toISOString().slice(0, 10);
-    // 名前はlocalStorageで管理（自己理解タブから共有）
+    // 記録者名を初期表示
+    const nameEl = document.getElementById('logUserName');
+    if (nameEl) {
+      const stored = localStorage.getItem(LS_NAME);
+      nameEl.textContent = stored || '（未設定）';
+      nameEl.style.color = stored ? 'var(--primary)' : 'var(--red)';
+    }
   });
   </script>
 </body>
