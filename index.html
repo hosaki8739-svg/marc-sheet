@@ -970,6 +970,123 @@
   .success-title { font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
   .success-sub { font-size: 13px; color: var(--ink-muted); line-height: 1.8; }
 
+
+  /* ===== TIMELINE LOG ===== */
+  .timeline-card {
+    position: relative;
+    border-radius: var(--radius-lg);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all .3s cubic-bezier(.22,1,.36,1);
+  }
+  .timeline-card::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 100%;
+    width: 2px;
+    height: 12px;
+    background: var(--border);
+  }
+  .timeline-card:last-of-type::before { display: none; }
+
+  .timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    cursor: default;
+  }
+  .timeline-step-badge {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    transition: all .3s;
+  }
+  .timeline-step-badge.active {
+    background: var(--primary); color: #fff;
+    box-shadow: 0 2px 8px rgba(26,58,107,0.3);
+  }
+  .timeline-step-badge.locked {
+    background: var(--bg-warm); color: var(--ink-muted);
+    border: 2px solid var(--border);
+  }
+  .timeline-step-badge.done {
+    background: #059669; color: #fff;
+  }
+  .timeline-title { flex: 1; }
+  .timeline-title-main {
+    font-size: 14px; font-weight: 700; letter-spacing: .03em;
+  }
+  .timeline-title-sub {
+    font-size: 10px; letter-spacing: .05em; margin-top: 2px;
+  }
+  .timeline-status-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .timeline-body {
+    padding: 0 18px 18px;
+    transition: all .3s;
+  }
+  .timeline-body.locked-body {
+    padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--ink-muted); font-size: 13px;
+  }
+
+  /* アクティブカードは濃い枠 */
+  .timeline-card.phase-active {
+    border: 2px solid var(--primary);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+  }
+  /* ロックカードは薄い */
+  .timeline-card.phase-locked {
+    border: 1.5px solid var(--border);
+    background: var(--bg-warm);
+    opacity: .75;
+  }
+  /* 完了カードは緑枠 */
+  .timeline-card.phase-done {
+    border: 2px solid #059669;
+    background: #F0FDF4;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pre-submit-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-lt));
+    color: #fff; border: none;
+    border-radius: var(--radius-md);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .04em;
+    margin-top: 14px;
+    box-shadow: 0 3px 12px rgba(26,58,107,0.25);
+  }
+  .pre-submit-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+  .pre-submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  .post-submit-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff; border: none;
+    border-radius: var(--radius-md);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .04em;
+    margin-top: 14px;
+    box-shadow: 0 3px 12px rgba(5,150,105,0.25);
+  }
+  .post-submit-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+  .post-submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
 </style>
 </head>
 <body>
@@ -1142,8 +1259,8 @@
     <!-- 入力フォーム -->
     <div id="logInputArea">
 
-      <!-- 稽古日（先頭）-->
-      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <!-- 稽古日・記録者バー -->
+      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
         <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;">
@@ -1156,79 +1273,65 @@
         </div>
       </div>
 
-      <!-- 稽古前 -->
-      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1.5px solid var(--primary);box-shadow:var(--shadow-sm);padding:18px 20px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:15px;">🎯</span>
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--primary);">稽古前に記入</div>
-          </div>
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">今週の稽古で試したいこと</label>
-          <div class="field-hint">
-            <strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br>
-            <span style="color:var(--ink-muted);font-size:11px;">状況（いつ・どんな場面で）＋ 動作（何をする）をセットで。</span><br>
-            <span style="color:var(--ink-muted);">✗ 「もっと攻める」← 稽古中に思い出せない</span><br>
-            <span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span><br>
-            <span style="color:var(--primary);font-weight:600;">✓ 「引き技を打った直後、右足を引いてから次を打つ」</span>
-          </div>
-          <input type="text" id="logIntent"
-            placeholder=""
-            oninput="autoSaveIntent(this.value)"
-            style="border-color:var(--primary);">
+      <!-- タイムライン縦線の起点 -->
+      <div style="position:relative;">
 
-        </div>
-      </div>
-
-      <!-- 稽古後 -->
-      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:20px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-soft);">
-          <span style="font-size:15px;">🔍</span>
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--ink);">稽古後に記入</div>
-            <div style="font-size:10px;color:var(--red);font-weight:600;letter-spacing:.04em;">体がまだ覚えているうちに。時間が経つほど感覚は薄れます。</div>
+        <!-- PHASE 1: 稽古前 チャレンジ宣言 -->
+        <div class="timeline-card phase-active" id="phase1Card">
+          <div class="timeline-header">
+            <div class="timeline-step-badge active" id="phase1Badge">1</div>
+            <div class="timeline-title">
+              <div class="timeline-title-main" style="color:var(--primary);">稽古前 — チャレンジ宣言</div>
+              <div class="timeline-title-sub" style="color:var(--primary);">稽古が始まる前に宣言してください</div>
+            </div>
+            <div class="timeline-status-tag" id="phase1StatusTag"
+              style="background:var(--primary);color:#fff;">入力中</div>
           </div>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label">試したいことへの達成感</label>
-          <div class="field-hint">稽古前に書いたことに対して、どれくらいできたか。直感で選んでください。</div>
-          <div class="achieve-row">
-            <button class="achieve-btn" data-val="1" onclick="selectFulfillment(this,1)">できな<br>かった</button>
-            <button class="achieve-btn" data-val="2" onclick="selectFulfillment(this,2)">少し<br>できた</button>
-            <button class="achieve-btn" data-val="3" onclick="selectFulfillment(this,3)">まあまあ<br>できた</button>
-            <button class="achieve-btn" data-val="4" onclick="selectFulfillment(this,4)">かなり<br>できた</button>
-            <button class="achieve-btn" data-val="5" onclick="selectFulfillment(this,5)">完全に<br>できた</button>
+          <div class="timeline-body" id="phase1Body">
+            <div class="field-group">
+              <label class="field-label">今週の稽古で試したいこと<span class="required">*</span></label>
+              <div class="field-hint">
+                <strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br>
+                <span style="color:var(--ink-muted);font-size:11px;">状況（いつ・どんな場面で）＋ 動作（何をする）をセットで。</span><br>
+                <span style="color:var(--ink-muted);">✗ 「もっと攻める」← 稽古中に思い出せない</span><br>
+                <span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span><br>
+                <span style="color:var(--primary);font-weight:600;">✓ 「引き技を打った直後、右足を引いてから次を打つ」</span>
+              </div>
+              <input type="text" id="logIntent" placeholder=""
+                oninput="autoSaveIntent(this.value)"
+                style="border-color:var(--primary);">
+            </div>
+            <button class="pre-submit-btn" id="preSubmitBtn" onclick="submitPreLog()">
+              ✦ チャレンジを宣言する
+            </button>
           </div>
         </div>
 
-        <div class="field-group">
-          <label class="field-label">① 今週の稽古で一番印象に残った場面を具体的に<span class="required">*</span></label>
-          <div class="field-hint">
-            うまくいった場面でも、うまくいかなかった場面でも。<strong>「どんな状況で、何をしたか」</strong>を具体的に。今この瞬間が一番鮮明です。<br>
-            <span style="color:var(--gold);font-weight:500;">例：「強い相手に攻めたら動いてくれて、出ばな小手が決まった。打った後の間合いがちょうど良かった。」</span>
+        <!-- タイムライン接続線 -->
+        <div style="width:2px;height:16px;background:var(--border);margin:0 auto 0 23px;"></div>
+
+        <!-- PHASE 2: 稽古後 振り返り -->
+        <div class="timeline-card phase-locked" id="phase2Card">
+          <div class="timeline-header">
+            <div class="timeline-step-badge locked" id="phase2Badge">2</div>
+            <div class="timeline-title">
+              <div class="timeline-title-main" style="color:var(--ink-muted);">稽古後 — 振り返り</div>
+              <div class="timeline-title-sub" style="color:var(--ink-muted);">稽古後に記入・提出してください</div>
+            </div>
+            <div class="timeline-status-tag" id="phase2StatusTag"
+              style="background:var(--bg-warm);color:var(--ink-muted);border:1px solid var(--border);">🔒 宣言後に解除</div>
           </div>
-          <textarea id="logScene" placeholder="" style="min-height:88px"></textarea>
+          <div class="timeline-body locked-body" id="phase2Body">
+            <span style="font-size:20px;">🔒</span>
+            <span>「チャレンジを宣言する」を送信すると入力できます</span>
+          </div>
         </div>
 
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">② なぜそうなったと思うか<span class="required">*</span></label>
-          <div class="field-hint">
-            「たまたま」「運が良かった」ではなく、<strong>自分の動き・判断・準備の何が原因か</strong>を考えてください。ここが一番大事な問いです。<br>
-            <span style="color:var(--gold);font-weight:500;">例：「間合いを少し遠めにとって待てたから。いつもより焦らず動けた。」</span>
-          </div>
-          <textarea id="logWhy" placeholder="" style="min-height:88px"></textarea>
-        </div>
-      </div>
-
-      <button onclick="submitLog()" style="width:100%;padding:16px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-md);font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.04em;transition:background .2s;margin-bottom:28px;">
-        ✦ 稽古ログを提出する
-      </button>
-    </div>
+      </div><!-- /タイムライン -->
+    </div><!-- /logInputArea -->
 
     <!-- 過去ログ（時系列）-->
-    <div id="logHistory" style="margin-top:4px;">
+    <div id="logHistory" style="margin-top:16px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
         <div style="flex:1;height:1px;background:var(--border);"></div>
         <div style="font-size:10px;font-weight:700;color:var(--ink-muted);letter-spacing:.15em;">過去の記録</div>
@@ -1237,7 +1340,7 @@
       <div id="logHistoryList"></div>
     </div>
 
-  </div> <!-- /tab-log -->
+    </div> <!-- /tab-log -->
 
 </div> <!-- /wrapper -->
 
@@ -1831,6 +1934,7 @@
       if (d && !d.value) d.value = sd || new Date().toISOString().slice(0, 10);
       restoreName();
       restoreIntentDraft();
+      renderPhaseUI();
       renderHistory();
       // 記録者名を表示
       const nameEl = document.getElementById('logUserName');
@@ -1855,7 +1959,7 @@
   }
 
   // ===== 試したいこと：下書き自動保存 =====
-  function autoSaveIntent(val) { localStorage.setItem(LS_INTENT, val); }
+  function autoSaveIntent(val) { if (val !== undefined) localStorage.setItem(LS_INTENT, val); }
   function restoreIntentDraft() {
     const saved = localStorage.getItem(LS_INTENT);
     const el = document.getElementById('logIntent');
@@ -1873,32 +1977,228 @@
     fulfillmentVal = val;
   }
 
-  // ===== 稽古ログ提出 =====
-  async function submitLog() {
+  // ===== フェーズ管理 =====
+  // phase: 'pre'（宣言前）| 'post'（宣言済・振り返り未）| 'done'（完了）
+  const LS_PHASE = 'marc_log_phase';
+  const LS_PRE   = 'marc_log_pre';   // チャレンジ宣言データ
+
+  function getPhase() {
+    return localStorage.getItem(LS_PHASE) || 'pre';
+  }
+  function setPhase(p) {
+    localStorage.setItem(LS_PHASE, p);
+  }
+
+  function renderPhaseUI() {
+    const phase = getPhase();
+    const p1Card  = document.getElementById('phase1Card');
+    const p2Card  = document.getElementById('phase2Card');
+    const p1Badge = document.getElementById('phase1Badge');
+    const p2Badge = document.getElementById('phase2Badge');
+    const p1Tag   = document.getElementById('phase1StatusTag');
+    const p2Tag   = document.getElementById('phase2StatusTag');
+    const p1Body  = document.getElementById('phase1Body');
+    const p2Body  = document.getElementById('phase2Body');
+    if (!p1Card) return;
+
+    if (phase === 'pre') {
+      // Phase1: アクティブ / Phase2: ロック
+      p1Card.className  = 'timeline-card phase-active';
+      p1Badge.className = 'timeline-step-badge active';
+      p1Tag.textContent = '入力中';
+      p1Tag.style.cssText = 'background:var(--primary);color:#fff;';
+      p1Body.style.display = '';
+
+      p2Card.className  = 'timeline-card phase-locked';
+      p2Badge.className = 'timeline-step-badge locked';
+      p2Tag.textContent = '🔒 宣言後に解除';
+      p2Tag.style.cssText = 'background:var(--bg-warm);color:var(--ink-muted);border:1px solid var(--border);';
+      p2Body.innerHTML = '<span style="font-size:20px;">🔒</span><span>「チャレンジを宣言する」を送信すると入力できます</span>';
+      p2Body.className = 'timeline-body locked-body';
+
+      // チャレンジ宣言データがあれば復元
+      restoreIntentDraft();
+
+    } else if (phase === 'post') {
+      // Phase1: 完了 / Phase2: アクティブ（振り返り欄を表示）
+      p1Card.className  = 'timeline-card phase-done';
+      p1Badge.className = 'timeline-step-badge done';
+      p1Badge.textContent = '✓';
+      p1Tag.textContent = '宣言済み ✓';
+      p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
+
+      // Phase1の本文を申告内容サマリに変更
+      const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
+      p1Body.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">'
+        + '<span style="font-weight:700;color:#059669;">✓ 宣言内容：</span>'
+        + (preData.intent || '—')
+        + '</div>';
+      p1Body.className = 'timeline-body';
+
+      // Phase2をアクティブに
+      p2Card.className  = 'timeline-card phase-active';
+      p2Badge.className = 'timeline-step-badge active';
+      p2Badge.textContent = '2';
+      p2Tag.textContent = '入力中';
+      p2Tag.style.cssText = 'background:#059669;color:#fff;';
+      p2Body.className = 'timeline-body';
+      p2Body.innerHTML = buildPhase2HTML();
+
+      // 振り返りのイベント登録
+      attachPhase2Events();
+
+    } else if (phase === 'done') {
+      // 全完了 → 両方完了表示
+      p1Card.className  = 'timeline-card phase-done';
+      p1Badge.className = 'timeline-step-badge done';
+      p1Badge.textContent = '✓';
+      p1Tag.textContent = '宣言済み ✓';
+      p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
+      const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
+      p1Body.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">✓ ' + (preData.intent || '—') + '</div>';
+      p1Body.className = 'timeline-body';
+
+      p2Card.className  = 'timeline-card phase-done';
+      p2Badge.className = 'timeline-step-badge done';
+      p2Badge.textContent = '✓';
+      p2Tag.textContent = '提出済み';
+      p2Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
+      p2Body.innerHTML = '<div style="font-size:13px;color:#059669;font-weight:700;padding:8px 0;">✦ 稽古ログを提出しました。お疲れ様でした。</div>'
+        + '<button onclick="startNewLog()" style="margin-top:8px;padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:999px;font-family:sans-serif;font-size:13px;font-weight:700;cursor:pointer;">次の稽古を記録する</button>';
+      p2Body.className = 'timeline-body';
+    }
+  }
+
+  function buildPhase2HTML() {
+    return `
+      <div class="field-group">
+        <label class="field-label">試したいことへの達成感</label>
+        <div class="field-hint">稽古前に申告したことに対して、どれくらいできたか。直感で選んでください。</div>
+        <div class="achieve-row">
+          <button class="achieve-btn" data-val="1" onclick="selectFulfillment(this,1)">できな<br>かった</button>
+          <button class="achieve-btn" data-val="2" onclick="selectFulfillment(this,2)">少し<br>できた</button>
+          <button class="achieve-btn" data-val="3" onclick="selectFulfillment(this,3)">まあまあ<br>できた</button>
+          <button class="achieve-btn" data-val="4" onclick="selectFulfillment(this,4)">かなり<br>できた</button>
+          <button class="achieve-btn" data-val="5" onclick="selectFulfillment(this,5)">完全に<br>できた</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">① 今週の稽古で一番印象に残った場面を具体的に<span class="required">*</span></label>
+        <div class="field-hint">
+          うまくいった場面でも、うまくいかなかった場面でも。<strong>「どんな状況で、何をしたか」</strong>を具体的に。今この瞬間が一番鮮明です。<br>
+          <span style="color:var(--gold);font-weight:500;">例：「強い相手に攻めたら動いてくれて、出ばな小手が決まった。打った後の間合いがちょうど良かった。」</span>
+        </div>
+        <textarea id="logScene" placeholder="" style="min-height:88px"></textarea>
+      </div>
+      <div class="field-group" style="margin-bottom:0">
+        <label class="field-label">② なぜそうなったと思うか<span class="required">*</span></label>
+        <div class="field-hint">
+          「たまたま」「運が良かった」ではなく、<strong>自分の動き・判断・準備の何が原因か</strong>を考えてください。ここが一番大事な問いです。<br>
+          <span style="color:var(--gold);font-weight:500;">例：「間合いを少し遠めにとって待てたから。いつもより焦らず動けた。」</span>
+        </div>
+        <textarea id="logWhy" placeholder="" style="min-height:88px"></textarea>
+      </div>
+      <button class="post-submit-btn" onclick="submitLog()">✦ 振り返りを提出する</button>
+    `;
+  }
+
+  function attachPhase2Events() {
+    // iOS日本語IME対応
+    ['logScene','logWhy'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      ['input','compositionend','change','blur'].forEach(evt =>
+        el.addEventListener(evt, () => {}, { passive: true })
+      );
+    });
+  }
+
+  function startNewLog() {
+    // 全クリア
+    localStorage.removeItem(LS_PHASE);
+    localStorage.removeItem(LS_PRE);
+    localStorage.removeItem(LS_INTENT);
+    localStorage.removeItem('marc_log_date_draft');
+    fulfillmentVal = 0;
+
+    // 日付を今日にリセット
+    const d = document.getElementById('logDate');
+    if (d) d.value = new Date().toISOString().slice(0,10);
+
+    // Phase1 UIを再構築
+    const p1Badge = document.getElementById('phase1Badge');
+    if (p1Badge) p1Badge.textContent = '1';
+    renderPhaseUI();
+    renderHistory();
+    updateLogCount();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ===== チャレンジ宣言送信 =====
+  async function submitPreLog() {
     const v = id => (document.getElementById(id)?.value || '').trim();
     const name = localStorage.getItem(LS_NAME) || '';
     if (!name) { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
     if (!v('logDate')) { showToast('⚠ 稽古日を入力してください'); return; }
-    if (!v('logScene')){ showToast('⚠ ①の場面を入力してください'); return; }
-    if (!v('logWhy'))  { showToast('⚠ ②の理由を入力してください'); return; }
+    if (!v('logIntent')) { showToast('⚠ 今週の稽古で試したいことを入力してください'); return; }
 
-    const btn = document.querySelector('#logInputArea button[onclick="submitLog()"]');
+    const btn = document.getElementById('preSubmitBtn');
     const orig = btn.textContent;
     btn.textContent = '送信中…'; btn.disabled = true;
 
+    const preData = {
+      timestamp:  new Date().toLocaleString('ja-JP'),
+      記録種別:   'チャレンジ宣言',
+      氏名:       name,
+      稽古日:     v('logDate'),
+      試したいこと: v('logIntent'),
+    };
+
+    // localStorageに保存
+    localStorage.setItem(LS_PRE, JSON.stringify(preData));
+    localStorage.setItem('marc_log_date_draft', v('logDate'));
+
+    // GASに送信
+    if (GAS_URL !== 'ここにGASのウェブアプリURLを貼り付ける') {
+      try {
+        await fetch(GAS_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preData),
+        });
+      } catch(e) {}
+    }
+
+    setPhase('post');
+    showToast('チャレンジを宣言しました。稽古後に振り返りを記入してください。');
+    btn.textContent = orig; btn.disabled = false;
+    renderPhaseUI();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ===== 振り返り提出 =====
+  async function submitLog() {
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const name = localStorage.getItem(LS_NAME) || '';
+    if (!name) { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
+    if (!v('logScene')) { showToast('⚠ ①の場面を入力してください'); return; }
+    if (!v('logWhy'))   { showToast('⚠ ②の理由を入力してください'); return; }
+
+    const btn = document.querySelector('.post-submit-btn');
+    if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
+
+    const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
     const entry = {
-      timestamp:   new Date().toLocaleString('ja-JP'),
-      date:        v('logDate'),
+      timestamp:    new Date().toLocaleString('ja-JP'),
+      date:         preData.稽古日 || v('logDate'),
       name,
-      intent:      v('logIntent'),
-      scene:       v('logScene'),
-      why:         v('logWhy'),
-      fulfillment: fulfillmentVal || '',
+      intent:       preData.試したいこと || '',
+      scene:        v('logScene'),
+      why:          v('logWhy'),
+      fulfillment:  fulfillmentVal || '',
     };
 
     saveLogEntry(entry);
-    localStorage.removeItem(LS_INTENT);
-    localStorage.removeItem('marc_log_date_draft');
 
     if (GAS_URL !== 'ここにGASのウェブアプリURLを貼り付ける') {
       try {
@@ -1910,22 +2210,17 @@
       } catch(e) {}
     }
 
-    showToast('✦ 稽古ログを記録しました');
-    btn.textContent = orig; btn.disabled = false;
-
-
-    ['logScene','logWhy','logIntent'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
-    document.querySelectorAll('.achieve-btn').forEach(b => b.classList.remove('selected'));
+    setPhase('done');
     fulfillmentVal = 0;
-    const d = document.getElementById('logDate');
-    if (d) d.value = new Date().toISOString().slice(0, 10);
-
+    localStorage.removeItem(LS_INTENT);
+    showToast('✦ 振り返りを提出しました');
+    renderPhaseUI();
     renderHistory();
     updateLogCount();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // ===== 稽古ログ提出（旧・互換用エイリアス）=====
 
   // ===== 過去ログ表示 =====
   function renderHistory() {
@@ -2011,6 +2306,7 @@
     renderHistory();
     updateLogCount();
     restoreIntentDraft();
+    renderPhaseUI();
     const d = document.getElementById('logDate');
     const savedDate = localStorage.getItem('marc_log_date_draft');
     if (d) d.value = savedDate || new Date().toISOString().slice(0, 10);
@@ -2020,6 +2316,18 @@
       const stored = localStorage.getItem(LS_NAME);
       nameEl.textContent = stored || '（未設定）';
       nameEl.style.color = stored ? 'var(--primary)' : 'var(--red)';
+    }
+
+    // ===== logIntent: iOS日本語IME対応の自動保存 =====
+    // oninputだけでは日本語変換中に発火しないため
+    // compositionend（変換確定）・blur（フォーカスを外した）・changeも補完
+    const intentEl = document.getElementById('logIntent');
+    if (intentEl) {
+      ['input', 'compositionend', 'change', 'blur'].forEach(evt => {
+        intentEl.addEventListener(evt, () => {
+          if (intentEl.value.trim()) autoSaveIntent(intentEl.value);
+        });
+      });
     }
   });
   </script>
