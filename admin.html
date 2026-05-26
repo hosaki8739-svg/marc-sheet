@@ -602,9 +602,12 @@ function renderRecent(selectedDate){
       const prev=prevScoreMap[name]||0;
       let trendHtml='—';
       if(f&&prev){
-        if(f>prev) trendHtml=`<span class="trend-up">↑ ${f-prev}</span>`;
-        else if(f<prev) trendHtml=`<span class="trend-down">↓ ${prev-f}</span>`;
-        else trendHtml=`<span class="trend-flat">→</span>`;
+        const diff = f - prev;
+        if(diff >= 2)      trendHtml=`<span class="trend-up" title="+${diff}">↑</span>`;
+        else if(diff === 1) trendHtml=`<span class="trend-up" title="+${diff}">↗</span>`;
+        else if(diff === 0) trendHtml=`<span class="trend-flat" title="変化なし">→</span>`;
+        else if(diff === -1) trendHtml=`<span class="trend-down" title="${diff}">↘</span>`;
+        else               trendHtml=`<span class="trend-down" title="${diff}">↓</span>`;
       }
       const intent=dc?(dc['試したいこと']||dc.intent||'—'):'—';
       return `<tr>
