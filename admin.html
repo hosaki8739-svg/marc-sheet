@@ -163,6 +163,17 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
+  /* ヘッダー：スマホでは更新時刻を非表示、ロゴを小さく */
+  .hdr{padding:0 12px;gap:8px;height:52px}
+  .hdr-logo{font-size:15px;letter-spacing:.03em}
+  .hdr-update{display:none}
+  .hdr-btn{padding:6px 12px;font-size:11px}
+  .hdr-print{padding:6px 10px;font-size:13px}
+  /* タブバー：スクロール可能に */
+  .tab-bar{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab-bar::-webkit-scrollbar{display:none}
+  .tab-btn{padding:12px 14px;font-size:12px;white-space:nowrap;flex-shrink:0}
+
   .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px}
   .kpi-val{font-size:22px}
   .chart-row{grid-template-columns:1fr}
