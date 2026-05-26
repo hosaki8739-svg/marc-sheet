@@ -748,7 +748,7 @@ body {
           <div class="state"><div class="state-icon">🎯</div><div class="state-text">データを収集してください</div></div>
         </div>
         <div class="detail-panel" id="challengeDetail">
-          <div class="state" style="padding:60px 20px;"><div class="state-icon">👈</div><div class="state-text">左の部員を選択してください</div></div>
+          <div class="state" style="padding:60px 20px;"><div class="state-icon">👈</div><div class="state-text">左の部員を選択してください</div>
         </div>
       </div>
     </div>
@@ -765,16 +765,23 @@ body {
           <label class="f-label">終了日</label>
           <input type="date" class="f-input" id="reflectDateTo" onchange="renderReflect()">
         </div>
-        <button class="f-btn f-btn-today" onclick="setRangeToday(); renderReflect();">今日</button>
-        <button class="f-btn" style="background:var(--navy-pale);color:var(--navy-mid);border:1px solid var(--navy-pale);" onclick="setRangeWeek(); renderReflect();">今週</button>
-        <button class="f-btn f-btn-all"   onclick="clearRange(); renderReflect();">全件</button>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-          <label style="font-size:11px;font-weight:700;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;gap:6px;">
-            <input type="checkbox" id="latestOnly" checked onchange="renderReflect()"
-              style="width:16px;height:16px;accent-color:var(--navy-lt);cursor:pointer;">
-            最新のみ
-          </label>
+        <button class="f-btn" id="reflectBtnWeek"
+          style="background:var(--navy-pale);color:var(--navy-mid);border:1px solid var(--navy-pale);"
+          onclick="setRangeWeek(); renderReflect();">今週</button>
+        <button class="f-btn" id="reflectBtnClear"
+          style="background:transparent;color:var(--ink-muted);border:1px solid var(--border);"
+          onclick="clearReflectRange();">クリア</button>
+        <div style="margin-left:auto;font-size:11px;color:var(--ink-muted);" id="reflectModeLabel">最新1件 / 部員</div>
+      </div></div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:1px;color:var(--ink-muted);font-weight:700;">〜</div>
+        <div>
+          <label class="f-label">終了日</label>
+          <input type="date" class="f-input" id="reflectDateTo" onchange="renderReflect()">
         </div>
+        <button class="f-btn f-btn-today" id="reflectBtnToday" onclick="setRangeToday(); renderReflect();">今日</button>
+        <button class="f-btn" style="background:var(--navy-pale);color:var(--navy-mid);border:1px solid var(--navy-pale);" id="reflectBtnWeek" onclick="setRangeWeek(); renderReflect();">今週</button>
+        <button class="f-btn f-btn-all"   id="reflectBtnAll" onclick="clearRange();">全件</button>
+
       </div>
       <div style="padding:16px 0;">
         <div class="cards-grid" id="reflectCards">
@@ -791,7 +798,7 @@ body {
           <div class="state"><div class="state-icon">👤</div><div class="state-text">データを収集してください</div></div>
         </div>
         <div class="detail-panel" id="profileDetail">
-          <div class="state" style="padding:60px 20px;"><div class="state-icon">👈</div><div class="state-text">左の部員を選択してください</div></div>
+          <div class="state" style="padding:60px 20px;"><div class="state-icon">👈</div><div class="state-text">左の部員を選択してください</div>
         </div>
       </div>
     </div>
@@ -999,12 +1006,12 @@ function showChallengeDetail(name, el) {
 function renderReflect() {
   const dateFrom = document.getElementById('reflectDateFrom').value;
   const dateTo   = document.getElementById('reflectDateTo').value;
+  const hasRange = dateFrom || dateTo;
   let rows = store.reflects;
 
-  // 日付を正規化してYYYY-MM-DDに統一
   function normDate(v) { return String(v||'').replace(/\//g,'-').slice(0,10); }
 
-  if(dateFrom || dateTo) {
+  if(hasRange) {
     rows = rows.filter(r=>{
       const d = normDate(r.date || r['稽古日']);
       if(dateFrom && d < dateFrom) return false;
@@ -1012,47 +1019,71 @@ function renderReflect() {
       return true;
     });
   }
-  const el = document.getElementById('reflectCards');
-  if(!rows.length) { el.innerHTML='<div class="state" style="grid-column:1/-1;"><div class="state-icon">🔍</div><div class="state-text">該当データがありません</div></div>'; return; }
+
   // 日付降順ソート
   rows = rows.slice().sort((a,b)=>{
-    const da = String(a.date||a['稽古日']||'').replace(/\//g,'-').slice(0,10);
-    const db = String(b.date||b['稽古日']||'').replace(/\//g,'-').slice(0,10);
+    const da = normDate(a.date||a['稽古日']);
+    const db = normDate(b.date||b['稽古日']);
     return db.localeCompare(da);
   });
 
-  // 「最新のみ」チェック時：部員ごとに最新1件だけ残す
-  const latestOnly = document.getElementById('latestOnly')?.checked;
-  if(latestOnly) {
-    const seen = new Set();
-    rows = rows.filter(r=>{
-      const n = r['氏名']||r.name||'';
-      if(seen.has(n)) return false;
-      seen.add(n); return true;
-    });
+  const el = document.getElementById('reflectCards');
+  const modeLabel = document.getElementById('reflectModeLabel');
+
+  if(!rows.length) {
+    el.innerHTML='<div class="state" style="grid-column:1/-1;"><div class="state-icon">🔍</div><div class="state-text">該当データがありません</div></div>';
+    return;
   }
 
   const fL=['','できなかった','少しできた','まあまあ','かなり','完全に'];
-  const fC=['','1','1','1','1','1'];
-  el.innerHTML = rows.map(row=>{
-    const n=row['氏名']||row.name||'—', dt=row.date||row['稽古日']||'—';
-    const s=row.scene||row['印象に残った場面']||'—';
-    const w=row.why||row['なぜそうなったか']||'—';
-    const i=row.intent||row['試したいこと']||'';
-    const f=parseInt(String(row.fulfillment||row['充実度']||'').replace('/5',''))||0;
-    return `<div class="c-card">
-      <div class="c-card-header green">
-        <div class="c-av">${n.charAt(0)}</div>
-        <div><div class="c-name">${n}</div><div class="c-meta">${dt}${f?' &nbsp;<span style="background:rgba(255,255,255,.2);padding:1px 7px;border-radius:999px;">'+fL[f]+'</span>':''}</div></div>
-      </div>
-      <div class="c-body">
-        ${i?'<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">🎯 宣言</div><div class="challenge-box">'+i+'</div></div>':''}
-        <div style="margin-bottom:6px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">① 場面</div><div class="scene-box">${s}</div></div>
-        <div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">② なぜ</div><div class="why-box">${w}</div></div>
-      </div>
-    </div>`;
-  }).join('');
+
+  if(!hasRange) {
+    // デフォルト：部員ごとの最新1件をグリッド表示
+    const seen = new Set(), latest=[];
+    rows.forEach(r=>{ const n=r['氏名']||r.name||''; if(!seen.has(n)){seen.add(n);latest.push(r);} });
+    if(modeLabel) modeLabel.textContent = '最新1件 / 部員';
+    el.className = 'cards-grid';
+    el.innerHTML = latest.map(row => buildReflectCard(row, fL)).join('');
+  } else {
+    // 日付範囲指定：部員ごとにグループ化して縦に積む
+    if(modeLabel) modeLabel.textContent = dateFrom+'〜'+dateTo+' の記録';
+    const byName = {};
+    rows.forEach(r=>{ const n=r['氏名']||r.name||''; if(!byName[n])byName[n]=[]; byName[n].push(r); });
+    el.className = ''; // gridを外す
+    el.innerHTML = Object.keys(byName).sort().map(name=>{
+      const memberRows = byName[name];
+      const header = `<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;padding-bottom:8px;border-bottom:2px solid var(--border);">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">${name.charAt(0)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy);">${name}</div>
+        <div style="font-size:11px;color:var(--ink-muted);">${memberRows.length}件</div>
+      </div>`;
+      const cards = memberRows.map(row=>buildReflectCard(row, fL)).join('');
+      return `<div>${header}<div class="cards-grid">${cards}</div></div>`;
+    }).join('');
+  }
 }
+
+function buildReflectCard(row, fL) {
+  const n=row['氏名']||row.name||'—', dt=normReflectDate(row.date||row['稽古日']||'—');
+  const s=row.scene||row['印象に残った場面']||'—';
+  const w=row.why||row['なぜそうなったか']||'—';
+  const i=row.intent||row['試したいこと']||'';
+  const f=parseInt(String(row.fulfillment||row['充実度']||'').replace('/5',''))||0;
+  return `<div class="c-card">
+    <div class="c-card-header green">
+      <div class="c-av">${n.charAt(0)}</div>
+      <div><div class="c-name">${n}</div><div class="c-meta">${dt}${f?' &nbsp;<span style="background:rgba(255,255,255,.2);padding:1px 7px;border-radius:999px;">'+(fL[f]||'')+'</span>':''}</div></div>
+    </div>
+    <div class="c-body">
+      ${i?'<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">✊ 宣言</div><div class="challenge-box">'+i+'</div></div>':''}
+      <div style="margin-bottom:6px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">① 場面</div><div class="scene-box">${s}</div></div>
+      <div><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">② なぜ</div><div class="why-box">${w}</div></div>
+    </div>
+  </div>`;
+}
+function normReflectDate(v){ return String(v||'').replace(/\//g,'-').slice(0,10); }
+
+// dummy to prevent error
 
 // ── 自己理解（マスター・ディテール）──
 function renderProfileList() {
@@ -1120,9 +1151,28 @@ function showProfileDetail(name, el) {
 // ── ユーティリティ ──
 function setToday(id) { document.getElementById(id).value = new Date().toISOString().slice(0,10); }
 function clearDate(id) { document.getElementById(id).value = ''; }
-  function setRangeToday(){const t=new Date().toISOString().slice(0,10);document.getElementById('reflectDateFrom').value=t;document.getElementById('reflectDateTo').value=t;}
-  function setRangeWeek(){const today=new Date(),day=today.getDay();const mon=new Date(today);mon.setDate(today.getDate()-(day===0?6:day-1));document.getElementById('reflectDateFrom').value=mon.toISOString().slice(0,10);document.getElementById('reflectDateTo').value=today.toISOString().slice(0,10);}
-  function clearRange(){document.getElementById('reflectDateFrom').value='';document.getElementById('reflectDateTo').value='';}
+  function clearReflectRange() {
+    document.getElementById('reflectDateFrom').value = '';
+    document.getElementById('reflectDateTo').value   = '';
+    renderReflect();
+  }
+  function updateFilterBtns(active) {
+    const btns = {'today':'reflectBtnToday','week':'reflectBtnWeek','all':'reflectBtnAll'};
+    Object.entries(btns).forEach(([k,id])=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.style.background = k===active ? 'var(--navy-lt)' : '';
+      el.style.color       = k===active ? '#fff' : '';
+      el.style.borderColor = k===active ? 'var(--navy-lt)' : '';
+    });
+  }
+  function setRangeToday(){const t=new Date().toISOString().slice(0,10);document.getElementById('reflectDateFrom').value=t;document.getElementById('reflectDateTo').value=t;updateFilterBtns('today');}
+  function setRangeWeek(){const today=new Date(),day=today.getDay();const mon=new Date(today);mon.setDate(today.getDate()-(day===0?6:day-1));document.getElementById('reflectDateFrom').value=mon.toISOString().slice(0,10);document.getElementById('reflectDateTo').value=today.toISOString().slice(0,10);updateFilterBtns('week');}
+  function clearRange(){
+    document.getElementById('reflectDateFrom').value='';
+    document.getElementById('reflectDateTo').value='';
+    renderReflect();
+  }
 </script>
 
 <!-- モバイルナビゲーション -->
