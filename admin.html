@@ -4,7 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MARC 顧問ダッシュボード</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+  // モバイルナビとサイドバーの同期
+  function syncMobileNav(el) {
+    document.querySelectorAll('.mnav-item').forEach(i=>i.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // showPageのオーバーライド（サイドバーとモバイルナビを同期）
+  const _origShowPage = showPage;
+  // サイドバーnavクリックで自動同期
+  document.querySelectorAll('.nav-item').forEach(ni=>{
+    ni.addEventListener('click', ()=>{
+      const page = ni.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+      if(!page) return;
+      document.querySelectorAll('.mnav-item').forEach(mi=>{
+        const miPage = mi.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+        mi.classList.toggle('active', miPage===page);
+      });
+    });
+  });
+
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=DM+Mono:wght@400;500&display=swap');
 
@@ -538,12 +559,84 @@ body {
   .c-card, .section-box, .kpi-card, .chart-box, .member-list, .detail-panel { box-shadow:none; border:1px solid #ddd; }
 }
 
-@media (max-width:900px) {
-  .sidebar { transform:translateX(-100%); }
-  .main { margin-left:0; }
+/* ── モバイルナビ ── */
+.mobile-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--navy);
+  z-index:200;
+  box-shadow:0 -2px 16px rgba(15,32,68,0.25);
+  padding:0 4px env(safe-area-inset-bottom,0);
+}
+.mobile-nav-inner {
+  display:flex; align-items:stretch;
+}
+.mnav-item {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:10px 4px 8px;
+  color:rgba(255,255,255,0.45);
+  cursor:pointer; font-size:9px; font-weight:700;
+  letter-spacing:.04em; gap:4px;
+  border-top:2px solid transparent;
+  transition:all .2s; user-select:none;
+}
+.mnav-item.active { color:#fff; border-top-color:var(--gold); }
+.mnav-icon { font-size:18px; line-height:1; }
+
+/* モバイル用収集ボタン */
+.mobile-collect-bar {
+  display:none;
+  position:fixed; bottom:60px; left:0; right:0;
+  padding:8px 16px;
+  background:var(--navy);
+  border-top:1px solid rgba(255,255,255,.08);
+  z-index:199;
+}
+.mobile-collect-bar button {
+  width:100%; padding:10px;
+  background:var(--gold); color:var(--navy);
+  border:none; border-radius:var(--r);
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:13px; font-weight:700; cursor:pointer;
+}
+
+@media (max-width:768px) {
+  .sidebar { display:none; }
+  .mobile-nav { display:block; }
+  .mobile-collect-bar { display:block; }
+  .main { margin-left:0; padding-bottom:130px; }
+  .topbar { padding:0 14px; }
+  .topbar-date { display:none; }
+  .content { padding:14px 12px 20px; }
+
+  .kpi-row { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .kpi-val { font-size:24px; }
+  .kpi-card { padding:12px 14px; }
+
+  .chart-row { grid-template-columns:1fr; gap:12px; }
+  .chart-canvas { max-height:160px; }
+
+  .master-detail { grid-template-columns:1fr; gap:12px; }
+  .detail-header { padding:12px 14px; }
+  .detail-name { font-size:15px; }
+  .detail-body { padding:14px; }
+
+  .matrix-table th, .matrix-table td.name-cell { font-size:10px; }
+  .m-cell { width:22px; height:20px; font-size:8px; }
+
+  .section-box-meta { display:none; }
+  .alert-bar { font-size:11px; padding:8px 14px; }
+
+  .cards-grid { grid-template-columns:1fr; }
+
+  .filter-bar { padding:8px 12px; gap:8px; }
+}
+
+@media (max-width:480px) {
   .kpi-row { grid-template-columns:repeat(2,1fr); }
-  .master-detail { grid-template-columns:1fr; }
-  .chart-row { grid-template-columns:1fr; }
+  .kpi-val { font-size:22px; }
+  .topbar-title { font-size:14px; }
 }
 </style>
 </head>
@@ -561,7 +654,7 @@ body {
     <span class="nav-icon">📊</span> 概観
   </div>
   <div class="nav-item" onclick="showPage('challenge',this)">
-    <span class="nav-icon">🎯</span> チャレンジ宣言
+    <span class="nav-icon">✊</span> チャレンジ宣言
     <span class="nav-badge green" id="badge-challenge">—</span>
   </div>
   <div class="nav-item" onclick="showPage('reflection',this)">
@@ -598,7 +691,7 @@ body {
     <div class="page active" id="page-overview">
       <div class="kpi-row">
         <div class="kpi-card">
-          <div class="kpi-icon">🎯</div>
+          <div class="kpi-icon">✊</div>
           <div class="kpi-val" id="k-declare">—</div>
           <div class="kpi-label">チャレンジ宣言</div>
           <div class="kpi-delta">全期間の合計</div>
@@ -625,7 +718,7 @@ body {
 
       <div class="chart-row">
         <div class="chart-box">
-          <div class="chart-title">達成感の分布</div>
+          <div class="chart-title">達成感の分布（部員ごとの最新）</div>
           <canvas id="achieveChart" class="chart-canvas"></canvas>
         </div>
         <div class="chart-box">
@@ -792,9 +885,17 @@ function renderOverview() {
   const allNames = new Set([...d,...r,...p].map(x=>x['氏名']||x.name||'').filter(Boolean));
   document.getElementById('k-members').textContent  = allNames.size;
 
-  // 達成感分布
+  // 達成感分布（部員ごとの最新1件のみ）
+  const latestByName = {};
+  r.forEach(x=>{
+    const n=x['氏名']||x.name||'';
+    if(!latestByName[n]) latestByName[n]=x;
+  });
   const dist = [0,0,0,0,0];
-  scores.forEach(n=>{ if(n>=1&&n<=5) dist[n-1]++; });
+  Object.values(latestByName).forEach(x=>{
+    const f=parseInt(String(x.fulfillment||'').replace('/5',''));
+    if(f>=1&&f<=5) dist[f-1]++;
+  });
   const ac = document.getElementById('achieveChart');
   if(charts.achieve) charts.achieve.destroy();
   charts.achieve = new Chart(ac, {
@@ -883,11 +984,26 @@ function showChallengeDetail(name, el) {
 
 // ── 振り返りカード ──
 function renderReflect() {
-  const date = document.getElementById('reflectDate').value;
+  const dateRaw = document.getElementById('reflectDate').value; // YYYY-MM-DD
   let rows = store.reflects;
-  if(date) rows = rows.filter(r=>(r.date||r['稽古日']||'').startsWith(date));
+  if(dateRaw) {
+    rows = rows.filter(r=>{
+      // 日付フィールドを取得してYYYY-MM-DDに正規化して比較
+      const d = String(r.date || r['稽古日'] || '');
+      // "2026-05-19" / "2026/05/19" / "05/19/2026" など複数形式に対応
+      const normalized = d.replace(/\//g,'-').slice(0,10);
+      return normalized === dateRaw;
+    });
+  }
   const el = document.getElementById('reflectCards');
   if(!rows.length) { el.innerHTML='<div class="state" style="grid-column:1/-1;"><div class="state-icon">🔍</div><div class="state-text">該当データがありません</div></div>'; return; }
+  // 日付降順ソート
+  rows = rows.slice().sort((a,b)=>{
+    const da = String(a.date||a['稽古日']||'').replace(/\//g,'-').slice(0,10);
+    const db = String(b.date||b['稽古日']||'').replace(/\//g,'-').slice(0,10);
+    return db.localeCompare(da);
+  });
+
   const fL=['','できなかった','少しできた','まあまあ','かなり','完全に'];
   const fC=['','1','1','1','1','1'];
   el.innerHTML = rows.map(row=>{
@@ -977,5 +1093,26 @@ function showProfileDetail(name, el) {
 function setToday(id) { document.getElementById(id).value = new Date().toISOString().slice(0,10); }
 function clearDate(id) { document.getElementById(id).value = ''; }
 </script>
+
+<!-- モバイルナビゲーション -->
+<nav class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <div class="mnav-item active" onclick="showPage('overview',this);syncMobileNav(this)">
+      <span class="mnav-icon">📊</span>概観
+    </div>
+    <div class="mnav-item" onclick="showPage('challenge',this);syncMobileNav(this)">
+      <span class="mnav-icon">✊</span>宣言
+    </div>
+    <div class="mnav-item" onclick="showPage('reflection',this);syncMobileNav(this)">
+      <span class="mnav-icon">🔍</span>振り返り
+    </div>
+    <div class="mnav-item" onclick="showPage('profile',this);syncMobileNav(this)">
+      <span class="mnav-icon">👤</span>自己理解
+    </div>
+  </div>
+</nav>
+<div class="mobile-collect-bar">
+  <button onclick="collectAll()">🔄 データを収集</button>
+</div>
 </body>
 </html>
