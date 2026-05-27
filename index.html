@@ -1779,7 +1779,6 @@
   }
 
   function fetchPrevData(name) {
-    // JSONP方式でCORSを回避（どの端末・ブラウザでも動作）
     const cbName = 'gasCallback_' + Date.now();
     const script = document.createElement('script');
 
@@ -1789,6 +1788,8 @@
       if (json.status !== 'ok') return;
       applyPrevData(json.data);
       showToast('📋 ' + name + ' さんの前回データを復元しました');
+      // プロフィール復元後、チャレンジ宣言・稽古ログの最新状態も復元
+      restorePhaseFromGAS(name);
     };
 
     script.src = GAS_URL + '?name=' + encodeURIComponent(name) + '&callback=' + cbName;
@@ -1797,6 +1798,111 @@
       document.head.removeChild(script);
     };
     document.head.appendChild(script);
+  }
+
+  // GASからチャレンジ宣言・稽古ログを取得してフェーズを復元
+  function restorePhaseFromGAS(name) {
+    const cbD = 'gasDeclare_' + Date.now();
+    const scD = document.createElement('script');
+    window[cbD] = function(json) {
+      delete window[cbD];
+      try { document.head.removeChild(scD); } catch(e) {}
+      if (json.status !== 'ok' || !json.rows || !json.rows.length) return;
+
+      // この部員の最新チャレンジ宣言を探す
+      const myDecls = json.rows.filter(r => (r['氏名']||r.name||'') === name);
+      if (!myDecls.length) return;
+
+      // 最新の宣言を取得
+      myDecls.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
+      const latestDecl = myDecls[0];
+      const declDate = latestDecl['稽古日'] || latestDecl.date || '';
+      const declIntent = latestDecl['試したいこと'] || latestDecl.intent || '';
+
+      // localStorageのLS_PREに保存されているdateと比較
+      const currentPhase = localStorage.getItem(LS_PHASE) || 'pre';
+      // すでにphase管理されていれば上書きしない
+      if (currentPhase !== 'pre') return;
+
+      // GASに宣言がある → phaseをpostに復元
+      const preData = {
+        timestamp: latestDecl.timestamp || '',
+        記録種別: 'チャレンジ宣言',
+        氏名: name,
+        稽古日: declDate,
+        試したいこと: declIntent,
+        intent: declIntent,
+      };
+      localStorage.setItem(LS_PRE, JSON.stringify(preData));
+      localStorage.setItem('marc_log_date_draft', declDate);
+
+      // 稽古日も更新
+      const dateEl = document.getElementById('logDate');
+      if (dateEl && declDate) dateEl.value = declDate;
+
+      // 稽古ログも確認してphase=doneかチェック
+      checkLogFromGAS(name, declDate);
+    };
+    scD.onerror = function() {
+      delete window[cbD];
+      try { document.head.removeChild(scD); } catch(e) {}
+    };
+    scD.src = GAS_URL + '?action=getAll&type=' + encodeURIComponent('チャレンジ宣言') + '&callback=' + cbD;
+    document.head.appendChild(scD);
+  }
+
+  function checkLogFromGAS(name, declDate) {
+    const cbR = 'gasLog_' + Date.now();
+    const scR = document.createElement('script');
+    window[cbR] = function(json) {
+      delete window[cbR];
+      try { document.head.removeChild(scR); } catch(e) {}
+      if (json.status !== 'ok' || !json.rows) return;
+
+      // この部員の全稽古ログを取得
+      const myLogs = json.rows.filter(r => (r['氏名']||r.name||'') === name);
+
+      // 当日分のログでフェーズを判定
+      const todayLogs = myLogs.filter(r => {
+        const d = (r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
+        return d === declDate;
+      });
+
+      if (todayLogs.length > 0) {
+        setPhase('done');
+      } else {
+        setPhase('post');
+      }
+      renderPhaseUI();
+
+      // ===== 全履歴をlocalStorageに復元して表示 =====
+      if (myLogs.length > 0) {
+        // GASのデータをlocalStorageのフォーマットに変換
+        const entries = myLogs.map(r => ({
+          timestamp: r.timestamp || '',
+          date:      (r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10),
+          name:      name,
+          intent:    r.intent || r['試したいこと'] || '',
+          scene:     r.scene  || r['印象に残った場面'] || '',
+          why:       r.why    || r['なぜそうなったか'] || '',
+          next:      r.next   || r['次への一手'] || '',
+          fulfillment: parseInt(String(r.fulfillment||'').replace('/5','')) || 0,
+        }));
+        // 日付降順にソート
+        entries.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+        // localStorageに保存（既存のローカルデータより優先）
+        localStorage.setItem(LS_LOGS, JSON.stringify(entries));
+        // 表示を更新
+        renderHistory();
+        updateLogCount();
+      }
+    };
+    scR.onerror = function() {
+      delete window[cbR];
+      try { document.head.removeChild(scR); } catch(e) {}
+    };
+    scR.src = GAS_URL + '?action=getAll&type=' + encodeURIComponent('稽古ログ') + '&callback=' + cbR;
+    document.head.appendChild(scR);
   }
 
   function applyPrevData(data) {
