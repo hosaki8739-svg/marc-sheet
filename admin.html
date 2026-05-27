@@ -351,15 +351,15 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       <div class="sbox-body">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
           <div style="padding:12px 14px;background:var(--red-pale);border-radius:var(--r);border-left:3px solid var(--red)">
-            <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">🔴 即時介入</div>
+            <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">🔴 対話が必要</div>
             <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">③が曖昧・サイクル切断・感情ネガティブ。<br>「次の稽古で一番試したいことは何？」と一緒に③を言語化する。</div>
           </div>
           <div style="padding:12px 14px;background:var(--amber-pale);border-radius:var(--r);border-left:3px solid var(--amber)">
-            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:5px">🟡 深掘り促進</div>
+            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:5px">🟡 対話を検討</div>
             <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">③はあるがサイクルが弱い。<br>「先週書いた③、今日の宣言に使えた？」と接続を意識させる。</div>
           </div>
           <div style="padding:12px 14px;background:var(--green-pale);border-radius:var(--r);border-left:3px solid var(--green)">
-            <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:5px">🟢 自走サポート</div>
+            <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:5px">🟢 成長を見守る</div>
             <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">③が具体的でサイクルも繋がっている。<br>「その成長、自分で気づいてる？」と自己認識を深める。</div>
           </div>
         </div>
@@ -791,152 +791,327 @@ function renderAlerts(){
 }
 
 // ===================================================
-//  コーチング支援（ルールベース・4軸分析）
+//  コーチング支援（根拠ベース・重み付きスコア分析）
+//
+//  設計根拠：
+//  ① 参加行動（行動指標）が最も先行するサイン
+//     → 「宣言したのに振り返りを出さない」は離脱の最初の兆候
+//  ② トレンド（方向性）が単発スコアより重要
+//     → 前回比で悪化しているときが本当の危険信号
+//  ③ 複数指標が同時に悪化したとき介入根拠が強くなる
+//     → 重み付きスコアで統合
+//  ④ 言語化の深さは自己調整能力の代理指標（Zimmerman, 2000）
+//     → ③の具体性＋因果語で測定
 // ===================================================
-const NEG = ['わからない','わからなかった','できない','できなかった','難しい','難しかった','焦','苦手','うまくいかない','うまくいかなかった','消極的','自信がない','迷','崩れた','失敗','反撃','取り返された'];
-const POS = ['気づいた','わかった','できた','つかめた','感じた','次は','変わった','改善','つながった','余裕','落ち着','手応え','決まった'];
-const CAUSAL = ['から','ので','ため','なぜなら','原因','理由','ことで','することで','意識して','意識したら'];
-const ACTION_VERBS = ['意識する','試す','使う','取り組む','確認する','心がける','繰り返す','やってみる'];
-const SPECIFIC_WORDS = ['瞬間','直後','直前','ときに','場合','たら','足を','手を','体を','間合い','竹刀','踏み込み','引き','出ばな','小手','面','胴'];
 
-function analyzeText(text){
-  if(!text) return {neg:0,pos:0,causal:0,action:0,specific:0,len:0};
+// ── キーワード辞書 ──
+const NEG_WORDS = [
+  'わからない','わからなかった','できない','できなかった',
+  '難しい','難しかった','焦','苦手','うまくいかない',
+  '消極的','自信がない','迷','崩れた','失敗','反撃','取り返された'
+];
+const POS_WORDS = [
+  '気づいた','わかった','できた','つかめた','感じた',
+  '変わった','改善','つながった','余裕','落ち着','手応え','決まった'
+];
+const CAUSAL_WORDS = [
+  'から','ので','ため','なぜなら','原因','理由',
+  'ことで','することで','意識して','意識したら'
+];
+const ACTION_WORDS = [
+  '意識する','試す','使う','取り組む','確認する',
+  '心がける','繰り返す','やってみる'
+];
+const SPECIFIC_WORDS = [
+  '瞬間','直後','直前','ときに','場合','たら',
+  '足を','手を','体を','間合い','竹刀','踏み込み',
+  '引き','出ばな','小手','面','胴'
+];
+
+function analyzeText(text) {
+  if (!text) return { neg:0, pos:0, causal:0, action:0, specific:0, len:0 };
   return {
-    neg:      NEG.filter(w=>text.includes(w)).length,
-    pos:      POS.filter(w=>text.includes(w)).length,
-    causal:   CAUSAL.filter(w=>text.includes(w)).length,
-    action:   ACTION_VERBS.filter(w=>text.includes(w)).length,
-    specific: SPECIFIC_WORDS.filter(w=>text.includes(w)).length,
+    neg:      NEG_WORDS.filter(w => text.includes(w)).length,
+    pos:      POS_WORDS.filter(w => text.includes(w)).length,
+    causal:   CAUSAL_WORDS.filter(w => text.includes(w)).length,
+    action:   ACTION_WORDS.filter(w => text.includes(w)).length,
+    specific: SPECIFIC_WORDS.filter(w => text.includes(w)).length,
     len:      text.length
   };
 }
 
-function calcNextScore(nextText){
-  if(!nextText) return 0;
-  const a = analyzeText(nextText);
+// ── ③の具体性スコア（1〜5）──
+function calcNextScore(text) {
+  if (!text) return 0;
+  const a = analyzeText(text);
   let s = 0;
-  if(a.len >= 40) s += 1;
-  if(a.len >= 70) s += 1;
-  if(a.action >= 1) s += 1;
-  if(a.specific >= 1) s += 1;
-  if(a.action >= 1 && a.specific >= 1) s += 1;
+  if (a.len >= 30) s++;
+  if (a.len >= 60) s++;
+  if (a.action >= 1) s++;
+  if (a.specific >= 1) s++;
+  if (a.action >= 1 && a.specific >= 1) s++;
   return Math.max(1, Math.min(5, s));
 }
 
-function calcCycleConnection(nextText, nextIntent){
-  if(!nextText || !nextIntent) return 'unknown';
+// ── サイクル接続（③→次の宣言）──
+function calcCycleConn(nextText, nextIntent) {
+  if (!nextText || !nextIntent) return 'unknown';
   const keywords = [];
-  for(let i=0; i<nextText.length-1; i++){
-    const w2=nextText.slice(i,i+2), w3=nextText.slice(i,i+3);
-    if(/[一-鿿぀-ゟ゠-ヿ]{2}/.test(w2)) keywords.push(w2);
-    if(/[一-鿿぀-ゟ゠-ヿ]{3}/.test(w3)) keywords.push(w3);
+  for (let i = 0; i < nextText.length - 1; i++) {
+    const w2 = nextText.slice(i, i+2);
+    const w3 = nextText.slice(i, i+3);
+    if (/[\u4e00-\u9fff\u3040-\u309f]{2}/.test(w2)) keywords.push(w2);
+    if (/[\u4e00-\u9fff\u3040-\u309f]{3}/.test(w3)) keywords.push(w3);
   }
-  const matches = keywords.filter(w=>nextIntent.includes(w));
-  if(matches.length >= 3) return 'high';
-  if(matches.length >= 1) return 'medium';
+  const hits = keywords.filter(w => nextIntent.includes(w)).length;
+  if (hits >= 3) return 'high';
+  if (hits >= 1) return 'medium';
   return 'low';
 }
 
-function calcThemeDepth(name){
-  const rows = store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(a).localeCompare(getDate(b)));
-  if(rows.length < 2) return 'unknown';
-  let deepening=0, total=0;
-  for(let i=0; i<rows.length-1; i++){
-    const thisNext = rows[i].next || rows[i]['次への一手'] || '';
-    const nextIntent = rows[i+1].intent || rows[i+1]['試したいこと'] || '';
-    if(thisNext && nextIntent){
+// ── テーマ深化 ──
+function calcThemeDepth(name) {
+  const rows = store.r.filter(r => getName(r) === name)
+    .sort((a, b) => getDate(a).localeCompare(getDate(b)));
+  if (rows.length < 2) return 'unknown';
+  let deepening = 0, total = 0;
+  for (let i = 0; i < rows.length - 1; i++) {
+    const nx  = rows[i].next   || rows[i]['次への一手']    || '';
+    const ni  = rows[i+1].intent || rows[i+1]['試したいこと'] || '';
+    if (nx && ni) {
       total++;
-      const conn = calcCycleConnection(thisNext, nextIntent);
-      if(conn==='high'||conn==='medium') deepening++;
+      const conn = calcCycleConn(nx, ni);
+      if (conn === 'high' || conn === 'medium') deepening++;
     }
   }
-  if(total===0) return 'unknown';
-  const rate = deepening/total;
-  if(rate>=0.7) return 'deep';
-  if(rate>=0.4) return 'partial';
+  if (total === 0) return 'unknown';
+  const rate = deepening / total;
+  if (rate >= 0.7) return 'deep';
+  if (rate >= 0.4) return 'partial';
   return 'scattered';
 }
 
-function calcEmotion(scene, why){
-  const a = analyzeText(scene+why);
-  if(a.neg>=3||(a.neg>=1&&a.pos===0)) return 'caution';
-  if(a.pos>=2||(a.pos>=1&&a.causal>=1)) return 'positive';
+// ── 感情サイン ──
+function calcEmotion(scene, why) {
+  const a = analyzeText((scene||'') + (why||''));
+  if (a.neg >= 3 || (a.neg >= 1 && a.pos === 0)) return 'caution';
+  if (a.pos >= 2 || (a.pos >= 1 && a.causal >= 1)) return 'positive';
   return 'neutral';
 }
 
-function calcPriority2(nextScore, cycleConn, themeDepth, emotion, missCount){
-  if(missCount>=2) return 'high';
-  if(emotion==='caution'&&nextScore<=2) return 'high';
-  if(nextScore<=1) return 'high';
-  if(cycleConn==='low'&&nextScore<=2) return 'high';
-  if(emotion==='caution') return 'medium';
-  if(nextScore<=2) return 'medium';
-  if(cycleConn==='low') return 'medium';
-  if(themeDepth==='scattered') return 'medium';
+// ──────────────────────────────────────────────────
+//  重み付き介入スコア（0〜100点）
+//  高いほど介入の優先度が高い
+//
+//  配点根拠：
+//  [30点] 参加行動：最も先行する離脱サイン（行動指標優先）
+//  [25点] 達成感トレンド：方向性の悪化が単発スコアより重要
+//  [25点] 言語化の深さ：自己調整能力の代理指標（Zimmerman）
+//  [20点] 感情的サイン：心理的安全の低下を検出
+// ──────────────────────────────────────────────────
+function calcInterventionScore(data) {
+  let score = 0;
+  const reasons = [];
+
+  // [30点] 参加行動
+  const missRatio = data.totalDeclare > 0
+    ? data.missCount / data.totalDeclare : 0;
+  if (missRatio >= 0.5) {
+    score += 30;
+    reasons.push({ weight: 30, label: '参加行動',
+      detail: `宣言${data.totalDeclare}回中${data.missCount}回振り返り未提出（${Math.round(missRatio*100)}%）` });
+  } else if (missRatio >= 0.25) {
+    score += 15;
+    reasons.push({ weight: 15, label: '参加行動',
+      detail: `振り返り未提出が${Math.round(missRatio*100)}%（要注意水準）` });
+  }
+
+  // [25点] 達成感トレンド
+  const f = data.latestScore, prev = data.prevScore;
+  if (f > 0 && prev > 0) {
+    const diff = f - prev;
+    if (diff <= -2) {
+      score += 25;
+      reasons.push({ weight: 25, label: '達成感トレンド',
+        detail: `前回${prev}→今回${f}（${diff}点の急落）` });
+    } else if (diff === -1) {
+      score += 12;
+      reasons.push({ weight: 12, label: '達成感トレンド',
+        detail: `前回${prev}→今回${f}（1点低下）` });
+    }
+  }
+  if (f > 0 && f <= 2) {
+    score += 10;
+    reasons.push({ weight: 10, label: '達成感水準',
+      detail: `最新スコアが${f}/5（低水準）` });
+  }
+
+  // [25点] 言語化の深さ（③の具体性）
+  const ns = data.nextScore;
+  if (ns === 0) {
+    score += 25;
+    reasons.push({ weight: 25, label: '言語化',
+      detail: '③「次への一手」が未記入（自己調整サイクルが閉じていない）' });
+  } else if (ns <= 2) {
+    score += 15;
+    reasons.push({ weight: 15, label: '言語化',
+      detail: `③の具体性が${ns}/5（「もっと頑張る」レベル）` });
+  } else if (ns === 3) {
+    score += 5;
+    reasons.push({ weight: 5, label: '言語化',
+      detail: `③の具体性が${ns}/5（もう少し掘り下げが必要）` });
+  }
+
+  // [20点] 感情的サイン
+  if (data.emotion === 'caution') {
+    score += 20;
+    reasons.push({ weight: 20, label: '感情サイン',
+      detail: `ネガティブワード検出（${data.negWords.slice(0,3).join('・')}）` });
+  }
+
+  return { score: Math.min(100, score), reasons };
+}
+
+// ── 優先度ラベル ──
+function priorityFromScore(score) {
+  if (score >= 50) return 'high';
+  if (score >= 25) return 'medium';
   return 'low';
 }
 
-function coachingHint2(nextScore, cycleConn, themeDepth, emotion){
-  if(emotion==='caution') return '「最近どう？気になることある？」';
-  if(nextScore<=1) return '「次の稽古で一番試したいことを一緒に考えよう」';
-  if(cycleConn==='low') return '「先週書いた③、今日の宣言に使えた？」';
-  if(themeDepth==='scattered') return '「ひとつのテーマを2〜3回続けて試してみよう」';
-  if(nextScore>=4&&cycleConn==='high') return '「その成長、自分で気づいてる？」';
+// ── 声かけヒント ──
+function coachingHint2(data, priority) {
+  if (data.missCount >= 2)
+    return '「最近稽古どう？振り返り書けてる？」（参加を確認）';
+  if (data.nextScore === 0)
+    return '「次の稽古で一番試したいこと、一緒に考えよう」';
+  if (data.emotion === 'caution')
+    return '「最近稽古で気になることある？」（話を聞く）';
+  if (data.cycleConn === 'low')
+    return '「先週書いた③、今日の宣言に使えた？」';
+  if (data.nextScore <= 2)
+    return '「③をもっと具体的に。どの動作を変える？」';
+  if (priority === 'low')
+    return '「その気づき、自分でも感じてた？」（承認）';
   return '「③の内容を次の宣言に繋げてみよう」';
 }
 
+// ── メイン分析 ──
 function analyzeCoaching(){
-  const result = document.getElementById('coachingResult');
-  const cycleMapBody = document.getElementById('cycleMapBody');
-  const latest = latestPerMember(store.r);
-  if(!latest.length){ result.innerHTML='<div class="empty"><div class="empty-text">振り返りデータがありません。まずデータを収集してください。</div></div>'; return; }
+  const result   = document.getElementById('coachingResult');
+  const cycleMap = document.getElementById('cycleMapBody');
+  const latest   = latestPerMember(store.r);
+  if (!latest.length) {
+    result.innerHTML = '<div class="empty"><div class="empty-text">振り返りデータがありません。まずデータを収集してください。</div></div>';
+    return;
+  }
 
-  const missMap={};
-  allNames().forEach(n=>{ missMap[n]=Math.max(0,store.d.filter(r=>getName(r)===n).length-store.r.filter(r=>getName(r)===n).length); });
-  const latestDeclare={};
-  latestPerMember(store.d).forEach(r=>{ latestDeclare[getName(r)]=r; });
+  // 各部員のデータ収集
+  const latestDeclare = {};
+  latestPerMember(store.d).forEach(r => { latestDeclare[getName(r)] = r; });
 
-  const analyzed = latest.map(r=>{
-    const name=getName(r), scene=r.scene||r['印象に残った場面']||'', why=r.why||r['なぜそうなったか']||'';
-    const nextTxt=r.next||r['次への一手']||'', score=getScore(r), miss=missMap[name]||0;
-    const curIntent=latestDeclare[name]?(latestDeclare[name].intent||latestDeclare[name]['試したいこと']||''):''; 
-    const nextScore=calcNextScore(nextTxt), cycleConn=calcCycleConnection(nextTxt,curIntent);
-    const themeDepth=calcThemeDepth(name), emotion=calcEmotion(scene,why);
-    const priority=calcPriority2(nextScore,cycleConn,themeDepth,emotion,miss);
-    const hint=coachingHint2(nextScore,cycleConn,themeDepth,emotion);
-    return {name,nextTxt,curIntent,nextScore,cycleConn,themeDepth,emotion,priority,hint,score,miss,why,
-      negWords:NEG.filter(w=>(why+scene).includes(w)), posWords:POS.filter(w=>(why+scene).includes(w))};
+  // 前回スコアマップ
+  const reflectDates = [...new Set(store.r.map(getDate).filter(Boolean))].sort();
+  const prevScoreMap = {};
+  if (reflectDates.length >= 2) {
+    const pd = reflectDates[reflectDates.length - 2];
+    store.r.filter(r => getDate(r) === pd).forEach(r => { prevScoreMap[getName(r)] = getScore(r); });
+  }
+
+  const analyzed = latest.map(r => {
+    const name   = getName(r);
+    const scene  = r.scene  || r['印象に残った場面'] || '';
+    const why    = r.why    || r['なぜそうなったか'] || '';
+    const nextTxt= r.next   || r['次への一手']      || '';
+    const curDecl= latestDeclare[name];
+    const curIntent = curDecl ? (curDecl.intent || curDecl['試したいこと'] || '') : '';
+
+    const totalDeclare = store.d.filter(r2 => getName(r2) === name).length;
+    const totalLog     = store.r.filter(r2 => getName(r2) === name).length;
+    const missCount    = Math.max(0, totalDeclare - totalLog);
+    const latestScore  = getScore(r);
+    const prevScore    = prevScoreMap[name] || 0;
+    const nextScore    = calcNextScore(nextTxt);
+    const cycleConn    = calcCycleConn(nextTxt, curIntent);
+    const themeDepth   = calcThemeDepth(name);
+    const emotion      = calcEmotion(scene, why);
+    const negWords     = NEG_WORDS.filter(w => (scene + why).includes(w));
+    const posWords     = POS_WORDS.filter(w => (scene + why).includes(w));
+
+    const data = {
+      name, scene, why, nextTxt, curIntent,
+      totalDeclare, missCount,
+      latestScore, prevScore,
+      nextScore, cycleConn, themeDepth, emotion,
+      negWords, posWords
+    };
+    const { score, reasons } = calcInterventionScore(data);
+    const priority = priorityFromScore(score);
+    const hint     = coachingHint2(data, priority);
+
+    return { ...data, score, reasons, priority, hint };
   });
 
-  // KPI
-  const withNext=analyzed.filter(a=>a.nextTxt);
-  document.getElementById('ck-next').textContent=withNext.length?(withNext.reduce((s,a)=>s+a.nextScore,0)/withNext.length).toFixed(1):'—';
-  const withConn=analyzed.filter(a=>a.cycleConn!=='unknown');
-  const connected=withConn.filter(a=>a.cycleConn==='high'||a.cycleConn==='medium').length;
-  document.getElementById('ck-cycle').textContent=withConn.length?Math.round(connected/withConn.length*100)+'%':'—%';
-  const withDepth=analyzed.filter(a=>a.themeDepth!=='unknown');
-  const deepCount=withDepth.filter(a=>a.themeDepth==='deep'||a.themeDepth==='partial').length;
-  document.getElementById('ck-spiral').textContent=withDepth.length?Math.round(deepCount/withDepth.length*100)+'%':'—%';
+  // 介入スコア降順でソート
+  analyzed.sort((a, b) => b.score - a.score);
 
-  const order={high:0,medium:1,low:2};
-  analyzed.sort((a,b)=>(order[a.priority]||1)-(order[b.priority]||1));
+  // KPI更新
+  const withNext  = analyzed.filter(a => a.nextTxt);
+  const avgNext   = withNext.length
+    ? (withNext.reduce((s, a) => s + a.nextScore, 0) / withNext.length).toFixed(1) : '—';
+  document.getElementById('ck-next').textContent  = avgNext;
 
-  const pl={high:'🔴 即時介入',medium:'🟡 深掘り促進',low:'🟢 自走サポート'};
-  const connLabel={high:'🔗 高',medium:'🔗 中',low:'⚡ 低',unknown:'— 不足'};
-  const connColor={high:'var(--green)',medium:'var(--amber)',low:'var(--red)',unknown:'var(--ink-muted)'};
-  const depthLabel={deep:'📈 深化中',partial:'↔ 部分的',scattered:'🔀 分散',unknown:'— 不明'};
-  const depthColor2={deep:'var(--green)',partial:'var(--amber)',scattered:'var(--red)',unknown:'var(--ink-muted)'};
-  const emoLabel={caution:'⚠ 要注意',neutral:'→ 通常',positive:'✓ ポジティブ'};
-  const emoStyle={caution:'background:#FEE2E2;color:#DC2626',neutral:'background:var(--border-lt);color:var(--ink-muted)',positive:'background:var(--green-pale);color:var(--green)'};
-  const barCol=v=>v<=2?'var(--red)':v===3?'var(--amber)':'var(--green)';
+  const withConn  = analyzed.filter(a => a.cycleConn !== 'unknown');
+  const connected = withConn.filter(a => a.cycleConn === 'high' || a.cycleConn === 'medium').length;
+  document.getElementById('ck-cycle').textContent =
+    withConn.length ? Math.round(connected / withConn.length * 100) + '%' : '—%';
 
-  result.innerHTML=analyzed.map(a=>`
-    <div class="coaching-card ${a.priority}" style="margin-bottom:12px">
+  const withDepth = analyzed.filter(a => a.themeDepth !== 'unknown');
+  const deepCount = withDepth.filter(a => a.themeDepth === 'deep' || a.themeDepth === 'partial').length;
+  document.getElementById('ck-spiral').textContent =
+    withDepth.length ? Math.round(deepCount / withDepth.length * 100) + '%' : '—%';
+
+  // カード描画
+  const pl    = { high:'🔴 対話が必要', medium:'🟡 対話を検討', low:'🟢 成長を見守る' };
+  const pc    = { high:'high', medium:'medium', low:'low' };
+  const ec    = {
+    caution:  'background:#FEE2E2;color:#DC2626',
+    neutral:  'background:var(--border-lt);color:var(--ink-muted)',
+    positive: 'background:var(--green-pale);color:var(--green)'
+  };
+  const el    = { caution:'⚠ 要注意', neutral:'→ 通常', positive:'✓ ポジティブ' };
+  const connLabel  = { high:'🔗 高', medium:'🔗 中', low:'⚡ 低', unknown:'— 不足' };
+  const connColor  = { high:'var(--green)', medium:'var(--amber)', low:'var(--red)', unknown:'var(--ink-muted)' };
+  const depthLabel = { deep:'📈 深化中', partial:'↔ 部分的', scattered:'🔀 分散', unknown:'— 不明' };
+  const depthColor2= { deep:'var(--green)', partial:'var(--amber)', scattered:'var(--red)', unknown:'var(--ink-muted)' };
+  const barCol     = v => v <= 2 ? 'var(--red)' : v === 3 ? 'var(--amber)' : 'var(--green)';
+
+  result.innerHTML = analyzed.map(a => {
+    // 介入根拠リスト
+    const reasonsHtml = a.reasons.length
+      ? '<div style="margin-bottom:10px;background:rgba(255,255,255,.7);border-radius:7px;padding:8px 12px;">'
+        + '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">介入根拠（スコア: ' + a.score + '/100）</div>'
+        + a.reasons.map(r =>
+            '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;font-size:11px;">'
+            + '<span style="background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px;">+' + r.weight + '</span>'
+            + '<span style="color:var(--ink-soft)"><strong>' + r.label + '</strong>：' + r.detail + '</span>'
+            + '</div>'
+          ).join('')
+        + '</div>'
+      : '<div style="margin-bottom:10px;font-size:11px;color:var(--green);">✓ 特記すべき介入根拠なし</div>';
+
+    return `<div class="coaching-card ${pc[a.priority]}" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${a.name.charAt(0)}</div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--navy)">${a.name}</div><div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${pl[a.priority]}</div></div>
-        <span style="padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;${emoStyle[a.emotion]}">${emoLabel[a.emotion]}</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--navy)">${a.name}</div>
+          <div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${pl[a.priority]}　介入スコア <strong>${a.score}</strong>/100</div>
+        </div>
+        <span style="padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;${ec[a.emotion]}">${el[a.emotion]}</span>
       </div>
+
+      ${reasonsHtml}
+
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
         <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
           <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">③の具体性</div>
@@ -952,33 +1127,40 @@ function analyzeCoaching(){
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
           <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">達成感</div>
-          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.score)}">${a.score||'—'}/5</div>
+          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.latestScore)}">${a.latestScore||'—'}/5</div>
         </div>
       </div>
-      ${a.nextTxt?`<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:4px">③ 次への一手</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${a.nextTxt}</div></div>`:'<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠ ③未記入</div>'}
-      ${a.curIntent?`<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:4px">✊ 最新のチャレンジ宣言</div><div class="chip chip-d">${a.curIntent}</div></div>`:''}
-      <div style="background:rgba(255,255,255,.8);border-radius:7px;padding:9px 12px;display:flex;align-items:flex-start;gap:8px">
+
+      ${a.nextTxt ? `<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:4px">③ 次への一手</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${a.nextTxt}</div></div>` : '<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠ ③未記入（自己調整サイクルが閉じていない）</div>'}
+      ${a.curIntent ? `<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:4px">✊ 最新のチャレンジ宣言</div><div class="chip chip-d">${a.curIntent}</div></div>` : ''}
+
+      <div style="background:rgba(255,255,255,.85);border-radius:7px;padding:9px 12px;display:flex;align-items:flex-start;gap:8px">
         <span style="font-size:14px;flex-shrink:0">💬</span>
-        <div><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">推奨の声かけ</div>
-        <div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${a.hint}</div>
-        ${a.miss>0?`<div style="font-size:10px;color:var(--red);margin-top:3px">未提出 ${a.miss}回あり</div>`:''}</div>
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">推奨の声かけ</div>
+          <div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${a.hint}</div>
+          ${a.missCount > 0 ? `<div style="font-size:10px;color:var(--red);margin-top:3px">振り返り未提出 ${a.missCount}回（宣言${a.totalDeclare}回中）</div>` : ''}
+        </div>
       </div>
-      ${(a.negWords.length||a.posWords.length)?`<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">${a.negWords.length?`<span style="font-size:10px;color:var(--red)">⚠ ${a.negWords.slice(0,3).join('・')}</span>`:''}${a.posWords.length?`<span style="font-size:10px;color:var(--green)">✓ ${a.posWords.slice(0,3).join('・')}</span>`:''}</div>`:''}
-    </div>`).join('');
+
+      ${(a.negWords.length || a.posWords.length) ? `<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">${a.negWords.length ? `<span style="font-size:10px;color:var(--red)">⚠ ${a.negWords.slice(0,3).join('・')}</span>` : ''}${a.posWords.length ? `<span style="font-size:10px;color:var(--green)">✓ ${a.posWords.slice(0,3).join('・')}</span>` : ''}</div>` : ''}
+    </div>`;
+  }).join('');
 
   // サイクル接続マップ
-  const connBarStr={high:'████████ 高',medium:'█████░░░ 中',low:'██░░░░░░ 低',unknown:'——　不明'};
-  cycleMapBody.innerHTML=`<div style="overflow-x:auto"><table class="tbl">
+  const connBarStr = { high:'████████ 高', medium:'█████░░░ 中', low:'██░░░░░░ 低', unknown:'——　不明' };
+  cycleMap.innerHTML = `<div style="overflow-x:auto"><table class="tbl">
     <thead><tr><th>部員</th><th>③ 次への一手（前回）</th><th></th><th>✊ 最新のチャレンジ宣言</th><th>接続</th></tr></thead>
-    <tbody>${analyzed.map(a=>`<tr>
+    <tbody>${analyzed.map(a => `<tr>
       <td style="font-weight:600;font-size:12px;white-space:nowrap">${a.name}</td>
-      <td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nextTxt||'<span style="color:var(--ink-muted)">未記入</span>'}</td>
+      <td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nextTxt || '<span style="color:var(--ink-muted)">未記入</span>'}</td>
       <td style="font-size:13px">→</td>
-      <td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.curIntent||'<span style="color:var(--ink-muted)">宣言なし</span>'}</td>
+      <td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.curIntent || '<span style="color:var(--ink-muted)">宣言なし</span>'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${connColor[a.cycleConn]};white-space:nowrap">${connBarStr[a.cycleConn]}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
+
 
 // analyzeBtn専用ダイレクトリスナー（イベント委譲のバックアップ）
 document.addEventListener('DOMContentLoaded', function(){
