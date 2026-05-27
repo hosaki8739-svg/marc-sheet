@@ -1802,6 +1802,12 @@
   function applyPrevData(data) {
     const v = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
 
+    // 氏名を復元したらlocalStorageも更新（稽古ログタブと共有）
+    if (data['氏名']) {
+      const nameEl = document.getElementById('nameInput');
+      if (nameEl) { nameEl.value = data['氏名']; saveName(data['氏名']); }
+    }
+
     v('kendoReki',    data['剣道歴']);
     v('kadaikan',     data['今の課題感']);
     v('kojinMokuhyo', data['個人目標']);
@@ -1894,7 +1900,7 @@
       // 氏名だけ別途セット（applyPrevDataは氏名を含まないため）
       if (data['氏名']) {
         const nameEl = document.getElementById('nameInput');
-        if (nameEl) nameEl.value = data['氏名'];
+        if (nameEl) { nameEl.value = data['氏名']; saveName(data['氏名']); }
       }
       showToast('📋 前回の下書きを復元しました');
       updateProgress();
@@ -1933,6 +1939,9 @@
       const d = document.getElementById('logDate');
       const sd = localStorage.getItem('marc_log_date_draft');
       if (d && !d.value) d.value = sd || new Date().toISOString().slice(0, 10);
+      // 自己理解タブで入力した名前を優先して反映
+      const profileName = document.getElementById('nameInput')?.value?.trim();
+      if (profileName) saveName(profileName);
       restoreName();
       restoreIntentDraft();
       renderPhaseUI();
