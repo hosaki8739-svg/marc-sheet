@@ -2004,7 +2004,8 @@
       if (profileName) saveName(profileName);
       restoreName();
       restoreIntentDraft();
-      renderPhaseUI();
+      // logDateの現在値でフェーズを再評価
+      applyPhaseForDate(document.getElementById('logDate')?.value || '');
       renderHistory();
       // 記録者名を表示
       const nameEl = document.getElementById('logUserName');
@@ -2111,13 +2112,15 @@
         + '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
         + (preData.intent || preData['試したいこと'] || '—')
         + '</div>'
-        + '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓ <button data-action="reset-phase" style="font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer">✎ 修正</button></div>';
+        + '<div id="p1Footer" style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓</div>';
       p1Body.className = 'timeline-body';
-      // 修正ボタンに直接リスナーを追加
-      requestAnimationFrame(function() {
-        const editBtn = p1Body.querySelector('[data-action="reset-phase"]');
-        if (editBtn) editBtn.addEventListener('click', window.resetToPrePhase);
-      });
+      // 修正ボタンをDOMで直接生成してリスナーを付ける（innerHTML経由不使用）
+      const p1Footer = p1Body.querySelector('#p1Footer') || p1Body.lastElementChild;
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '✎ 修正';
+      editBtn.style.cssText = 'margin-left:10px;font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer;vertical-align:middle';
+      editBtn.addEventListener('click', function() { window.resetToPrePhase(); });
+      if (p1Footer) p1Footer.appendChild(editBtn);
 
       // Phase2をアクティブに
       p2Card.className  = 'timeline-card phase-active';
@@ -2461,10 +2464,12 @@
     const d = document.getElementById('logDate');
     const today = new Date().toISOString().slice(0, 10);
     if (d) {
-      d.min = today; // 今日より過去は選択不可
+      d.min = today;
       const savedDate = localStorage.getItem('marc_log_date_draft');
       d.value = savedDate || today;
     }
+    // 初期表示時にlogDateの日付でフェーズを設定
+    applyPhaseForDate(document.getElementById('logDate')?.value || today);
     // 記録者名を初期表示
     const nameEl = document.getElementById('logUserName');
     if (nameEl) {
