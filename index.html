@@ -2133,7 +2133,7 @@
         + '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
         + (preData.intent || preData['試したいこと'] || '—')
         + '</div>'
-        + '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓ <button onclick="resetToPrePhase()" style="font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer">✎ 修正</button></div>';
+        + '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓ <button data-action="reset-phase" style="font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer">✎ 修正</button></div>';
       p1Body.className = 'timeline-body';
       // 修正ボタンのイベント
       setTimeout(function(){
@@ -2470,6 +2470,16 @@
         intentEl.addEventListener(evt, () => {
           if (intentEl.value.trim()) autoSaveIntent(intentEl.value);
         });
+      });
+    }
+
+    // 修正ボタン：イベント委譲でlogInputArea全体を監視
+    const logArea = document.getElementById('logInputArea');
+    if (logArea) {
+      logArea.addEventListener('click', function(e) {
+        if (e.target.closest('[data-action="reset-phase"]')) {
+          resetToPrePhase();
+        }
       });
     }
   });
