@@ -1087,6 +1087,10 @@
   .post-submit-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
   .post-submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
+  .fulfillment-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:6px; }
+  .fulfillment-btn { padding:10px 4px; border:1.5px solid #dde4f0; border-radius:10px; background:#fff; color:#3d5278; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; text-align:center; line-height:1.4; transition:all .15s; -webkit-tap-highlight-color:transparent; touch-action:manipulation; display:block; width:100%; }
+  .fulfillment-btn:active { transform:scale(.97); }
+  .fulfillment-btn.selected { border-color:#0f2044; background:#0f2044; color:#fff; }
 </style>
 </head>
 <body>
@@ -2055,11 +2059,11 @@
   // ===== Phase2 HTML =====
   function buildPhase2HTML(intent) {
     return '<div class="field-group">'
-      + '<label class="field-label">試したいことへの達成感<span class="required">*</span></label>'
+      + '<label class="field-label">稽古での達成感<span class="required">*</span></label>'
       + '<div class="field-hint" style="margin-bottom:8px;">稽古前に申告したことに対して、どれくらいできたか。直感で選んでください。</div>'
       + '<div class="fulfillment-grid" id="fulfillmentGrid">'
       + ['できなかった','少しできた','まあまあ','かなり','完全に'].map(function(l,i){
-          return '<button class="fulfillment-btn" data-val="' + (i+1) + '" onclick="selectFulfillment(' + (i+1) + ')">' + l + '<br><span style="font-size:9px;opacity:.6;">' + (i+1) + '/5</span></button>';
+          return '<button class="fulfillment-btn" data-val="' + (i+1) + '" onclick="window.selectFulfillment(' + (i+1) + ')">' + l + '<br><span style="font-size:9px;opacity:.6;">' + (i+1) + '/5</span></button>';
         }).join('')
       + '</div>'
       + '</div>'
