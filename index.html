@@ -1993,7 +1993,18 @@
   const LS_PRE   = 'marc_log_pre';   // チャレンジ宣言データ
 
   function getPhase() {
-    return localStorage.getItem(LS_PHASE) || 'pre';
+    // 保存されているフェーズの稽古日と現在の稽古日が一致しないならリセット
+    const saved = localStorage.getItem(LS_PHASE) || 'pre';
+    const savedDate = localStorage.getItem('marc_log_date_draft') || '';
+    const currentDate = document.getElementById('logDate')?.value || '';
+    if(saved !== 'pre' && savedDate && currentDate && savedDate !== currentDate) {
+      // 日付が変わった → 新しい稽古なのでリセット
+      localStorage.setItem(LS_PHASE, 'pre');
+      localStorage.removeItem(LS_PRE);
+      localStorage.removeItem(LS_INTENT);
+      return 'pre';
+    }
+    return saved;
   }
   function setPhase(p) {
     localStorage.setItem(LS_PHASE, p);
@@ -2037,12 +2048,16 @@
       p1Tag.textContent = '宣言済み ✓';
       p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
 
-      // Phase1の本文を申告内容サマリに変更
+      // Phase1：宣言内容を大きく表示（送信後も見える）
       const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-      p1Body.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">'
-        + '<span style="font-weight:700;color:#059669;">✓ 宣言内容：</span>'
+      p1Body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+        + '<span style="font-size:13px;font-weight:700;color:#059669;">✓ チャレンジ宣言完了</span>'
+        + '<span style="font-size:10px;color:var(--ink-muted);">' + (preData.稽古日||'') + '</span>'
+        + '</div>'
+        + '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
         + (preData.intent || '—')
-        + '</div>';
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--ink-muted);margin-top:8px;">稽古後に振り返りを記入してください ↓</div>';
       p1Body.className = 'timeline-body';
 
       // Phase2をアクティブに
@@ -2065,7 +2080,11 @@
       p1Tag.textContent = '宣言済み ✓';
       p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
       const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-      p1Body.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">✓ ' + (preData.intent || '—') + '</div>';
+      p1Body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+        + '<span style="font-size:12px;font-weight:700;color:#059669;">✓ チャレンジ宣言完了</span>'
+        + '</div>'
+        + '<div style="padding:9px 12px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 6px 6px 0;font-size:13px;font-weight:600;color:var(--primary);line-height:1.6;">'
+        + (preData.intent || '—') + '</div>';
       p1Body.className = 'timeline-body';
 
       p2Card.className  = 'timeline-card phase-done';
