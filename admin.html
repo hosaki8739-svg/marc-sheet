@@ -482,7 +482,18 @@ function showMemberDetail(name){
   const reflects=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a))).slice(0,3);
   const bk=[{k:'自己評価_kire',lb:'打突の冴え'},{k:'自己評価_tenouchi',lb:'手の内'},{k:'自己評価_zanshin',lb:'残心'},{k:'自己評価_maai',lb:'間合い'},{k:'自己評価_seme',lb:'攻め'},{k:'自己評価_kikai',lb:'機会'},{k:'自己評価_footwork',lb:'足さばき'},{k:'自己評価_shiai',lb:'試合運び'},{k:'自己評価_kisei',lb:'気勢'},{k:'自己評価_mental',lb:'精神力'}];
   const barsHtml=p?'<div class="bars-grid">'+bk.map(b=>{ const v=parseInt(p[b.k])||0; return `<div class="brow"><div class="blbl">${b.lb}</div><div class="btrack"><div class="bfill" style="width:${v/5*100}%"></div></div><div class="bnum">${v}/5</div></div>`; }).join('')+'</div>':'';
-  const histHtml=reflects.length?reflects.map(r=>{ const f=getScore(r); return `<div style="padding:10px 0;border-bottom:1px solid var(--border-lt)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted)">${getDate(r)}</span>${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}</div>${r.intent||r['試したいこと']?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${r.intent||r['試したいこと']}</div>`:''}<div class="clabel clabel-s" style="margin-top:6px">① 場面</div><div class="chip chip-s">${r.scene||r['印象に残った場面']||'—'}</div><div class="clabel clabel-w" style="margin-top:6px">② なぜ</div><div class="chip chip-w">${r.why||r['なぜそうなったか']||'—'}</div></div>`; }).join(''):'<div class="empty"><div class="empty-text">振り返りデータなし</div></div>';
+  const histHtml=reflects.length?reflects.map(r=>{ const f=getScore(r); return `<div style="padding:10px 0;border-bottom:1px solid var(--border-lt)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted)">${getDate(r)}</span>
+        ${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}
+      </div>
+      ${r.intent||r['試したいこと']?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${r.intent||r['試したいこと']}</div>`:''}
+      <div class="clabel clabel-s" style="margin-top:6px">① 試した結果</div>
+      <div class="chip chip-s">${r.scene||r['印象に残った場面']||'—'}</div>
+      <div class="clabel clabel-w" style="margin-top:6px">② なぜそうなったか</div>
+      <div class="chip chip-w">${r.why||r['なぜそうなったか']||'—'}</div>
+      ${r.next||r['次への一手']?`<div class="clabel" style="color:var(--green);margin-top:6px">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${r.next||r['次への一手']}</div>`:''}
+    </div>`; }).join(''):'<div class="empty"><div class="empty-text">振り返りデータなし</div></div>';
   document.getElementById('memberDetail').innerHTML=`<div class="det-hdr"><div class="det-av">${name.charAt(0)}</div><div><div class="det-name">${name}</div><div class="det-sub">${p?`${p['学年']||''} / ${p['段位級']||''} / 剣道歴${p['剣道歴']||'—'} / 得意：${p['得意技']||'—'}`:'プロフィールなし'}</div></div></div><div class="det-body">${p?`<div class="det-sec"><div class="det-sec-title">自己評価（BARS）</div>${barsHtml}</div><div class="det-sec"><div class="det-sec-title">課題感</div><div class="chip chip-w">${p['今の課題感']||'—'}</div></div><div class="det-sec"><div class="det-sec-title">個人目標</div><div class="chip chip-d">🎯 ${p['個人目標']||'—'}</div></div>`:''}<div class="det-sec"><div class="det-sec-title">振り返り履歴（最新3件）</div>${histHtml}</div></div>`;
 }
 
@@ -528,8 +539,25 @@ function renderAllCards(){
 }
 
 function buildCard(row){
-  const n=getName(row),dt=getDate(row),s=row.scene||row['印象に残った場面']||'—',w=row.why||row['なぜそうなったか']||'—',i=row.intent||row['試したいこと']||'',f=getScore(row);
-  return `<div class="card"><div class="card-hdr reflect"><div class="card-av">${n.charAt(0)}</div><div style="flex:1;min-width:0"><div class="card-name">${n}</div><div class="card-meta">${dt}</div></div>${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}</div><div class="card-body">${i?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${i}</div>`:''}<div class="clabel clabel-s">① 場面</div><div class="chip chip-s">${s}</div><div class="clabel clabel-w">② なぜ</div><div class="chip chip-w">${w}</div></div></div>`;
+  const n=getName(row),dt=getDate(row);
+  const s=row.scene||row['印象に残った場面']||'—';
+  const w=row.why||row['なぜそうなったか']||'—';
+  const nx=row.next||row['次への一手']||'';
+  const i=row.intent||row['試したいこと']||'';
+  const f=getScore(row);
+  return `<div class="card">
+    <div class="card-hdr reflect">
+      <div class="card-av">${n.charAt(0)}</div>
+      <div style="flex:1;min-width:0"><div class="card-name">${n}</div><div class="card-meta">${dt}</div></div>
+      ${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}
+    </div>
+    <div class="card-body">
+      ${i?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${i}</div>`:''}
+      <div class="clabel clabel-s">① 試した結果</div><div class="chip chip-s">${s}</div>
+      <div class="clabel clabel-w">② なぜそうなったか</div><div class="chip chip-w">${w}</div>
+      ${nx?`<div class="clabel" style="color:var(--green)">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${nx}</div>`:''}
+    </div>
+  </div>`;
 }
 
 function renderAlerts(){
@@ -595,7 +623,7 @@ function analyzeCoaching(){
   const analyzed=latest.map(r=>{
     const name=getName(r),why=r.why||r['なぜそうなったか']||'',scene=r.scene||r['印象に残った場面']||'',score=getScore(r),prev=pMap[name]||0,miss=missMap[name]||0;
     const depth=calcDepth(why),emotion=calcEmotion(scene,why),priority=calcPriority(depth,emotion,score,prev,miss),hint=coachingHint(depth,emotion,score);
-    return {name,depth,emotion,priority,hint,score,miss,why,negWords:NEG.filter(w=>(why+scene).includes(w)),posWords:POS.filter(w=>(why+scene).includes(w))};
+    const nxt=r.next||r['次への一手']||''; return {name,depth,emotion,priority,hint,score,miss,why,next:nxt,negWords:NEG.filter(w=>(why+scene).includes(w)),posWords:POS.filter(w=>(why+scene).includes(w))};
   });
   const order={high:0,medium:1,low:2};
   analyzed.sort((a,b)=>(order[a.priority]||1)-(order[b.priority]||1));
@@ -629,7 +657,7 @@ function analyzeCoaching(){
           ${a.miss>0?`<div style="font-size:10px;color:var(--red);margin-top:4px">未提出 ${a.miss}回あり</div>`:''}
         </div>
       </div>
-      ${a.why?`<div style="font-size:11px;color:var(--ink-soft);background:rgba(255,255,255,.65);padding:8px 10px;border-radius:6px;line-height:1.65"><span style="font-weight:700;color:var(--ink)">② なぜ：</span>${a.why}</div>`:''}
+      ${a.why?`<div style="font-size:11px;color:var(--ink-soft);background:rgba(255,255,255,.65);padding:8px 10px;border-radius:6px;line-height:1.65"><span style="font-weight:700;color:var(--ink)">② なぜ：</span>${a.why}</div>`:''}      ${a.next?`<div style="font-size:11px;color:var(--green);background:var(--green-pale);padding:8px 10px;border-radius:6px;line-height:1.65;margin-top:4px"><span style="font-weight:700">③ 次への一手：</span>${a.next}</div>`:''}
     </div>`).join('');
 }
 
