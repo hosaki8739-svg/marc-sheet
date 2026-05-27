@@ -4,7 +4,205 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MARC 顧問ダッシュボード</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+// ===================================================
+//  コーチング支援（ルールベース分析）
+// ===================================================
+
+// ── キーワード辞書 ──
+const NEG_WORDS = ['わからない','わからなかった','できない','できなかった','難しい','難しかった',
+  '焦','苦手','うまくいかない','うまくいかなかった','ダメ','だめ','消極的','自信','迷','つらい',
+  '怖','びびった','萎縮','崩れ','崩れた','ミス','失敗','反撃','取り返','取り返された'];
+
+const POS_WORDS = ['気づいた','わかった','できた','つかめた','感じた','意識','次は','次回',
+  '変わった','変えられた','成長','改善','つながった','流れ','余裕','落ち着','冷静',
+  '意図','狙い','効果','手応え','決まった','良かった','うまく'];
+
+const CAUSAL_WORDS = ['から','ので','ため','なぜなら','原因','理由','結果','ことで',
+  'することで','していた','していたので','意識して','意識したら'];
+
+const FORWARD_WORDS = ['次は','次回','今後','これから','練習','意識する','心がける',
+  '試みる','やってみる','取り組む'];
+
+function analyzeText(text){
+  if(!text) return { neg:0, pos:0, causal:0, forward:0, len:0 };
+  return {
+    neg:     NEG_WORDS.filter(w=>text.includes(w)).length,
+    pos:     POS_WORDS.filter(w=>text.includes(w)).length,
+    causal:  CAUSAL_WORDS.filter(w=>text.includes(w)).length,
+    forward: FORWARD_WORDS.filter(w=>text.includes(w)).length,
+    len:     text.length
+  };
+}
+
+function calcDepth(why){
+  const a = analyzeText(why);
+  let score = 0;
+  // 文字数（最大2点）
+  if(a.len >= 60) score += 2;
+  else if(a.len >= 30) score += 1;
+  // 因果語（最大2点）
+  if(a.causal >= 2) score += 2;
+  else if(a.causal >= 1) score += 1;
+  // 前向き語（最大1点）
+  if(a.forward >= 1) score += 1;
+  return Math.max(1, Math.min(5, score));
+}
+
+function calcEmotion(scene, why){
+  const a = analyzeText(scene + why);
+  if(a.neg >= 3) return 'caution';
+  if(a.neg >= 1 && a.pos === 0) return 'caution';
+  if(a.pos >= 2 || (a.pos >= 1 && a.causal >= 1)) return 'positive';
+  return 'neutral';
+}
+
+function calcPriority(depth, emotion, score, prevScore, missCount){
+  // 高優先度
+  if(emotion === 'caution' && depth <= 2) return 'high';
+  if(score > 0 && score <= 2 && depth <= 2) return 'high';
+  if(missCount >= 2) return 'high';
+  if(emotion === 'caution' && score > 0 && score <= 2) return 'high';
+  // 中優先度
+  if(emotion === 'caution') return 'medium';
+  if(depth <= 2) return 'medium';
+  if(score > 0 && score <= 2) return 'medium';
+  if(prevScore > 0 && score > 0 && score < prevScore - 1) return 'medium';
+  // 低優先度
+  return 'low';
+}
+
+function coachingHint(depth, emotion, score){
+  if(emotion === 'caution')
+    return '「最近どう？稽古で気になることある？」';
+  if(depth <= 1)
+    return '「そのとき体はどう動いていた？」';
+  if(depth === 2)
+    return '「なぜそうなったか、もう少し教えて」';
+  if(depth === 3)
+    return '「具体的にどの瞬間のことを言ってる？」';
+  if(score >= 4)
+    return '「その感覚、次の稽古でも使えそう？」';
+  return '「気づいたこと、次に活かすとしたら？」';
+}
+
+function analyzeCoaching(){
+  const btn = document.getElementById('analyzeBtn');
+  const result = document.getElementById('coachingResult');
+
+  const latest = latestPerMember(store.r);
+  if(!latest.length){
+    result.innerHTML = '<div class="empty"><div class="empty-text">振り返りデータがありません。まずデータを収集してください。</div></div>';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = '⏳ 分析中…';
+
+  // 未提出回数のカウント
+  const missMap = {};
+  allNames().forEach(n=>{
+    const declared = store.d.filter(r=>getName(r)===n).length;
+    const reflected = store.r.filter(r=>getName(r)===n).length;
+    missMap[n] = Math.max(0, declared - reflected);
+  });
+
+  // 前回スコアマップ
+  const reflectDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort();
+  const prevScoreMap = {};
+  if(reflectDates.length >= 2){
+    const prevDate = reflectDates[reflectDates.length-2];
+    store.r.filter(r=>getDate(r)===prevDate).forEach(r=>{ prevScoreMap[getName(r)]=getScore(r); });
+  }
+
+  const analyzed = latest.map(r => {
+    const name  = getName(r);
+    const why   = r.why   || r['なぜそうなったか'] || '';
+    const scene = r.scene || r['印象に残った場面'] || '';
+    const score = getScore(r);
+    const prev  = prevScoreMap[name] || 0;
+    const miss  = missMap[name] || 0;
+
+    const depth    = calcDepth(why);
+    const emotion  = calcEmotion(scene, why);
+    const priority = calcPriority(depth, emotion, score, prev, miss);
+    const hint     = coachingHint(depth, emotion, score);
+
+    return { name, depth, emotion, priority, hint, score, prev, miss, why, scene,
+             negWords: NEG_WORDS.filter(w=>(why+scene).includes(w)),
+             posWords: POS_WORDS.filter(w=>(why+scene).includes(w)) };
+  });
+
+  // 優先度でソート
+  const order = {high:0, medium:1, low:2};
+  analyzed.sort((a,b)=>(order[a.priority]||1)-(order[b.priority]||1));
+
+  renderCoachingResult(analyzed);
+  btn.disabled = false; btn.textContent = '📊 分析する';
+}
+
+function renderCoachingResult(analyzed){
+  const result = document.getElementById('coachingResult');
+
+  const depthBar = v => {
+    const col = v<=2?'var(--red)':v===3?'var(--amber)':'var(--green)';
+    return `<div style="display:flex;align-items:center;gap:6px">
+      <div style="flex:1;background:var(--border-lt);border-radius:999px;height:6px">
+        <div style="width:${v/5*100}%;height:6px;border-radius:999px;background:${col};transition:width .6s"></div>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted);width:24px;text-align:right">${v}/5</span>
+    </div>`;
+  };
+
+  const emotionBadge = e => {
+    if(e==='caution')  return '<span style="background:#FEE2E2;color:#DC2626;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700">⚠ 要注意</span>';
+    if(e==='positive') return '<span style="background:var(--green-pale);color:var(--green);padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700">✓ ポジティブ</span>';
+    return '<span style="background:var(--border-lt);color:var(--ink-muted);padding:2px 9px;border-radius:999px;font-size:10px;font-weight:700">→ 通常</span>';
+  };
+
+  const pc = { high:'border-left:4px solid var(--red);background:var(--red-pale)',
+               medium:'border-left:4px solid var(--amber);background:var(--amber-pale)',
+               low:'border-left:4px solid var(--green);background:var(--green-pale)' };
+  const pl = { high:'🔴 声かけ優先', medium:'🟡 様子を見る', low:'🟢 継続サポート' };
+
+  const rows = analyzed.map(a => {
+    const negHtml = a.negWords.length
+      ? '<span style="font-size:10px;color:var(--red)">⚠ ' + a.negWords.slice(0,3).join('・') + '</span>' : '';
+    const posHtml = a.posWords.length
+      ? '<span style="font-size:10px;color:var(--green)">✓ ' + a.posWords.slice(0,3).join('・') + '</span>' : '';
+
+    return `<div style="border-radius:var(--r);padding:14px 16px;margin-bottom:10px;${pc[a.priority]||''}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${a.name.charAt(0)}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--navy)">${a.name}</div>
+          <div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${pl[a.priority]||''}</div>
+        </div>
+        ${emotionBadge(a.emotion)}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px">言語化の深さ</div>
+          ${depthBar(a.depth)}
+          <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${negHtml}${posHtml}</div>
+        </div>
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px">推奨の声かけ</div>
+          <div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${a.hint}</div>
+          ${a.miss>0?`<div style="font-size:10px;color:var(--red);margin-top:4px">未提出 ${a.miss}回</div>`:''}
+        </div>
+      </div>
+
+      ${a.why?`<div style="font-size:11px;color:var(--ink-soft);background:rgba(255,255,255,.65);padding:8px 10px;border-radius:6px;line-height:1.65">
+        <span style="font-weight:700;color:var(--ink)">② なぜ：</span>${a.why}
+      </div>`:''}
+    </div>`;
+  }).join('');
+
+  result.innerHTML = rows || '<div class="empty"><div class="empty-text">分析結果がありません</div></div>';
+}
+
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=DM+Mono:wght@400;500&display=swap');
 :root{
@@ -208,6 +406,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   <button class="tab-btn active" data-tab="recent">📋 直近の稽古</button>
   <button class="tab-btn" data-tab="member">👤 部員別詳細</button>
   <button class="tab-btn" data-tab="trend">📊 傾向・分析</button>
+  <button class="tab-btn" data-tab="coaching">🎤 コーチング支援</button>
 </div>
 
 <!-- ===== 直近の稽古 ===== -->
@@ -345,6 +544,56 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   </div>
 </div>
 
+<!-- ===== コーチング支援 ===== -->
+<div class="tab-panel" id="tab-coaching">
+  <div class="content">
+
+    <div class="sbox" style="margin-bottom:14px">
+      <div class="sbox-hdr">
+        <div class="sbox-title">🎤 コーチング支援　— AIが振り返りを分析</div>
+        <div class="sbox-meta">最新振り返りを2軸で評価し、声かけが必要な部員を特定します</div>
+      </div>
+      <div class="sbox-body" style="padding-bottom:10px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--ink-soft);line-height:1.7;flex:1">
+            <strong>分析軸①　言語化の深さ</strong>：「なぜそうなったか」が自分の行動・判断まで掘り下げられているか<br>
+            <strong>分析軸②　感情的サイン</strong>：落ち込み・自信喪失・意欲低下のシグナルが含まれていないか
+          </div>
+          <button class="hdr-btn" id="analyzeBtn" style="padding:10px 20px;font-size:13px;white-space:nowrap">
+            📊 分析する
+          </button>
+        </div>
+        <div id="coachingResult">
+          <div class="empty"><div class="empty-icon">🤖</div><div class="empty-text">「AIで分析する」ボタンを押すと<br>最新振り返りの分析結果が表示されます</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sbox">
+      <div class="sbox-hdr">
+        <div class="sbox-title">声かけのヒント</div>
+      </div>
+      <div class="sbox-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+          <div style="padding:12px 14px;background:var(--red-pale);border-radius:var(--r);border-left:3px solid var(--red)">
+            <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:6px">🔴 優先度：高</div>
+            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">自己分析が表面的、またはネガティブなサインが強い部員。稽古後に個別に声をかける。「なぜそうなったと思う？」と一緒に考える。</div>
+          </div>
+          <div style="padding:12px 14px;background:var(--amber-pale);border-radius:var(--r);border-left:3px solid var(--amber)">
+            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:6px">🟡 優先度：中</div>
+            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">振り返りはしているが、行動レベルまで掘り下げられていない。「具体的にどの瞬間のこと？」と問いかける。</div>
+          </div>
+          <div style="padding:12px 14px;background:var(--green-pale);border-radius:var(--r);border-left:3px solid var(--green)">
+            <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px">🟢 優先度：低</div>
+            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">自己分析が具体的で前向き。「それを次の稽古でどう使う？」と次に繋げる問いかけで十分。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
 // ===================================================
 //  MARC 顧問ダッシュボード
@@ -439,6 +688,9 @@ document.addEventListener('click', function(e){
 
   // データ収集
   if(t.id==='collectBtn'){ collectAll(); return; }
+
+  // コーチング分析
+  if(t.id==='analyzeBtn'){ analyzeCoaching(); return; }
 
   // ソートボタン
   const sortBtn = t.closest('[data-sort]');
