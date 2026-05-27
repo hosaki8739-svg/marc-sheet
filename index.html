@@ -1898,18 +1898,15 @@
   function renderDateDots() {
     const container = document.getElementById('dateDotList');
     if (!container) return;
-    const allDates = Object.keys(marc.declares).sort().reverse().slice(0,10);
-    if (!allDates.length) { container.innerHTML = ''; return; }
+    // 宣言済みで振り返り未提出の最新1件のみ表示
+    const pending = Object.keys(marc.declares)
+      .filter(function(d){ return !marc.logs[d]; })
+      .sort().reverse();
+    if (!pending.length) { container.innerHTML = ''; return; }
+    const d = pending[0];
     const currentDate = (document.getElementById('logDate')?.value||'').slice(0,10);
-    container.innerHTML = allDates.map(function(d) {
-      const hasDeclare = !!marc.declares[d];
-      const hasLog     = !!marc.logs[d];
-      const isActive   = d === currentDate;
-      const status     = hasLog ? '✓ 振り返り済' : (hasDeclare ? '宣言済み' : '');
-      const bg         = isActive ? 'var(--primary)' : hasLog ? '#059669' : '#c8952a';
-      const color      = isActive || hasLog ? '#fff' : '#fff';
-      return '<button onclick="selectDate(\'' + d + '\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;border:none;background:' + bg + ';color:' + color + ';font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;margin:0 4px 4px 0;">' + d.slice(5) + ' ' + status + '</button>';
-    }).join('');
+    const bg = d === currentDate ? 'var(--primary)' : '#c8952a';
+    container.innerHTML = '<button onclick="selectDate(\'' + d + '\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;border:none;background:' + bg + ';color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">' + d.slice(5) + ' 宣言済み</button>';
   }
 
   function selectDate(d) {
@@ -2088,7 +2085,7 @@
   function attachPhase2Events() {}
 
   let fulfillmentVal = 0;
-  function selectFulfillment(v) {
+  window.selectFulfillment = function selectFulfillment(v) {
     fulfillmentVal = v;
     document.querySelectorAll('.fulfillment-btn').forEach(function(b) {
       b.classList.toggle('selected', parseInt(b.dataset.val) === v);
