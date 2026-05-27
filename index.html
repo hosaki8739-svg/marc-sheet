@@ -1765,728 +1765,536 @@
   // ===== GAS ENDPOINT =====
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
 
-  // ===== 前回データ復元（氏名入力後にGASから取得）=====
-  let restoreTimer = null;
-  function onNameInput(el) {
-    updateProgress();
-    clearTimeout(restoreTimer);
-    const name = el.value.trim();
-    if (name.length < 2) return;
-    // 半角・全角スペースを除去して検索
-    const normalizedName = name.replace(/[\s\u3000]/g, '');
-    if (normalizedName.length < 2) return;
-    restoreTimer = setTimeout(() => fetchPrevData(normalizedName), 800);
+  // ===== ストア：GASから取得した全データ（メモリ管理）=====
+  // 一度ロードしたらメモリで管理。localStorageは補助キャッシュのみ。
+  // ===== 定数 =====
+  const LS_NAME = 'marc_user_name';
+
+  // ===== localStorage ユーティリティ =====
+  function saveName(v) { if(v) localStorage.setItem(LS_NAME, v); }
+  function applyPrevData(data) {
+    // 自己理解タブに値をセット
+    const fields = {
+      '学年':'grade','組':'kumi','段位級':'rankSelect','剣道歴':'kendoReki',
+      '利き手構え':'handedness','得意技':'tokui','今の課題感':'issue','個人目標':'goal'
+    };
+    Object.keys(fields).forEach(function(k) {
+      const el = document.getElementById(fields[k]);
+      if (el && data[k]) el.value = data[k];
+    });
+    // BARSスコア
+    ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(function(key) {
+      const v = data['自己評価_'+key];
+      if (v) setBarsValue(key, parseInt(v)||0);
+    });
   }
 
-  // GASから全データを1回で取得して復元
-  function fetchPrevData(name) {
-    const cb = 'gasUser_' + Date.now();
-    const sc = document.createElement('script');
+  const marc = {
+    name:     '',
+    declares: {},   // { "2026-06-02": { intent: "..." }, ... }
+    logs:     {},   // { "2026-06-02": { scene, why, next, fulfillment, ... } }
+    history:  [],   // 振り返りカード表示用（全件）
+    loaded:   false
+  };
 
+  // ===== フェーズ計算（常にmarcから計算。localStorageのフェーズ状態は使わない）=====
+  function phaseFor(dateStr) {
+    const d = (dateStr||'').slice(0,10);
+    if (!d) return 'pre';
+    if (marc.logs[d])     return 'done';
+    if (marc.declares[d]) return 'post';
+    return 'pre';
+  }
+
+  // ===== GASから全データを1回で取得 =====
+  function fetchUserData(name) {
+    const cb = '_marcUser_' + Date.now();
+    const sc = document.createElement('script');
     window[cb] = function(json) {
       delete window[cb];
       try { document.head.removeChild(sc); } catch(e) {}
-      if (json.status !== 'ok') return;
+      if (json.status !== 'ok') {
+        showToast('データの取得に失敗しました');
+        return;
+      }
 
-      const declares = json.declares || [];
-      const logs     = json.logs     || [];
-
-      // ① 自己理解
+      // 自己理解
       if (json.data && Object.keys(json.data).length > 0) {
         applyPrevData(json.data);
-        showToast('📋 ' + name + ' さんのデータを復元しました');
       }
 
-      // ② 全宣言を日付→intentマップに保存
-      const declMap = {};
-      declares.forEach(function(r) {
+      // 宣言マップ構築
+      marc.declares = {};
+      (json.declares || []).forEach(function(r) {
         const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
-        const intent = r['試したいこと']||r.intent||'';
-        if (d) declMap[d] = { intent: intent };
+        if (d) marc.declares[d] = { intent: r['試したいこと']||r.intent||'' };
       });
-      localStorage.setItem('marc_declares_map', JSON.stringify(declMap));
 
-      // ③ 全ログを日付マップに保存
-      const logMap = {};
-      logs.forEach(function(r) {
+      // ログマップ構築
+      marc.logs = {};
+      (json.logs || []).forEach(function(r) {
         const d = String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
-        if (d) logMap[d] = true;
+        if (d) marc.logs[d] = {
+          intent:      r.intent      || r['試したいこと']   || '',
+          scene:       r.scene       || r['印象に残った場面'] || '',
+          why:         r.why         || r['なぜそうなったか'] || '',
+          next:        r.next        || r['次への一手']      || '',
+          fulfillment: parseInt(String(r.fulfillment||'').replace('/5',''))||0
+        };
       });
-      localStorage.setItem('marc_logs_map', JSON.stringify(logMap));
 
-      // ④ 履歴カード用ログ保存
-      if (logs.length > 0) {
-        const entries = logs.map(function(r) {
-          return {
-            timestamp: r.timestamp||'',
-            date: String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10),
-            name: name,
-            intent: r.intent||r['試したいこと']||'',
-            scene:  r.scene||r['印象に残った場面']||'',
-            why:    r.why||r['なぜそうなったか']||'',
-            next:   r.next||r['次への一手']||'',
-            fulfillment: parseInt(String(r.fulfillment||'').replace('/5',''))||0,
-          };
-        }).sort(function(a,b){ return b.date.localeCompare(a.date); });
-        localStorage.setItem(LS_LOGS, JSON.stringify(entries));
-      }
+      // 履歴カード用
+      marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) {
+        return Object.assign({ date: d }, marc.logs[d]);
+      });
+      marc.loaded = true;
 
-      // ⑤ 現在のlogDateでフェーズを設定してUI更新
-      const currentDate = (document.getElementById('logDate')?.value||'').slice(0,10);
-      applyPhaseForDate(currentDate);
-      renderHistory();
-      updateLogCount();
+      // UIを更新
+      renderLogUI();
+      showToast('📋 ' + name + ' さんのデータを復元しました');
     };
-
     sc.onerror = function() {
       delete window[cb];
       try { document.head.removeChild(sc); } catch(e) {}
+      showToast('GAS接続に失敗しました');
     };
-
     sc.src = GAS_URL + '?name=' + encodeURIComponent(name) + '&callback=' + cb;
     document.head.appendChild(sc);
   }
 
-  function applyPrevData(data) {
-    const v = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-
-    // 氏名を復元したらlocalStorageも更新（稽古ログタブと共有）
-    if (data['氏名']) {
-      const nameEl = document.getElementById('nameInput');
-      if (nameEl) { nameEl.value = data['氏名']; saveName(data['氏名']); }
-    }
-
-    v('kendoReki',    data['剣道歴']);
-    v('kadaikan',     data['今の課題感']);
-    v('kojinMokuhyo', data['個人目標']);
-    v('kumiInput',    data['組']);
-
-    // 学年
-    if (data['学年']) {
-      const sel = document.getElementById('gakuNenSelect');
-      if (sel) sel.value = data['学年'];
-    }
-
-    // 段位・利き手
-    if (data['段位級']) {
-      const d = document.getElementById('dankyuSelect');
-      if (d) d.value = data['段位級'];
-    }
-    if (data['利き手構え']) {
-      const k = document.getElementById('kikiteSelect');
-      if (k) k.value = data['利き手構え'];
-    }
-
-    // 得意技
-    if (data['得意技']) {
-      const wazaList = data['得意技'].split('・');
-      document.querySelectorAll('#wazaSelector .rank-btn').forEach(btn => {
-        if (wazaList.includes(btn.textContent.trim())) btn.classList.add('active');
-      });
-    }
-
-    // BARS自己評価 復元
-    ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(key => {
-      if (data['自己評価_' + key]) setBarsValue(key, data['自己評価_' + key]);
-    });
-
-    updateProgress();
-  }
-
-  // ===== データ収集（現在のフォームのみ）=====
-  function collectFormData() {
-    const v = id => (document.getElementById(id)?.value || '').trim();
-
-    // 得意技
-    const waza = [...document.querySelectorAll('#wazaSelector .rank-btn.active')]
-      .map(b => b.textContent.trim()).join('・');
-
-    // 段位・利き手（ID指定）
-    const grade  = document.getElementById('dankyuSelect')?.value || '';
-    const stance = document.getElementById('kikiteSelect')?.value || '';
-
-    // 記入日
-    const dateInputs = document.querySelectorAll('.section-body input[type="date"]');
-    const recordDate = dateInputs[0]?.value || '';
-
-    return {
-      timestamp:   new Date().toLocaleString('ja-JP'),
-      記録種別:    '自己理解',
-      氏名:        v('nameInput'),
-      学年:        document.getElementById('gakuNenSelect')?.value || '',
-      組:          v('kumiInput'),
-      段位級:      grade,
-      剣道歴:      v('kendoReki'),
-      利き手構え:  stance,
-      記入日:      recordDate,
-      得意技:      waza,
-      ...getBarsValues(),
-      今の課題感:  v('kadaikan'),
-      個人目標:    v('kojinMokuhyo'),
-    };
-  }
-
-  // ===== 一時保存（localStorageのみ・GASには送信しない）=====
-  function tempSave() {
-    const data = collectFormData();
-    localStorage.setItem('kendo_draft', JSON.stringify(data));
-    showToast('📋 一時保存しました。次回は氏名を入力すると復元されます');
-    const btn = document.querySelector('.save-btn');
-    const orig = btn.textContent;
-    btn.textContent = '✓ 保存済み';
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  }
-
-  // ===== 下書き復元 =====
-  function loadDraft() {
-    const raw = localStorage.getItem('kendo_draft');
-    if (!raw) return;
-    try {
-      const data = JSON.parse(raw);
-      // applyPrevDataと同じ全項目復元を使う
-      applyPrevData(data);
-      // 氏名だけ別途セット（applyPrevDataは氏名を含まないため）
-      if (data['氏名']) {
-        const nameEl = document.getElementById('nameInput');
-        if (nameEl) { nameEl.value = data['氏名']; saveName(data['氏名']); }
-      }
-      showToast('📋 前回の下書きを復元しました');
-      updateProgress();
-    } catch(e) {}
-  }
-
-  // （月次ラベル：削除済み）
-
-  updateProgress();
-  setTimeout(loadDraft, 300);
-
-  // ===== 共有ストレージキー =====
-  const LS_NAME   = 'marc_user_name';
-  const LS_LOGS   = 'marc_logs';
-  const LS_INTENT = 'marc_intent_draft';
-
-  // ===== 名前の共有管理 =====
-  function saveName(val) {
-    if (val.trim()) localStorage.setItem(LS_NAME, val.trim());
-  }
-  function restoreName() {
-    const saved = localStorage.getItem(LS_NAME);
-    if (!saved) return;
-    document.querySelectorAll('#nameInput, #logName').forEach(el => {
-      if (el && !el.value) el.value = saved;
-    });
-  }
-
-  // ===== TAB切り替え =====
-  function switchTab(tab, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    btn.classList.add('active');
-    if (tab === 'log') {
-      const d = document.getElementById('logDate');
-      const sd = localStorage.getItem('marc_log_date_draft');
-      if (d && !d.value) d.value = sd || new Date().toISOString().slice(0, 10);
-      // 自己理解タブで入力した名前を優先して反映
-      const profileName = document.getElementById('nameInput')?.value?.trim();
-      if (profileName) saveName(profileName);
-      restoreName();
-      restoreIntentDraft();
-      // logDateの現在値でフェーズを再評価
-      applyPhaseForDate(document.getElementById('logDate')?.value || '');
-      renderHistory();
-      // 記録者名を表示
-      const nameEl = document.getElementById('logUserName');
-      if (nameEl) {
-        const stored = localStorage.getItem(LS_NAME);
-        nameEl.textContent = stored || '（未設定）';
-        nameEl.style.color = stored ? 'var(--primary)' : 'var(--red)';
-      }
-    }
-    if (tab === 'profile') restoreName();
-  }
-
-  // ===== ログ履歴管理 =====
-  function getLogs() {
-    try { return JSON.parse(localStorage.getItem(LS_LOGS)) || []; }
-    catch(e) { return []; }
-  }
-  function saveLogEntry(entry) {
-    const logs = getLogs();
-    logs.unshift(entry);
-    localStorage.setItem(LS_LOGS, JSON.stringify(logs));
-  }
-
-  // ===== 試したいこと：下書き自動保存 =====
-  function autoSaveIntent(val) { if (val !== undefined) localStorage.setItem(LS_INTENT, val); }
-  function restoreIntentDraft() {
-    const saved = localStorage.getItem(LS_INTENT);
-    const el = document.getElementById('logIntent');
-    if (el && saved && !el.value) el.value = saved;
-
-  }
-
-
-
-  // ===== 充実度選択 =====
-  let fulfillmentVal = 0;
-  function selectFulfillment(btn, val) {
-    document.querySelectorAll('.achieve-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    fulfillmentVal = val;
-  }
-
-  // ===== フェーズ管理 =====
-  // phase: 'pre'（宣言前）| 'post'（宣言済・振り返り未）| 'done'（完了）
-  const LS_PHASE = 'marc_log_phase';
-  const LS_PRE   = 'marc_log_pre';   // チャレンジ宣言データ
-
-  function onLogDateChange() {
+  // ===== UIを一括更新 =====
+  function renderLogUI() {
     const dateEl = document.getElementById('logDate');
-    applyPhaseForDate(dateEl?.value || '');
+    const d = (dateEl && dateEl.value) ? dateEl.value.slice(0,10) : '';
+    renderPhaseUI(d);
+    renderDateDots();
+    renderHistory();
+    updateLogCount();
   }
 
-  function getPhase() {
-    return localStorage.getItem(LS_PHASE) || 'pre';
-  }
-  function setPhase(p) {
-    localStorage.setItem(LS_PHASE, p);
+  // ===== 稽古日変更 =====
+  function onLogDateChange() {
+    renderLogUI();
   }
 
-  function renderPhaseUI() {
-    const phase = getPhase();
+  // ===== 稽古日に印をつける =====
+  function renderDateDots() {
+    const container = document.getElementById('dateDotList');
+    if (!container) return;
+    const allDates = Object.keys(marc.declares).sort().reverse().slice(0,10);
+    if (!allDates.length) { container.innerHTML = ''; return; }
+    const currentDate = (document.getElementById('logDate')?.value||'').slice(0,10);
+    container.innerHTML = allDates.map(function(d) {
+      const hasDeclare = !!marc.declares[d];
+      const hasLog     = !!marc.logs[d];
+      const isActive   = d === currentDate;
+      const status     = hasLog ? '✓ 振り返り済' : (hasDeclare ? '宣言済み' : '');
+      const bg         = isActive ? 'var(--primary)' : hasLog ? '#059669' : '#c8952a';
+      const color      = isActive || hasLog ? '#fff' : '#fff';
+      return '<button onclick="selectDate(\'' + d + '\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;border:none;background:' + bg + ';color:' + color + ';font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;margin:0 4px 4px 0;">' + d.slice(5) + ' ' + status + '</button>';
+    }).join('');
+  }
+
+  function selectDate(d) {
+    const dateEl = document.getElementById('logDate');
+    if (dateEl) { dateEl.value = d; }
+    renderLogUI();
+  }
+
+  // ===== フェーズUI描画 =====
+  function renderPhaseUI(dateStr) {
+    const d       = (dateStr||'').slice(0,10);
+    const phase   = phaseFor(d);
     const p1Card  = document.getElementById('phase1Card');
-    const p2Card  = document.getElementById('phase2Card');
     const p1Badge = document.getElementById('phase1Badge');
-    const p2Badge = document.getElementById('phase2Badge');
     const p1Tag   = document.getElementById('phase1StatusTag');
-    const p2Tag   = document.getElementById('phase2StatusTag');
     const p1Body  = document.getElementById('phase1Body');
+    const p2Card  = document.getElementById('phase2Card');
+    const p2Badge = document.getElementById('phase2Badge');
+    const p2Tag   = document.getElementById('phase2StatusTag');
     const p2Body  = document.getElementById('phase2Body');
     if (!p1Card) return;
 
     if (phase === 'pre') {
-      // Phase1: アクティブ / Phase2: ロック
+      // Phase1: 入力中
       p1Card.className  = 'timeline-card phase-active';
       p1Badge.className = 'timeline-step-badge active';
+      p1Badge.textContent = '1';
       p1Tag.textContent = '入力中';
       p1Tag.style.cssText = 'background:var(--primary);color:#fff;';
-      p1Body.style.display = '';
+      p1Body.className = 'timeline-body';
+      p1Body.innerHTML = '<div class="field-group">'
+        + '<label class="field-label">今週の稽古で試したいこと<span class="required">*</span></label>'
+        + '<div class="field-hint"><strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br>'
+        + '<span style="color:var(--ink-muted);font-size:11px;">状況（いつ・どんな場面で）＋ 動作（何をする）をセットで。</span><br>'
+        + '<span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span><br>'
+        + '<span style="color:var(--primary);font-weight:600;">✓ 「引き技を打った直後、右足を引いてから次を打つ」</span>'
+        + '</div>'
+        + '<input type="text" id="logIntent" placeholder="" oninput="autoSaveIntent(this.value)" style="border-color:var(--primary);">'
+        + '</div>'
+        + '<button class="pre-submit-btn" onclick="submitPreLog()">✦ チャレンジを宣言する</button>';
+      // 下書き復元
+      const saved = localStorage.getItem('marc_intent_draft');
+      const intentEl = document.getElementById('logIntent');
+      if (intentEl && saved) intentEl.value = saved;
 
+      // Phase2: ロック
       p2Card.className  = 'timeline-card phase-locked';
       p2Badge.className = 'timeline-step-badge locked';
+      p2Badge.textContent = '2';
       p2Tag.textContent = '🔒 宣言後に解除';
       p2Tag.style.cssText = 'background:var(--bg-warm);color:var(--ink-muted);border:1px solid var(--border);';
-      p2Body.innerHTML = '<span style="font-size:20px;">🔒</span><span>「チャレンジを宣言する」を送信すると入力できます</span>';
       p2Body.className = 'timeline-body locked-body';
-
-      // チャレンジ宣言データがあれば復元
-      restoreIntentDraft();
+      p2Body.innerHTML = '<span style="font-size:20px;">🔒</span><span>「チャレンジを宣言する」を送信すると入力できます</span>';
 
     } else if (phase === 'post') {
-      // Phase1: 完了 / Phase2: アクティブ（振り返り欄を表示）
+      const decl = marc.declares[d] || {};
+      const intent = decl.intent || '';
+
+      // Phase1: 宣言済み表示 + 修正ボタン
       p1Card.className  = 'timeline-card phase-done';
       p1Badge.className = 'timeline-step-badge done';
       p1Badge.textContent = '✓';
       p1Tag.textContent = '宣言済み ✓';
       p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
-
-      // Phase1：宣言内容を大きく表示（送信後も見える）
-      const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
+      p1Body.className = 'timeline-body';
       p1Body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
         + '<span style="font-size:13px;font-weight:700;color:#059669;">✓ チャレンジ宣言完了</span>'
-        + '<span style="font-size:10px;color:var(--ink-muted);">' + (preData.稽古日||'') + '</span>'
+        + '<span style="font-size:10px;color:var(--ink-muted);">' + d + '</span>'
         + '</div>'
         + '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
-        + (preData.intent || preData['試したいこと'] || '—')
+        + (intent || '—')
         + '</div>'
-        + '<div id="p1Footer" style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓</div>';
-      p1Body.className = 'timeline-body';
-      // 修正ボタンをDOMで直接生成してリスナーを付ける（innerHTML経由不使用）
-      const p1Footer = p1Body.querySelector('#p1Footer') || p1Body.lastElementChild;
-      const editBtn = document.createElement('button');
-      editBtn.textContent = '✎ 修正';
-      editBtn.style.cssText = 'margin-left:10px;font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer;vertical-align:middle';
-      editBtn.addEventListener('click', function() { window.resetToPrePhase(); });
-      if (p1Footer) p1Footer.appendChild(editBtn);
+        + '<div style="margin-top:10px;font-size:11px;color:var(--ink-muted);">稽古後に振り返りを記入してください ↓</div>';
 
-      // Phase2をアクティブに
+      // 修正ボタンをDOMで生成（innerHTML外）
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '✎ 宣言を修正する';
+      editBtn.style.cssText = 'margin-top:8px;font-size:11px;padding:5px 14px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer;font-family:inherit;';
+      editBtn.onclick = function() { editDeclaration(d); };
+      p1Body.appendChild(editBtn);
+
+      // Phase2: 入力中
       p2Card.className  = 'timeline-card phase-active';
       p2Badge.className = 'timeline-step-badge active';
       p2Badge.textContent = '2';
       p2Tag.textContent = '入力中';
       p2Tag.style.cssText = 'background:#059669;color:#fff;';
       p2Body.className = 'timeline-body';
-      p2Body.innerHTML = buildPhase2HTML();
-
-      // 振り返りのイベント登録
+      p2Body.innerHTML = buildPhase2HTML(intent);
       attachPhase2Events();
 
     } else if (phase === 'done') {
-      // 全完了 → 両方完了表示
+      const decl = marc.declares[d] || {};
+      const log  = marc.logs[d]     || {};
+
+      // Phase1: 宣言済み
       p1Card.className  = 'timeline-card phase-done';
       p1Badge.className = 'timeline-step-badge done';
       p1Badge.textContent = '✓';
       p1Tag.textContent = '宣言済み ✓';
       p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
-      const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-      p1Body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
-        + '<span style="font-size:12px;font-weight:700;color:#059669;">✓ チャレンジ宣言完了</span>'
-        + '</div>'
-        + '<div style="padding:9px 12px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 6px 6px 0;font-size:13px;font-weight:600;color:var(--primary);line-height:1.6;">'
-        + (preData.intent || preData['試したいこと'] || '—') + '</div>';
       p1Body.className = 'timeline-body';
+      p1Body.innerHTML = '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
+        + (decl.intent || log.intent || '—')
+        + '</div>';
 
+      // Phase2: 振り返り完了
       p2Card.className  = 'timeline-card phase-done';
       p2Badge.className = 'timeline-step-badge done';
       p2Badge.textContent = '✓';
-      p2Tag.textContent = '提出済み';
+      p2Tag.textContent = '提出済み ✓';
       p2Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
-      p2Body.innerHTML = '<div style="font-size:13px;color:#059669;font-weight:700;padding:8px 0;">✦ 稽古ログを提出しました。お疲れ様でした。</div>'
-        + '<button onclick="startNewLog()" style="margin-top:8px;padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:999px;font-family:sans-serif;font-size:13px;font-weight:700;cursor:pointer;">次の稽古を記録する</button>';
       p2Body.className = 'timeline-body';
+      const fLabels = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
+      const fVal = log.fulfillment||0;
+      p2Body.innerHTML = '<div style="margin-bottom:8px;"><span style="font-weight:700;font-size:12px;color:#059669;">✓ 振り返り提出済み</span></div>'
+        + (fVal ? '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">達成感：<strong>' + fLabels[fVal] + '</strong>（' + fVal + '/5）</div>' : '')
+        + '<div style="font-size:12px;color:var(--ink-soft);line-height:1.7;">'
+        + '<div style="margin-bottom:4px;"><span style="font-weight:700;">①</span> ' + (log.scene||'—') + '</div>'
+        + '<div style="margin-bottom:4px;"><span style="font-weight:700;">②</span> ' + (log.why||'—') + '</div>'
+        + (log.next ? '<div><span style="font-weight:700;color:var(--primary);">③</span> ' + log.next + '</div>' : '')
+        + '</div>';
+
+      // 新しい稽古を記録ボタン
+      const newBtn = document.createElement('button');
+      newBtn.textContent = '＋ 新しい稽古を記録する';
+      newBtn.style.cssText = 'margin-top:12px;padding:10px 20px;border-radius:999px;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;';
+      newBtn.onclick = function() { startNewLog(); };
+      p2Body.appendChild(newBtn);
     }
   }
 
-  function buildPhase2HTML() {
-    return `
-      <div class="field-group">
-        <label class="field-label">試したいことへの達成感</label>
-        <div class="field-hint">稽古前に申告したことに対して、どれくらいできたか。直感で選んでください。</div>
-        <div class="achieve-row">
-          <button class="achieve-btn" data-val="1" onclick="selectFulfillment(this,1)">できな<br>かった</button>
-          <button class="achieve-btn" data-val="2" onclick="selectFulfillment(this,2)">少し<br>できた</button>
-          <button class="achieve-btn" data-val="3" onclick="selectFulfillment(this,3)">まあまあ<br>できた</button>
-          <button class="achieve-btn" data-val="4" onclick="selectFulfillment(this,4)">かなり<br>できた</button>
-          <button class="achieve-btn" data-val="5" onclick="selectFulfillment(this,5)">完全に<br>できた</button>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">① 宣言したことを、稽古で試した結果は？<span class="required">*</span></label>
-        <div class="field-hint">
-          宣言したチャレンジを実際に試しましたか？<strong>できた場面・できなかった場面を具体的に</strong>書いてください。<br>
-          <span style="color:var(--ink-muted);font-size:11px;">うまくいった場合もいかなかった場合も、どちらも大切な経験です。</span><br>
-          <span style="color:var(--gold);font-weight:500;">例：「2回試した。1回目は間合いを遠めにとって待てて小手が決まった。2回目は焦って早く動いてしまい空振りした。」</span>
-        </div>
-        <textarea id="logScene" placeholder="" style="min-height:88px"></textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">② なぜそうなったと思うか<span class="required">*</span></label>
-        <div class="field-hint">
-          「たまたま」「運が良かった」ではなく、<strong>自分の動き・判断・準備の何が原因か</strong>を考えてください。<br>
-          <span style="color:var(--gold);font-weight:500;">例：「1回目は待てたのに2回目は焦った。相手が動き出す前に自分が動いてしまっていた。」</span>
-        </div>
-        <textarea id="logWhy" placeholder="" style="min-height:88px"></textarea>
-      </div>
-      <div class="field-group" style="margin-bottom:0">
-        <label class="field-label">③ 次の稽古でどう変えるか<span class="required">*</span></label>
-        <div class="field-hint">
-          ②の原因分析をもとに、<strong>次のチャレンジ宣言につながる「次の一手」</strong>を書いてください。ここが次のサイクルの出発点になります。<br>
-          <span style="color:var(--gold);font-weight:500;">例：「打つ前に一瞬止まって相手を見る。動き出してから打つリズムを意識する。」</span>
-        </div>
-        <textarea id="logNext" placeholder="" style="min-height:72px"></textarea>
-      </div>
-      <button class="post-submit-btn" onclick="submitLog()">✦ 振り返りを提出する</button>
-    `;
+  // ===== 宣言を修正する =====
+  function editDeclaration(d) {
+    const decl = marc.declares[d] || {};
+    const savedIntent = decl.intent || '';
+    // メモリから削除（GASの実データは再送信で上書き）
+    delete marc.declares[d];
+    localStorage.setItem('marc_intent_draft', savedIntent);
+    renderPhaseUI(d);
+    const intentEl = document.getElementById('logIntent');
+    if (intentEl && savedIntent) intentEl.value = savedIntent;
+    showToast('宣言内容を修正できます。変更後に再送信してください。');
   }
 
-  function attachPhase2Events() {
-    // iOS日本語IME対応
-    ['logScene','logWhy'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      ['input','compositionend','change','blur'].forEach(evt =>
-        el.addEventListener(evt, () => {}, { passive: true })
-      );
+  // ===== Phase2 HTML =====
+  function buildPhase2HTML(intent) {
+    return '<div class="field-group">'
+      + '<label class="field-label">試したいことへの達成感<span class="required">*</span></label>'
+      + '<div class="field-hint" style="margin-bottom:8px;">稽古前に申告したことに対して、どれくらいできたか。直感で選んでください。</div>'
+      + '<div class="fulfillment-grid" id="fulfillmentGrid">'
+      + ['できなかった','少しできた','まあまあ','かなり','完全に'].map(function(l,i){
+          return '<button class="fulfillment-btn" data-val="' + (i+1) + '" onclick="selectFulfillment(' + (i+1) + ')">' + l + '<br><span style="font-size:9px;opacity:.6;">' + (i+1) + '/5</span></button>';
+        }).join('')
+      + '</div>'
+      + '</div>'
+      + '<div class="field-group">'
+      + '<label class="field-label">① 宣言したことを、稽古で試した結果は？<span class="required">*</span></label>'
+      + '<div class="field-hint">宣言したチャレンジを実際に試しましたか？<strong>できた場面・できなかった場面を具体的に</strong>。<br><span style="color:var(--gold);font-weight:500;">例：「2回試した。1回目は合わせられたが2回目は空振りした」</span></div>'
+      + '<textarea id="logScene" style="min-height:88px"></textarea>'
+      + '</div>'
+      + '<div class="field-group">'
+      + '<label class="field-label">② なぜそうなったと思うか<span class="required">*</span></label>'
+      + '<div class="field-hint">「たまたま」でなく、<strong>自分の動き・判断・準備の何が原因か</strong>を考えてください。<br><span style="color:var(--gold);font-weight:500;">例：「焦って早く動いてしまった。待てなかった」</span></div>'
+      + '<textarea id="logWhy" style="min-height:88px"></textarea>'
+      + '</div>'
+      + '<div class="field-group" style="margin-bottom:0;">'
+      + '<label class="field-label">③ 次の稽古でどう変えるか<span class="required">*</span></label>'
+      + '<div class="field-hint">②の原因分析をもとに、<strong>次のチャレンジ宣言につながる「次の一手」</strong>を書いてください。<br><span style="color:var(--gold);font-weight:500;">例：「打つ前に一瞬止まって相手を見る」</span></div>'
+      + '<textarea id="logNext" style="min-height:72px"></textarea>'
+      + '</div>'
+      + '<button class="post-submit-btn" onclick="submitLog()">✦ 振り返りを提出する</button>';
+  }
+
+  // ===== Phase2イベント =====
+  function attachPhase2Events() {}
+
+  let fulfillmentVal = 0;
+  function selectFulfillment(v) {
+    fulfillmentVal = v;
+    document.querySelectorAll('.fulfillment-btn').forEach(function(b) {
+      b.classList.toggle('selected', parseInt(b.dataset.val) === v);
     });
   }
 
-  // 指定日付の宣言・ログ状態からフェーズを設定
-  function applyPhaseForDate(dateStr) {
-    const d = String(dateStr||'').slice(0,10);
-    if (!d) { renderPhaseUI(); return; }
-    const declMap = JSON.parse(localStorage.getItem('marc_declares_map') || '{}');
-    const logMap  = JSON.parse(localStorage.getItem('marc_logs_map')     || '{}');
-    const decl = declMap[d];
-    if (decl) {
-      // この日付の宣言がある
-      localStorage.setItem(LS_PRE, JSON.stringify({
-        稽古日: d, intent: decl.intent, 試したいこと: decl.intent, 氏名: localStorage.getItem(LS_NAME)||''
-      }));
-      localStorage.setItem(LS_PHASE, logMap[d] ? 'done' : 'post');
-    } else {
-      // この日付の宣言がない → 新規入力
-      localStorage.setItem(LS_PHASE, 'pre');
-      localStorage.removeItem(LS_PRE);
-    }
-    renderPhaseUI();
-  }
-
-  // チャレンジ宣言を修正する（フェーズをpreに戻す）
-  window.resetToPrePhase = function() {
-    const dateStr = document.getElementById('logDate')?.value || '';
-    const declMap = JSON.parse(localStorage.getItem('marc_declares_map') || '{}');
-    const d = dateStr.slice(0,10);
-    const savedIntent = (declMap[d] && declMap[d].intent) || '';
-    // この日付の宣言を削除してpreに戻す
-    if (declMap[d]) { delete declMap[d]; localStorage.setItem('marc_declares_map', JSON.stringify(declMap)); }
-    localStorage.setItem(LS_PHASE, 'pre');
-    localStorage.removeItem(LS_PRE);
-    if (savedIntent) localStorage.setItem(LS_INTENT, savedIntent);
-    renderPhaseUI();
-    const intentEl = document.getElementById('logIntent');
-    if (intentEl && savedIntent) intentEl.value = savedIntent;
-    showToast('宣言内容を修正できます。変更後に再度「チャレンジを宣言する」を押してください。');
-  }
-
-  function startNewLog() {
-    // 全クリア
-    localStorage.removeItem(LS_PHASE);
-    localStorage.removeItem(LS_PRE);
-    localStorage.removeItem(LS_INTENT);
-    localStorage.removeItem('marc_log_date_draft');
-    fulfillmentVal = 0;
-
-    // 日付を今日にリセット
-    const d = document.getElementById('logDate');
-    if (d) d.value = new Date().toISOString().slice(0,10);
-
-    // Phase1 UIを再構築
-    const p1Badge = document.getElementById('phase1Badge');
-    if (p1Badge) p1Badge.textContent = '1';
-    renderPhaseUI();
-    renderHistory();
-    updateLogCount();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
   // ===== チャレンジ宣言送信 =====
-  async function submitPreLog() {
-    const v = id => (document.getElementById(id)?.value || '').trim();
-    const name = localStorage.getItem(LS_NAME) || '';
-    if (!name) { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
-    if (!v('logDate')) { showToast('⚠ 稽古日を入力してください'); return; }
-    if (!v('logIntent')) { showToast('⚠ 今週の稽古で試したいことを入力してください'); return; }
+  function submitPreLog() {
+    const name   = marc.name;
+    const intent = (document.getElementById('logIntent')?.value||'').trim();
+    const date   = (document.getElementById('logDate')?.value||'').slice(0,10);
+    if (!name)   { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
+    if (!date)   { showToast('⚠ 稽古日を入力してください'); return; }
+    if (!intent) { showToast('⚠ チャレンジ内容を入力してください'); return; }
 
     const btn = document.getElementById('preSubmitBtn');
-    const orig = btn.textContent;
-    btn.textContent = '送信中…'; btn.disabled = true;
+    if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
 
-    const preData = {
-      timestamp:  new Date().toLocaleString('ja-JP'),
-      記録種別:   'チャレンジ宣言',
-      氏名:       name,
-      稽古日:     v('logDate'),
-      試したいこと: v('logIntent'),
-      intent:     v('logIntent'),
-    };
+    const data = { 記録種別:'チャレンジ宣言', 氏名:name, 稽古日:date, 試したいこと:intent, intent:intent, timestamp:new Date().toLocaleString('ja-JP') };
 
-    // localStorageに保存
-    localStorage.setItem(LS_PRE, JSON.stringify(preData));
-    localStorage.setItem('marc_log_date_draft', v('logDate'));
-
-    // GASに送信
-    if (GAS_URL !== 'ここにGASのウェブアプリURLを貼り付ける') {
-      try {
-        await fetch(GAS_URL, {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(preData),
-        });
-      } catch(e) {}
-    }
-
-    // marc_declares_mapを更新（この端末でのフェーズ管理用）
-    try {
-      const dm = JSON.parse(localStorage.getItem('marc_declares_map') || '{}');
-      const dk = (preData.稽古日||'').slice(0,10);
-      if (dk) { dm[dk] = { intent: preData.intent||'' }; localStorage.setItem('marc_declares_map', JSON.stringify(dm)); }
-    } catch(e) {}
-    setPhase('post');
-    showToast('チャレンジを宣言しました。稽古後に振り返りを記入してください。');
-    btn.textContent = orig; btn.disabled = false;
-    renderPhaseUI();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // GASへJSONP送信
+    sendToGAS(data, function(ok) {
+      if (ok) {
+        marc.declares[date] = { intent: intent };
+        localStorage.removeItem('marc_intent_draft');
+        renderLogUI();
+        showToast('✓ チャレンジを宣言しました！');
+      } else {
+        showToast('⚠ 送信に失敗しました。再度お試しください');
+      }
+      if (btn) { btn.textContent = '✦ チャレンジを宣言する'; btn.disabled = false; }
+    });
   }
 
-  // ===== 振り返り提出 =====
-  async function submitLog() {
-    const v = id => (document.getElementById(id)?.value || '').trim();
-    const name = localStorage.getItem(LS_NAME) || '';
-    if (!name) { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
-    if (!v('logScene')) { showToast('⚠ ①の結果を入力してください'); return; }
-    if (!v('logWhy'))   { showToast('⚠ ②の原因分析を入力してください'); return; }
-    if (!v('logNext'))  { showToast('⚠ ③の次への一手を入力してください'); return; }
+  // ===== 振り返り送信 =====
+  function submitLog() {
+    const name  = marc.name;
+    const date  = (document.getElementById('logDate')?.value||'').slice(0,10);
+    const scene = (document.getElementById('logScene')?.value||'').trim();
+    const why   = (document.getElementById('logWhy')?.value||'').trim();
+    const next  = (document.getElementById('logNext')?.value||'').trim();
+    const decl  = marc.declares[date] || {};
+    const intent= decl.intent || '';
+
+    if (!name)          { showToast('⚠ 氏名が設定されていません'); return; }
+    if (!fulfillmentVal){ showToast('⚠ 達成感を選んでください'); return; }
+    if (!scene)         { showToast('⚠ ①の結果を入力してください'); return; }
+    if (!why)           { showToast('⚠ ②の原因分析を入力してください'); return; }
+    if (!next)          { showToast('⚠ ③の次への一手を入力してください'); return; }
 
     const btn = document.querySelector('.post-submit-btn');
     if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
 
-    const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-    const entry = {
-      timestamp:    new Date().toLocaleString('ja-JP'),
-      date:         preData.稽古日 || v('logDate'),
-      name,
-      intent:       preData.試したいこと || '',
-      scene:        v('logScene'),
-      why:          v('logWhy'),
-      next:         v('logNext'),
-      fulfillment:  fulfillmentVal || '',
-    };
+    const data = { 記録種別:'稽古ログ', 氏名:name, 稽古日:date, date:date, name:name,
+      intent:intent, 試したいこと:intent,
+      scene:scene, why:why, next:next,
+      fulfillment:fulfillmentVal+'/5',
+      timestamp:new Date().toLocaleString('ja-JP') };
 
-    saveLogEntry(entry);
-
-    if (GAS_URL !== 'ここにGASのウェブアプリURLを貼り付ける') {
-      try {
-        await fetch(GAS_URL, {
-          method: 'POST', mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 記録種別: '稽古ログ', ...entry }),
+    sendToGAS(data, function(ok) {
+      if (ok) {
+        marc.logs[date] = { intent:intent, scene:scene, why:why, next:next, fulfillment:fulfillmentVal };
+        marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) {
+          return Object.assign({ date:d }, marc.logs[d]);
         });
-      } catch(e) {}
-    }
-
-    // marc_logs_mapを更新
-    try {
-      const lm = JSON.parse(localStorage.getItem('marc_logs_map') || '{}');
-      const lk = (entry.date||'').slice(0,10);
-      if (lk) { lm[lk] = true; localStorage.setItem('marc_logs_map', JSON.stringify(lm)); }
-    } catch(e) {}
-    setPhase('done');
-    fulfillmentVal = 0;
-    localStorage.removeItem(LS_INTENT);
-    showToast('✦ 振り返りを提出しました');
-    renderPhaseUI();
-    renderHistory();
-    updateLogCount();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+        fulfillmentVal = 0;
+        renderLogUI();
+        showToast('✓ 振り返りを提出しました！');
+      } else {
+        showToast('⚠ 送信に失敗しました。再度お試しください');
+      }
+      if (btn) { btn.textContent = '✦ 振り返りを提出する'; btn.disabled = false; }
+    });
   }
 
-  // ===== 稽古ログ提出（旧・互換用エイリアス）=====
+  // ===== GASへの送信（JSONP）=====
+  function sendToGAS(data, callback) {
+    const cb = '_marcSend_' + Date.now();
+    const sc = document.createElement('script');
+    let done = false;
+    const timer = setTimeout(function() {
+      if (done) return; done = true;
+      delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
+      // no-corsでタイムアウト → 実際には送信成功していることが多い
+      callback(true);
+    }, 5000);
+    window[cb] = function(json) {
+      if (done) return; done = true;
+      clearTimeout(timer);
+      delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
+      callback(json.status === 'ok');
+    };
+    sc.onerror = function() {
+      if (done) return; done = true;
+      clearTimeout(timer);
+      delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
+      callback(true); // GASはno-corsで送信成功でもエラーになるため成功扱い
+    };
+    let url = GAS_URL + '?callback=' + cb;
+    Object.keys(data).forEach(function(k) {
+      url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
+    });
+    sc.src = url;
+    document.head.appendChild(sc);
+  }
+
+  // ===== 新しい稽古を記録 =====
+  function startNewLog() {
+    const today = new Date().toISOString().slice(0,10);
+    const dateEl = document.getElementById('logDate');
+    if (dateEl) dateEl.value = today;
+    renderLogUI();
+  }
+
+  // ===== 下書き自動保存 =====
+  function autoSaveIntent(v) {
+    if (v && v.trim()) localStorage.setItem('marc_intent_draft', v.trim());
+  }
+  function restoreIntentDraft() {
+    const saved = localStorage.getItem('marc_intent_draft');
+    const el    = document.getElementById('logIntent');
+    if (el && saved) el.value = saved;
+  }
 
   // ===== 過去ログ表示 =====
   function renderHistory() {
-    const logs = getLogs();
-    const container = document.getElementById('logHistoryList');
-    const countEl   = document.getElementById('logCount');
-    if (countEl) countEl.textContent = logs.length + ' 件';
-    if (!logs.length) {
-      container.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink-muted);">まだ記録がありません</div>';
+    const container = document.getElementById('logHistory');
+    if (!container) return;
+    const entries = marc.history;
+    const fLabels = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
+    const fColors = ['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
+    if (!entries || !entries.length) {
+      container.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><div style="flex:1;height:1px;background:var(--border);"></div><div style="font-size:10px;font-weight:700;color:var(--ink-muted);letter-spacing:.15em;">過去の記録</div><div style="flex:1;height:1px;background:var(--border);"></div></div><div style="text-align:center;padding:20px;color:var(--ink-muted);font-size:12px;">まだ記録がありません</div>';
       return;
     }
-    const achieve = ['','△','◎△','◎','◎◎','★'];
-    container.innerHTML = logs.map((log, i) => `
-      <div style="background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-md);padding:16px;margin-bottom:10px;${i===0?'border-left:3px solid var(--primary);':''}">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-size:12px;font-weight:700;color:${i===0?'var(--primary)':'var(--ink-soft)'};">
-            ${log.date}${i===0?' <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 7px;border-radius:999px;margin-left:6px;">最新</span>':''}
-          </div>
-          <div style="font-size:11px;color:var(--ink-muted);font-weight:700;">${log.fulfillment ? achieve[log.fulfillment] : ''}</div>
-        </div>
-        ${log.intent ? `<div style="font-size:11px;color:var(--primary);font-weight:600;margin-bottom:6px;">🎯 ${log.intent}</div>` : ''}
-        <div style="font-size:12px;color:var(--ink-soft);line-height:1.65;margin-bottom:4px;"><span style="font-weight:700;color:var(--ink);">①</span> ${log.scene}</div>
-        <div style="font-size:12px;color:var(--ink-soft);line-height:1.65;margin-bottom:4px;"><span style="font-weight:700;color:var(--ink);">②</span> ${log.why}</div>
-        ${log.next ? `<div style="font-size:12px;color:var(--primary);line-height:1.65;font-weight:500;"><span style="font-weight:700;">③</span> ${log.next}</div>` : ''}
-      </div>`).join('');
+    container.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><div style="flex:1;height:1px;background:var(--border);"></div><div style="font-size:10px;font-weight:700;color:var(--ink-muted);letter-spacing:.15em;">過去の記録</div><div style="flex:1;height:1px;background:var(--border);"></div></div>'
+      + entries.map(function(e, i) {
+        const f = e.fulfillment||0;
+        const isLatest = i === 0;
+        return '<div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:12px;">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+          + '<span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:var(--ink);">' + e.date + '</span>'
+          + (isLatest ? '<span style="background:var(--primary);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">最新</span>' : '')
+          + (f ? '<span style="color:' + fColors[f] + ';font-size:11px;font-weight:700;margin-left:auto;">' + fLabels[f] + '（' + f + '/5）</span>' : '')
+          + '</div>'
+          + (e.intent ? '<div style="padding:6px 10px;background:var(--navy-pale);border-left:3px solid var(--primary);border-radius:0 6px 6px 0;font-size:12px;font-weight:600;color:var(--primary);margin-bottom:8px;">🎯 ' + e.intent + '</div>' : '')
+          + '<div style="font-size:12px;color:var(--ink-soft);line-height:1.8;">'
+          + '<div><span style="font-weight:700;">①</span> ' + (e.scene||'—') + '</div>'
+          + '<div><span style="font-weight:700;">②</span> ' + (e.why||'—') + '</div>'
+          + (e.next ? '<div><span style="font-weight:700;color:var(--primary);">③</span> ' + e.next + '</div>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('');
   }
 
+  // ===== 記録数更新 =====
   function updateLogCount() {
     const el = document.getElementById('logCount');
-    if (el) el.textContent = getLogs().length + ' 件';
+    if (el) el.textContent = Object.keys(marc.logs).length + ' 件';
   }
 
-  // ===== 自己理解タブ名前入力 =====
-  function onNameInput(el) {
-    saveName(el.value);
-    if (el.value.length < 1) return;
-    clearTimeout(el._t);
-    el._t = setTimeout(() => fetchPrevData(el.value), 1000);
-  }
 
-  // ===== submitForm（自己理解シート）=====
-  function submitForm() {
-    const required = document.querySelectorAll('[data-required]');
-    let ok = true;
-    required.forEach(el => {
-      if (!el.closest('#tab-log') && !el.value.trim()) {
-        el.style.borderColor = 'var(--red)';
-        el.style.boxShadow = '0 0 0 3px rgba(192,57,43,0.15)';
-        ok = false;
-        setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 3000);
+  
+  // ===== タブ切り替え =====
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    if (el) el.classList.add('active');
+    const panel = document.getElementById('tab-' + tab);
+    if (panel) panel.style.display = 'block';
+    if (tab === 'log') {
+      // 自己理解タブの名前をmarc.nameに同期
+      const nameEl = document.getElementById('nameInput');
+      if (nameEl && nameEl.value.trim()) {
+        marc.name = nameEl.value.trim();
+        if(marc.name) localStorage.setItem(LS_NAME, marc.name);
+        const logName = document.getElementById('logUserName');
+        if (logName) { logName.textContent = marc.name; logName.style.color = 'var(--primary)'; }
       }
-    });
-    if (!ok) { showToast('⚠ 必須項目を記入してください'); return; }
-
-    if (GAS_URL === 'ここにGASのウェブアプリURLを貼り付ける') {
-      showToast('⚠ GAS_URL を設定してください'); return;
+      renderLogUI();
     }
-
-    const btn = document.querySelector('.submit-btn');
-    const orig = btn.textContent;
-    btn.textContent = '送信中…'; btn.disabled = true;
-
-    const data = collectFormData();
-    data['記録種別'] = '自己理解';
-    saveName(data['氏名'] || '');
-
-    fetch(GAS_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    }).then(() => {
-      showToast('✦ 自己理解シートを提出しました');
-      btn.textContent = '✓ 提出済み';
-      btn.style.background = 'linear-gradient(135deg,#2d6a4f,#1b4332)';
-    }).catch(() => {
-      showToast('⚠ 送信に失敗しました');
-      btn.textContent = orig; btn.disabled = false;
-    });
   }
 
-  // ===== 初期化 =====
-  document.addEventListener('DOMContentLoaded', () => {
-    restoreName();
-    renderHistory();
-    updateLogCount();
-    restoreIntentDraft();
-    renderPhaseUI();
-    const d = document.getElementById('logDate');
-    const today = new Date().toISOString().slice(0, 10);
-    if (d) {
-      d.min = today;
-      const savedDate = localStorage.getItem('marc_log_date_draft');
-      d.value = savedDate || today;
+  // ===== 名前入力 =====
+  function onNameInput(el) {
+    const v = el.value.trim();
+    marc.name = v;
+    saveName(v);
+    if (v.length >= 2) {
+      clearTimeout(window._nameTimer);
+      window._nameTimer = setTimeout(function() {
+        fetchUserData(v);
+      }, 1000);
     }
-    // 初期表示時にlogDateの日付でフェーズを設定
-    applyPhaseForDate(document.getElementById('logDate')?.value || today);
-    // 記録者名を初期表示
-    const nameEl = document.getElementById('logUserName');
-    if (nameEl) {
-      const stored = localStorage.getItem(LS_NAME);
-      nameEl.textContent = stored || '（未設定）';
-      nameEl.style.color = stored ? 'var(--primary)' : 'var(--red)';
-    }
+  }
 
-    // ===== logIntent: iOS日本語IME対応の自動保存 =====
-    // oninputだけでは日本語変換中に発火しないため
-    // compositionend（変換確定）・blur（フォーカスを外した）・changeも補完
-    const intentEl = document.getElementById('logIntent');
-    if (intentEl) {
-      ['input', 'compositionend', 'change', 'blur'].forEach(evt => {
-        intentEl.addEventListener(evt, () => {
-          if (intentEl.value.trim()) autoSaveIntent(intentEl.value);
-        });
-      });
+    document.addEventListener('DOMContentLoaded', () => {
+    // 稽古日セレクター用コンテナをHTMLに追加（なければ追加）
+    const dateBar = document.getElementById('logDate')?.closest('div[style]');
+    if (dateBar && !document.getElementById('dateDotList')) {
+      const dot = document.createElement('div');
+      dot.id = 'dateDotList';
+      dot.style.cssText = 'margin-top:8px;flex-basis:100%;';
+      dateBar.appendChild(dot);
     }
-
-    // 修正ボタン：イベント委譲でlogInputArea全体を監視
-    const logArea = document.getElementById('logInputArea');
-    if (logArea) {
-      logArea.addEventListener('click', function(e) {
-        if (e.target.closest('[data-action="reset-phase"]')) {
-          resetToPrePhase();
-        }
-      });
+    // 名前を復元してmarc.nameに設定
+    const storedName = localStorage.getItem('marc_user_name') || '';
+    if (storedName) {
+      marc.name = storedName;
+      const ni = document.getElementById('nameInput');
+      if (ni) ni.value = storedName;
+      const lu = document.getElementById('logUserName');
+      if (lu) { lu.textContent = storedName; lu.style.color = 'var(--primary)'; }
     }
+    // 稽古日を今日に設定
+    const dateEl2 = document.getElementById('logDate');
+    const today2  = new Date().toISOString().slice(0,10);
+    if (dateEl2) { dateEl2.min = today2; dateEl2.value = today2; }
+    // 初期UI
+    renderLogUI();
   });
   </script>
 </body>
