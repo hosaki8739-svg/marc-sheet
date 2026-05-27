@@ -1993,17 +1993,21 @@
   const LS_PRE   = 'marc_log_pre';   // チャレンジ宣言データ
 
   function getPhase() {
-    // 保存されているフェーズの稽古日と現在の稽古日が一致しないならリセット
     const saved = localStorage.getItem(LS_PHASE) || 'pre';
-    const savedDate = localStorage.getItem('marc_log_date_draft') || '';
-    const currentDate = document.getElementById('logDate')?.value || '';
-    if(saved !== 'pre' && savedDate && currentDate && savedDate !== currentDate) {
-      // 日付が変わった → 新しい稽古なのでリセット
-      localStorage.setItem(LS_PHASE, 'pre');
-      localStorage.removeItem(LS_PRE);
-      localStorage.removeItem(LS_INTENT);
-      return 'pre';
-    }
+    if(saved === 'pre') return 'pre';
+    // LS_PREに保存された稽古日と現在の稽古日を比較
+    try {
+      const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
+      const savedPracticeDate = preData['稽古日'] || '';
+      const currentDate = document.getElementById('logDate')?.value || '';
+      if(savedPracticeDate && currentDate && savedPracticeDate !== currentDate) {
+        // 稽古日が違う → 別の稽古なのでリセット
+        localStorage.setItem(LS_PHASE, 'pre');
+        localStorage.removeItem(LS_PRE);
+        localStorage.removeItem(LS_INTENT);
+        return 'pre';
+      }
+    } catch(e) {}
     return saved;
   }
   function setPhase(p) {
