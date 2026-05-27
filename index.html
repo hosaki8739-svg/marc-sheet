@@ -1118,10 +1118,10 @@
   <!-- TAB BAR -->
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('profile', this)">
-      👤 自己理解（課題の言語化）
+      👤 自己理解（現在地）
     </button>
     <button class="tab-btn" onclick="switchTab('log', this)">
-      ⚔ 稽古ログ（経験の言語化）
+      ⚔ 稽古ログ（目的地）
     </button>
   </div>
 
@@ -1224,7 +1224,7 @@
 
       <!-- 個人目標 -->
       <div class="field-group">
-        <label class="field-label" for="kojinMokuhyo">今シーズン、稽古を通して身につけたいこと<span class="required">*</span></label>
+        <label class="field-label" for="kojinMokuhyo">稽古を通して身につけたいこと<span class="required">*</span></label>
         <div class="field-hint">
           「試合に勝つ」ではなく、<strong>「どんな剣道ができるようになりたいか」</strong>を書いてください。稽古の中で変えていける、具体的な行動・技術の言葉で書くほど、AIの提案が的確になります。<br>
           <span style="color:var(--gold);font-weight:500;">例：「出ばな小手を意図して打てるようになる」「攻めで相手を動かしてから打つ剣道を身につける」</span>
@@ -1287,14 +1287,14 @@
             <div class="timeline-step-badge active" id="phase1Badge">1</div>
             <div class="timeline-title">
               <div class="timeline-title-main" style="color:var(--primary);">稽古前 — チャレンジ宣言</div>
-              <div class="timeline-title-sub" style="color:var(--primary);">稽古が始まる前に宣言してください</div>
+              <div class="timeline-title-sub" style="color:var(--primary);">今の自分にとって、少し頑張れば届く内容になるよう記入</div>
             </div>
             <div class="timeline-status-tag" id="phase1StatusTag"
               style="background:var(--primary);color:#fff;">入力中</div>
           </div>
           <div class="timeline-body" id="phase1Body">
             <div class="field-group">
-              <label class="field-label">今週の稽古で試したいこと<span class="required">*</span></label>
+              <label class="field-label">次回の稽古で試したいこと<span class="required">*</span></label>
               <div class="field-hint">
                 <strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br>
                 <span style="color:var(--ink-muted);font-size:11px;">状況（いつ・どんな場面で）＋ 動作（何をする）をセットで。</span><br>
@@ -1942,7 +1942,7 @@
       p1Tag.style.cssText = 'background:var(--primary);color:#fff;';
       p1Body.className = 'timeline-body';
       p1Body.innerHTML = '<div class="field-group">'
-        + '<label class="field-label">今週の稽古で試したいこと<span class="required">*</span></label>'
+        + '<label class="field-label">次回の稽古で試したいこと<span class="required">*</span></label>'
         + '<div class="field-hint"><strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br>'
         + '<span style="color:var(--ink-muted);font-size:11px;">状況（いつ・どんな場面で）＋ 動作（何をする）をセットで。</span><br>'
         + '<span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span><br>'
