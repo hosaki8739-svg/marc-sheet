@@ -2131,7 +2131,7 @@
         + '<span style="font-size:10px;color:var(--ink-muted);">' + (preData.稽古日||'') + '</span>'
         + '</div>'
         + '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
-        + (preData.intent || '—')
+        + (preData.intent || preData['試したいこと'] || '—')
         + '</div>'
         + '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓ <button onclick="resetToPrePhase()" style="font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer">✎ 修正</button></div>';
       p1Body.className = 'timeline-body';
@@ -2165,7 +2165,7 @@
         + '<span style="font-size:12px;font-weight:700;color:#059669;">✓ チャレンジ宣言完了</span>'
         + '</div>'
         + '<div style="padding:9px 12px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 6px 6px 0;font-size:13px;font-weight:600;color:var(--primary);line-height:1.6;">'
-        + (preData.intent || '—') + '</div>';
+        + (preData.intent || preData['試したいこと'] || '—') + '</div>';
       p1Body.className = 'timeline-body';
 
       p2Card.className  = 'timeline-card phase-done';
@@ -2233,7 +2233,7 @@
   }
 
   // チャレンジ宣言を修正する（フェーズをpreに戻す）
-  function resetToPrePhase() {
+  window.resetToPrePhase = function resetToPrePhase() {
     const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
     const savedIntent = preData.intent || preData['試したいこと'] || '';
     // フェーズをリセット
@@ -2287,6 +2287,7 @@
       氏名:       name,
       稽古日:     v('logDate'),
       試したいこと: v('logIntent'),
+      intent:     v('logIntent'),
     };
 
     // localStorageに保存
