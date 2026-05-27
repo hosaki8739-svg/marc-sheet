@@ -1816,16 +1816,17 @@
         }));
         localStorage.setItem('marc_log_date_draft', declDate);
 
-        // 稽古日をUIに反映
-        const dateEl = document.getElementById('logDate');
-        if (dateEl && declDate) dateEl.value = declDate;
-
-        // ③ 最新宣言日の稽古ログがあるか確認してフェーズ設定
-        const hasLog = logs.some(r => {
-          const d = (r.date || r['稽古日'] || '').replace(/\//g,'-').slice(0,10);
-          return d === declDate;
-        });
-        setPhase(hasLog ? 'done' : 'post');
+        // 稽古日の上書きはしない（ユーザーが自分で設定した日付を優先）
+        // ③ 現在のlogDateと宣言日が一致する場合のみフェーズを設定
+        const currentLogDate = (document.getElementById('logDate')?.value || '').slice(0,10);
+        if(currentLogDate && currentLogDate === declDate) {
+          const hasLog = logs.some(r => {
+            const d = (r.date || r['稽古日'] || '').replace(/\//g,'-').slice(0,10);
+            return d === declDate;
+          });
+          setPhase(hasLog ? 'done' : 'post');
+        }
+        // logDateが異なる場合はphase='pre'のまま（ユーザーが新しい稽古日を入力中）
       }
 
       // ④ 全稽古ログ履歴を復元
@@ -2069,19 +2070,16 @@
   function getPhase() {
     const saved = localStorage.getItem(LS_PHASE) || 'pre';
     if(saved === 'pre') return 'pre';
-    // LS_PREに保存された稽古日と現在の稽古日を比較
+    // 必ずlogDateとLS_PREの稽古日を比較する
     try {
       const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-      const savedPracticeDate = preData['稽古日'] || '';
-      const currentDate = document.getElementById('logDate')?.value || '';
-      if(savedPracticeDate && currentDate && savedPracticeDate !== currentDate) {
-        // 稽古日が違う → 別の稽古なのでリセット
-        localStorage.setItem(LS_PHASE, 'pre');
-        localStorage.removeItem(LS_PRE);
-        localStorage.removeItem(LS_INTENT);
-        return 'pre';
+      const savedDate  = (preData['稽古日'] || '').slice(0,10);
+      const currentDate = (document.getElementById('logDate')?.value || '').slice(0,10);
+      // どちらかが空、または一致しない場合は必ずpre
+      if(!savedDate || !currentDate || savedDate !== currentDate) {
+        return 'pre'; // リセットはしない（別日付の宣言データは保持）
       }
-    } catch(e) {}
+    } catch(e) { return 'pre'; }
     return saved;
   }
   function setPhase(p) {
