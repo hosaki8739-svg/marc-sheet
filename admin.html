@@ -853,20 +853,41 @@ function calcNextScore(text) {
   return Math.max(1, Math.min(5, s));
 }
 
-// ── サイクル接続（③→次の宣言）──
-function calcCycleConn(nextText, nextIntent) {
-  if (!nextText || !nextIntent) return 'unknown';
+// ── サイクル接続（達成感×テーマ移行で判定）──
+// 設計根拠：
+//   達成感4〜5で新テーマ → 正常な成長的発展（high）
+//   達成感4〜5で同テーマ → さらなる深化（high）
+//   達成感1〜3で同テーマ → 正しい継続（high）
+//   達成感1〜3で別テーマ → 逃避の可能性（low）
+//   ③が空              → サイクル未閉（unknown）
+function calcCycleConn(nextText, nextIntent, latestScore) {
+  if (!nextText) return 'unknown';  // ③未記入はサイクル未閉
+  if (!nextIntent) return 'unknown'; // 次の宣言なし
+
+  // キーワード一致で「同テーマか」を判定
   const keywords = [];
   for (let i = 0; i < nextText.length - 1; i++) {
     const w2 = nextText.slice(i, i+2);
     const w3 = nextText.slice(i, i+3);
-    if (/[\u4e00-\u9fff\u3040-\u309f]{2}/.test(w2)) keywords.push(w2);
-    if (/[\u4e00-\u9fff\u3040-\u309f]{3}/.test(w3)) keywords.push(w3);
+    if (/[一-鿿぀-ゟ]{2}/.test(w2)) keywords.push(w2);
+    if (/[一-鿿぀-ゟ]{3}/.test(w3)) keywords.push(w3);
   }
   const hits = keywords.filter(w => nextIntent.includes(w)).length;
-  if (hits >= 3) return 'high';
-  if (hits >= 1) return 'medium';
-  return 'low';
+  const sameTheme = hits >= 2;
+  const score = latestScore || 0;
+
+  if (score >= 4) {
+    // 達成感高：テーマ移行は正常な成長。同テーマでも発展。常にhigh
+    return 'high';
+  } else if (score >= 3) {
+    // 達成感中：同テーマ継続が望ましい
+    return sameTheme ? 'high' : 'medium';
+  } else if (score >= 1) {
+    // 達成感低：同テーマ継続なら正しい深化、別テーマなら逃避の可能性
+    return sameTheme ? 'high' : 'low';
+  }
+  // スコアなし
+  return sameTheme ? 'medium' : 'low';
 }
 
 // ── テーマ深化 ──
@@ -880,7 +901,9 @@ function calcThemeDepth(name) {
     const ni  = rows[i+1].intent || rows[i+1]['試したいこと'] || '';
     if (nx && ni) {
       total++;
-      const conn = calcCycleConn(nx, ni);
+      // テーマ深化は前回の達成感を考慮して判定
+      const prevScore = getScore(rows[i]) || 0;
+      const conn = calcCycleConn(nx, ni, prevScore);
       if (conn === 'high' || conn === 'medium') deepening++;
     }
   }
@@ -1032,7 +1055,7 @@ function analyzeCoaching(){
     const latestScore  = getScore(r);
     const prevScore    = prevScoreMap[name] || 0;
     const nextScore    = calcNextScore(nextTxt);
-    const cycleConn    = calcCycleConn(nextTxt, curIntent);
+    const cycleConn    = calcCycleConn(nextTxt, curIntent, latestScore);
     const themeDepth   = calcThemeDepth(name);
     const emotion      = calcEmotion(scene, why);
     const negWords     = NEG_WORDS.filter(w => (scene + why).includes(w));
