@@ -2053,34 +2053,12 @@
   const LS_PRE   = 'marc_log_pre';   // チャレンジ宣言データ
 
   function onLogDateChange() {
-    // 日付が変わったらフェーズをリセットして再評価
     const dateEl = document.getElementById('logDate');
-    const newDate = dateEl?.value || '';
-    const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-    const savedDate = preData['稽古日'] || '';
-    // 保存済み稽古日と違う日付が選ばれたらリセット
-    if (savedDate && newDate !== savedDate) {
-      localStorage.setItem(LS_PHASE, 'pre');
-      localStorage.removeItem(LS_PRE);
-      localStorage.removeItem(LS_INTENT);
-    }
-    renderPhaseUI();
+    applyPhaseForDate(dateEl?.value || '');
   }
 
   function getPhase() {
-    const saved = localStorage.getItem(LS_PHASE) || 'pre';
-    if(saved === 'pre') return 'pre';
-    // 必ずlogDateとLS_PREの稽古日を比較する
-    try {
-      const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-      const savedDate  = (preData['稽古日'] || '').slice(0,10);
-      const currentDate = (document.getElementById('logDate')?.value || '').slice(0,10);
-      // どちらかが空、または一致しない場合は必ずpre
-      if(!savedDate || !currentDate || savedDate !== currentDate) {
-        return 'pre'; // リセットはしない（別日付の宣言データは保持）
-      }
-    } catch(e) { return 'pre'; }
-    return saved;
+    return localStorage.getItem(LS_PHASE) || 'pre';
   }
   function setPhase(p) {
     localStorage.setItem(LS_PHASE, p);
@@ -2135,11 +2113,11 @@
         + '</div>'
         + '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓ <button data-action="reset-phase" style="font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer">✎ 修正</button></div>';
       p1Body.className = 'timeline-body';
-      // 修正ボタンのイベント
-      setTimeout(function(){
-        const editBtn = document.getElementById('editDeclBtn');
-        if(editBtn) editBtn.addEventListener('click', resetToPrePhase);
-      }, 0);
+      // 修正ボタンに直接リスナーを追加
+      requestAnimationFrame(function() {
+        const editBtn = p1Body.querySelector('[data-action="reset-phase"]');
+        if (editBtn) editBtn.addEventListener('click', window.resetToPrePhase);
+      });
 
       // Phase2をアクティブに
       p2Card.className  = 'timeline-card phase-active';
@@ -2232,19 +2210,41 @@
     });
   }
 
+  // 指定日付の宣言・ログ状態からフェーズを設定
+  function applyPhaseForDate(dateStr) {
+    const d = String(dateStr||'').slice(0,10);
+    if (!d) { renderPhaseUI(); return; }
+    const declMap = JSON.parse(localStorage.getItem('marc_declares_map') || '{}');
+    const logMap  = JSON.parse(localStorage.getItem('marc_logs_map')     || '{}');
+    const decl = declMap[d];
+    if (decl) {
+      // この日付の宣言がある
+      localStorage.setItem(LS_PRE, JSON.stringify({
+        稽古日: d, intent: decl.intent, 試したいこと: decl.intent, 氏名: localStorage.getItem(LS_NAME)||''
+      }));
+      localStorage.setItem(LS_PHASE, logMap[d] ? 'done' : 'post');
+    } else {
+      // この日付の宣言がない → 新規入力
+      localStorage.setItem(LS_PHASE, 'pre');
+      localStorage.removeItem(LS_PRE);
+    }
+    renderPhaseUI();
+  }
+
   // チャレンジ宣言を修正する（フェーズをpreに戻す）
-  window.resetToPrePhase = function resetToPrePhase() {
-    const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
-    const savedIntent = preData.intent || preData['試したいこと'] || '';
-    // フェーズをリセット
+  window.resetToPrePhase = function() {
+    const dateStr = document.getElementById('logDate')?.value || '';
+    const declMap = JSON.parse(localStorage.getItem('marc_declares_map') || '{}');
+    const d = dateStr.slice(0,10);
+    const savedIntent = (declMap[d] && declMap[d].intent) || '';
+    // この日付の宣言を削除してpreに戻す
+    if (declMap[d]) { delete declMap[d]; localStorage.setItem('marc_declares_map', JSON.stringify(declMap)); }
     localStorage.setItem(LS_PHASE, 'pre');
     localStorage.removeItem(LS_PRE);
-    // 入力内容は保持して復元
-    if(savedIntent) localStorage.setItem(LS_INTENT, savedIntent);
+    if (savedIntent) localStorage.setItem(LS_INTENT, savedIntent);
     renderPhaseUI();
-    // 入力欄に前の内容を復元
     const intentEl = document.getElementById('logIntent');
-    if(intentEl && savedIntent) intentEl.value = savedIntent;
+    if (intentEl && savedIntent) intentEl.value = savedIntent;
     showToast('宣言内容を修正できます。変更後に再度「チャレンジを宣言する」を押してください。');
   }
 
@@ -2305,6 +2305,12 @@
       } catch(e) {}
     }
 
+    // marc_declares_mapを更新（この端末でのフェーズ管理用）
+    try {
+      const dm = JSON.parse(localStorage.getItem('marc_declares_map') || '{}');
+      const dk = (preData.稽古日||'').slice(0,10);
+      if (dk) { dm[dk] = { intent: preData.intent||'' }; localStorage.setItem('marc_declares_map', JSON.stringify(dm)); }
+    } catch(e) {}
     setPhase('post');
     showToast('チャレンジを宣言しました。稽古後に振り返りを記入してください。');
     btn.textContent = orig; btn.disabled = false;
@@ -2348,6 +2354,12 @@
       } catch(e) {}
     }
 
+    // marc_logs_mapを更新
+    try {
+      const lm = JSON.parse(localStorage.getItem('marc_logs_map') || '{}');
+      const lk = (entry.date||'').slice(0,10);
+      if (lk) { lm[lk] = true; localStorage.setItem('marc_logs_map', JSON.stringify(lm)); }
+    } catch(e) {}
     setPhase('done');
     fulfillmentVal = 0;
     localStorage.removeItem(LS_INTENT);
