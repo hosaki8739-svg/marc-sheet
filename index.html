@@ -1773,20 +1773,42 @@
   // ===== localStorage ユーティリティ =====
   function saveName(v) { if(v) localStorage.setItem(LS_NAME, v); }
   function applyPrevData(data) {
-    // 自己理解タブに値をセット
-    const fields = {
-      '学年':'grade','組':'kumi','段位級':'rankSelect','剣道歴':'kendoReki',
-      '利き手構え':'handedness','得意技':'tokui','今の課題感':'issue','個人目標':'goal'
+    // 自己理解タブに値をセット（実際のHTML IDに合わせる）
+    const setVal = function(id, val) {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== '') {
+        el.value = val;
+        // changeイベントを発火してupdateProgressに通知
+        el.dispatchEvent(new Event('change'));
+        el.dispatchEvent(new Event('input'));
+      }
     };
-    Object.keys(fields).forEach(function(k) {
-      const el = document.getElementById(fields[k]);
-      if (el && data[k]) el.value = data[k];
-    });
+    setVal('gakuNenSelect', data['学年']);
+    setVal('kumiInput',     data['組']);
+    setVal('dankyuSelect',  data['段位級']);
+    setVal('kendoReki',     data['剣道歴']);
+    setVal('kikiteSelect',  data['利き手構え']);
+    setVal('kadaikan',      data['今の課題感']);
+    setVal('kojinMokuhyo',  data['個人目標']);
+
+    // 得意技チェックボックス
+    if (data['得意技']) {
+      const wazas = String(data['得意技']).split(/[・,、]+/);
+      document.querySelectorAll('.waza-tag').forEach(function(tag) {
+        if (wazas.some(function(w){ return tag.textContent.trim().includes(w.trim()); })) {
+          tag.classList.add('selected');
+        }
+      });
+    }
+
     // BARSスコア
     ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(function(key) {
-      const v = data['自己評価_'+key];
-      if (v) setBarsValue(key, parseInt(v)||0);
+      const v = parseInt(data['自己評価_'+key])||0;
+      if (v) setBarsValue(key, v);
     });
+
+    // 進捗を更新
+    setTimeout(updateProgress, 100);
   }
 
   const marc = {
