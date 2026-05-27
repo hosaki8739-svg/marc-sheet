@@ -1778,131 +1778,84 @@
     restoreTimer = setTimeout(() => fetchPrevData(normalizedName), 800);
   }
 
+  // GASから全データを1回で取得して復元
   function fetchPrevData(name) {
-    const cbName = 'gasCallback_' + Date.now();
-    const script = document.createElement('script');
+    const cb = 'gasUser_' + Date.now();
+    const sc = document.createElement('script');
 
-    window[cbName] = function(json) {
-      delete window[cbName];
-      document.head.removeChild(script);
+    window[cb] = function(json) {
+      delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
       if (json.status !== 'ok') return;
-      applyPrevData(json.data);
-      showToast('📋 ' + name + ' さんの前回データを復元しました');
-      // プロフィール復元後、チャレンジ宣言・稽古ログの最新状態も復元
-      restorePhaseFromGAS(name);
-    };
 
-    script.src = GAS_URL + '?name=' + encodeURIComponent(name) + '&callback=' + cbName;
-    script.onerror = function() {
-      delete window[cbName];
-      document.head.removeChild(script);
-    };
-    document.head.appendChild(script);
-  }
-
-  // GASからチャレンジ宣言・稽古ログを取得してフェーズを復元
-  function restorePhaseFromGAS(name) {
-    const cbD = 'gasDeclare_' + Date.now();
-    const scD = document.createElement('script');
-    window[cbD] = function(json) {
-      delete window[cbD];
-      try { document.head.removeChild(scD); } catch(e) {}
-      if (json.status !== 'ok' || !json.rows || !json.rows.length) return;
-
-      // この部員の最新チャレンジ宣言を探す
-      const myDecls = json.rows.filter(r => (r['氏名']||r.name||'') === name);
-      if (!myDecls.length) return;
-
-      // 最新の宣言を取得
-      myDecls.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
-      const latestDecl = myDecls[0];
-      const declDate = latestDecl['稽古日'] || latestDecl.date || '';
-      const declIntent = latestDecl['試したいこと'] || latestDecl.intent || '';
-
-      // localStorageのLS_PREに保存されているdateと比較
-      const currentPhase = localStorage.getItem(LS_PHASE) || 'pre';
-      // すでにphase管理されていれば上書きしない
-      if (currentPhase !== 'pre') return;
-
-      // GASに宣言がある → phaseをpostに復元
-      const preData = {
-        timestamp: latestDecl.timestamp || '',
-        記録種別: 'チャレンジ宣言',
-        氏名: name,
-        稽古日: declDate,
-        試したいこと: declIntent,
-        intent: declIntent,
-      };
-      localStorage.setItem(LS_PRE, JSON.stringify(preData));
-      localStorage.setItem('marc_log_date_draft', declDate);
-
-      // 稽古日も更新
-      const dateEl = document.getElementById('logDate');
-      if (dateEl && declDate) dateEl.value = declDate;
-
-      // 稽古ログも確認してphase=doneかチェック
-      checkLogFromGAS(name, declDate);
-    };
-    scD.onerror = function() {
-      delete window[cbD];
-      try { document.head.removeChild(scD); } catch(e) {}
-    };
-    scD.src = GAS_URL + '?action=getAll&type=' + encodeURIComponent('チャレンジ宣言') + '&callback=' + cbD;
-    document.head.appendChild(scD);
-  }
-
-  function checkLogFromGAS(name, declDate) {
-    const cbR = 'gasLog_' + Date.now();
-    const scR = document.createElement('script');
-    window[cbR] = function(json) {
-      delete window[cbR];
-      try { document.head.removeChild(scR); } catch(e) {}
-      if (json.status !== 'ok' || !json.rows) return;
-
-      // この部員の全稽古ログを取得
-      const myLogs = json.rows.filter(r => (r['氏名']||r.name||'') === name);
-
-      // 当日分のログでフェーズを判定
-      const todayLogs = myLogs.filter(r => {
-        const d = (r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
-        return d === declDate;
-      });
-
-      if (todayLogs.length > 0) {
-        setPhase('done');
-      } else {
-        setPhase('post');
+      // ① 自己理解データを復元
+      if (json.data && Object.keys(json.data).length > 0) {
+        applyPrevData(json.data);
+        showToast('📋 ' + name + ' さんのデータを復元しました');
       }
-      renderPhaseUI();
 
-      // ===== 全履歴をlocalStorageに復元して表示 =====
-      if (myLogs.length > 0) {
-        // GASのデータをlocalStorageのフォーマットに変換
-        const entries = myLogs.map(r => ({
-          timestamp: r.timestamp || '',
-          date:      (r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10),
-          name:      name,
-          intent:    r.intent || r['試したいこと'] || '',
-          scene:     r.scene  || r['印象に残った場面'] || '',
-          why:       r.why    || r['なぜそうなったか'] || '',
-          next:      r.next   || r['次への一手'] || '',
-          fulfillment: parseInt(String(r.fulfillment||'').replace('/5','')) || 0,
+      // ② チャレンジ宣言からフェーズを復元
+      const declares = json.declares || [];
+      const logs     = json.logs     || [];
+
+      if (declares.length > 0) {
+        // 最新の宣言
+        declares.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
+        const latest    = declares[0];
+        const declDate  = (latest['稽古日'] || latest.date || '').replace(/\//g,'-').slice(0,10);
+        const declIntent= latest['試したいこと'] || latest.intent || '';
+
+        // LS_PREに保存
+        localStorage.setItem(LS_PRE, JSON.stringify({
+          timestamp: latest.timestamp || '',
+          記録種別: 'チャレンジ宣言',
+          氏名: name,
+          稽古日: declDate,
+          試したいこと: declIntent,
+          intent: declIntent,
         }));
-        // 日付降順にソート
-        entries.sort((a,b) => (b.date||'').localeCompare(a.date||''));
-        // localStorageに保存（既存のローカルデータより優先）
-        localStorage.setItem(LS_LOGS, JSON.stringify(entries));
-        // 表示を更新
-        renderHistory();
-        updateLogCount();
+        localStorage.setItem('marc_log_date_draft', declDate);
+
+        // 稽古日をUIに反映
+        const dateEl = document.getElementById('logDate');
+        if (dateEl && declDate) dateEl.value = declDate;
+
+        // ③ 最新宣言日の稽古ログがあるか確認してフェーズ設定
+        const hasLog = logs.some(r => {
+          const d = (r.date || r['稽古日'] || '').replace(/\//g,'-').slice(0,10);
+          return d === declDate;
+        });
+        setPhase(hasLog ? 'done' : 'post');
       }
+
+      // ④ 全稽古ログ履歴を復元
+      if (logs.length > 0) {
+        const entries = logs.map(r => ({
+          timestamp:   r.timestamp || '',
+          date:        (r.date || r['稽古日'] || '').replace(/\//g,'-').slice(0,10),
+          name:        name,
+          intent:      r.intent  || r['試したいこと']   || '',
+          scene:       r.scene   || r['印象に残った場面'] || '',
+          why:         r.why     || r['なぜそうなったか'] || '',
+          next:        r.next    || r['次への一手']      || '',
+          fulfillment: parseInt(String(r.fulfillment || '').replace('/5','')) || 0,
+        })).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+        localStorage.setItem(LS_LOGS, JSON.stringify(entries));
+      }
+
+      // ⑤ UIを一括更新
+      renderPhaseUI();
+      renderHistory();
+      updateLogCount();
     };
-    scR.onerror = function() {
-      delete window[cbR];
-      try { document.head.removeChild(scR); } catch(e) {}
+
+    sc.onerror = function() {
+      delete window[cb];
+      try { document.head.removeChild(sc); } catch(e) {}
     };
-    scR.src = GAS_URL + '?action=getAll&type=' + encodeURIComponent('稽古ログ') + '&callback=' + cbR;
-    document.head.appendChild(scR);
+
+    sc.src = GAS_URL + '?name=' + encodeURIComponent(name) + '&callback=' + cb;
+    document.head.appendChild(sc);
   }
 
   function applyPrevData(data) {
