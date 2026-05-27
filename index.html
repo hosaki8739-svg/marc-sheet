@@ -1264,7 +1264,7 @@
         <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">稽古を行った当日の日付を入力してください（翌日に記入する場合も稽古日を変えないこと）</div>
-          <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;">
+          <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;" onchange="onLogDateChange()">
         </div>
         <div style="flex-shrink:0;text-align:right;">
           <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
@@ -2051,6 +2051,21 @@
   const LS_PHASE = 'marc_log_phase';
   const LS_PRE   = 'marc_log_pre';   // チャレンジ宣言データ
 
+  function onLogDateChange() {
+    // 日付が変わったらフェーズをリセットして再評価
+    const dateEl = document.getElementById('logDate');
+    const newDate = dateEl?.value || '';
+    const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
+    const savedDate = preData['稽古日'] || '';
+    // 保存済み稽古日と違う日付が選ばれたらリセット
+    if (savedDate && newDate !== savedDate) {
+      localStorage.setItem(LS_PHASE, 'pre');
+      localStorage.removeItem(LS_PRE);
+      localStorage.removeItem(LS_INTENT);
+    }
+    renderPhaseUI();
+  }
+
   function getPhase() {
     const saved = localStorage.getItem(LS_PHASE) || 'pre';
     if(saved === 'pre') return 'pre';
@@ -2120,8 +2135,13 @@
         + '<div style="padding:10px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">'
         + (preData.intent || '—')
         + '</div>'
-        + '<div style="font-size:11px;color:var(--ink-muted);margin-top:8px;">稽古後に振り返りを記入してください ↓</div>';
+        + '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted)">稽古後に振り返りを記入してください ↓ <button onclick="resetToPrePhase()" style="font-size:11px;padding:3px 10px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer">✎ 修正</button></div>';
       p1Body.className = 'timeline-body';
+      // 修正ボタンのイベント
+      setTimeout(function(){
+        const editBtn = document.getElementById('editDeclBtn');
+        if(editBtn) editBtn.addEventListener('click', resetToPrePhase);
+      }, 0);
 
       // Phase2をアクティブに
       p2Card.className  = 'timeline-card phase-active';
@@ -2212,6 +2232,22 @@
         el.addEventListener(evt, () => {}, { passive: true })
       );
     });
+  }
+
+  // チャレンジ宣言を修正する（フェーズをpreに戻す）
+  function resetToPrePhase() {
+    const preData = JSON.parse(localStorage.getItem(LS_PRE) || '{}');
+    const savedIntent = preData.intent || preData['試したいこと'] || '';
+    // フェーズをリセット
+    localStorage.setItem(LS_PHASE, 'pre');
+    localStorage.removeItem(LS_PRE);
+    // 入力内容は保持して復元
+    if(savedIntent) localStorage.setItem(LS_INTENT, savedIntent);
+    renderPhaseUI();
+    // 入力欄に前の内容を復元
+    const intentEl = document.getElementById('logIntent');
+    if(intentEl && savedIntent) intentEl.value = savedIntent;
+    showToast('宣言内容を修正できます。変更後に再度「チャレンジを宣言する」を押してください。');
   }
 
   function startNewLog() {
@@ -2412,8 +2448,12 @@
     restoreIntentDraft();
     renderPhaseUI();
     const d = document.getElementById('logDate');
-    const savedDate = localStorage.getItem('marc_log_date_draft');
-    if (d) d.value = savedDate || new Date().toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    if (d) {
+      d.min = today; // 今日より過去は選択不可
+      const savedDate = localStorage.getItem('marc_log_date_draft');
+      d.value = savedDate || today;
+    }
     // 記録者名を初期表示
     const nameEl = document.getElementById('logUserName');
     if (nameEl) {
