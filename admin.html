@@ -632,6 +632,17 @@ function analyzeCoaching(){
       ${a.why?`<div style="font-size:11px;color:var(--ink-soft);background:rgba(255,255,255,.65);padding:8px 10px;border-radius:6px;line-height:1.65"><span style="font-weight:700;color:var(--ink)">② なぜ：</span>${a.why}</div>`:''}
     </div>`).join('');
 }
+
+// analyzeBtn専用ダイレクトリスナー（イベント委譲のバックアップ）
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('analyzeBtn');
+  if(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      analyzeCoaching();
+    });
+  }
+});
 </script>
 </body>
 </html>
