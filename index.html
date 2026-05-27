@@ -1788,64 +1788,52 @@
       try { document.head.removeChild(sc); } catch(e) {}
       if (json.status !== 'ok') return;
 
-      // ① 自己理解データを復元
+      const declares = json.declares || [];
+      const logs     = json.logs     || [];
+
+      // ① 自己理解
       if (json.data && Object.keys(json.data).length > 0) {
         applyPrevData(json.data);
         showToast('📋 ' + name + ' さんのデータを復元しました');
       }
 
-      // ② チャレンジ宣言からフェーズを復元
-      const declares = json.declares || [];
-      const logs     = json.logs     || [];
+      // ② 全宣言を日付→intentマップに保存
+      const declMap = {};
+      declares.forEach(function(r) {
+        const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
+        const intent = r['試したいこと']||r.intent||'';
+        if (d) declMap[d] = { intent: intent };
+      });
+      localStorage.setItem('marc_declares_map', JSON.stringify(declMap));
 
-      if (declares.length > 0) {
-        // 最新の宣言
-        declares.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
-        const latest    = declares[0];
-        const declDate  = (latest['稽古日'] || latest.date || '').replace(/\//g,'-').slice(0,10);
-        const declIntent= latest['試したいこと'] || latest.intent || '';
+      // ③ 全ログを日付マップに保存
+      const logMap = {};
+      logs.forEach(function(r) {
+        const d = String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
+        if (d) logMap[d] = true;
+      });
+      localStorage.setItem('marc_logs_map', JSON.stringify(logMap));
 
-        // LS_PREに保存
-        localStorage.setItem(LS_PRE, JSON.stringify({
-          timestamp: latest.timestamp || '',
-          記録種別: 'チャレンジ宣言',
-          氏名: name,
-          稽古日: declDate,
-          試したいこと: declIntent,
-          intent: declIntent,
-        }));
-        localStorage.setItem('marc_log_date_draft', declDate);
-
-        // 稽古日の上書きはしない（ユーザーが自分で設定した日付を優先）
-        // ③ 現在のlogDateと宣言日が一致する場合のみフェーズを設定
-        const currentLogDate = (document.getElementById('logDate')?.value || '').slice(0,10);
-        if(currentLogDate && currentLogDate === declDate) {
-          const hasLog = logs.some(r => {
-            const d = (r.date || r['稽古日'] || '').replace(/\//g,'-').slice(0,10);
-            return d === declDate;
-          });
-          setPhase(hasLog ? 'done' : 'post');
-        }
-        // logDateが異なる場合はphase='pre'のまま（ユーザーが新しい稽古日を入力中）
-      }
-
-      // ④ 全稽古ログ履歴を復元
+      // ④ 履歴カード用ログ保存
       if (logs.length > 0) {
-        const entries = logs.map(r => ({
-          timestamp:   r.timestamp || '',
-          date:        (r.date || r['稽古日'] || '').replace(/\//g,'-').slice(0,10),
-          name:        name,
-          intent:      r.intent  || r['試したいこと']   || '',
-          scene:       r.scene   || r['印象に残った場面'] || '',
-          why:         r.why     || r['なぜそうなったか'] || '',
-          next:        r.next    || r['次への一手']      || '',
-          fulfillment: parseInt(String(r.fulfillment || '').replace('/5','')) || 0,
-        })).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+        const entries = logs.map(function(r) {
+          return {
+            timestamp: r.timestamp||'',
+            date: String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10),
+            name: name,
+            intent: r.intent||r['試したいこと']||'',
+            scene:  r.scene||r['印象に残った場面']||'',
+            why:    r.why||r['なぜそうなったか']||'',
+            next:   r.next||r['次への一手']||'',
+            fulfillment: parseInt(String(r.fulfillment||'').replace('/5',''))||0,
+          };
+        }).sort(function(a,b){ return b.date.localeCompare(a.date); });
         localStorage.setItem(LS_LOGS, JSON.stringify(entries));
       }
 
-      // ⑤ UIを一括更新
-      renderPhaseUI();
+      // ⑤ 現在のlogDateでフェーズを設定してUI更新
+      const currentDate = (document.getElementById('logDate')?.value||'').slice(0,10);
+      applyPhaseForDate(currentDate);
       renderHistory();
       updateLogCount();
     };
