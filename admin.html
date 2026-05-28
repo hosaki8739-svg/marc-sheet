@@ -656,9 +656,13 @@ function renderAllRadar(){
   const listEl   = document.getElementById('radarSelectList');
   if (!listEl) return;
 
-  // 選択リスト構築（初回のみ）
-  if (listEl.children.length !== names.length) {
-    listEl.innerHTML = '';
+  // 選択リスト構築（毎回再構築して最新データを反映）
+  listEl.innerHTML = '';
+  if (!names.length) {
+    listEl.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);">データを収集してください</div>';
+    return;
+  }
+  {
     names.forEach(function(name) {
       const item = document.createElement('label');
       item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-soft);transition:all .15s;user-select:none;';
@@ -736,8 +740,20 @@ function renderAllRadar(){
 
     if (!datasets.length) {
       charts.allRadar = null;
+      // チェックしているのにデータがない→store.pが空
+      const ctx2 = document.getElementById('allRadarChart');
+      if (ctx2) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'text-align:center;padding:30px;color:var(--ink-muted);font-size:12px;';
+        msg.innerHTML = '⚠ 自己理解データがありません<br><span style="font-size:11px;">部員が自己理解タブを提出すると表示されます</span>';
+        ctx2.parentNode.insertBefore(msg, ctx2);
+        ctx2.style.display = 'none';
+      }
       return;
     }
+    // データがある場合はcanvasを表示
+    const ctx3 = document.getElementById('allRadarChart');
+    if (ctx3) ctx3.style.display = '';
 
     charts.allRadar = new Chart(ctx, {
       type: 'radar',
