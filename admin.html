@@ -168,8 +168,29 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   <div class="content">
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-icon">✊</div><div class="kpi-val" id="k-declare">—</div><div class="kpi-label">チャレンジ宣言</div><div class="kpi-sub" id="k-declare-date">—</div></div>
-      <div class="kpi green"><div class="kpi-icon">🔍</div><div class="kpi-val" id="k-reflect">—</div><div class="kpi-label">振り返り提出</div><div class="kpi-sub" id="k-reflect-rate">提出率 —%</div></div>
-      <div class="kpi gold"><div class="kpi-icon">⭐</div><div class="kpi-val" id="k-achieve">—</div><div class="kpi-label">平均達成感</div><div class="kpi-sub">/ 5.0</div></div>
+      <div class="kpi green">
+        <div class="kpi-icon">🔍</div>
+        <div class="kpi-val" id="k-reflect">—</div>
+        <div class="kpi-label">振り返り提出</div>
+        <div class="kpi-sub" id="k-reflect-rate">提出率 —%</div>
+        <div style="margin-top:8px;background:rgba(10,124,92,0.15);border-radius:4px;height:8px;overflow:hidden">
+          <div id="k-reflect-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div>
+        </div>
+        <div id="k-reflect-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
+      </div>
+      <div class="kpi gold">
+        <div class="kpi-icon">⭐</div>
+        <div class="kpi-val" id="k-achieve">—</div>
+        <div class="kpi-label">平均達成感</div>
+        <div class="kpi-sub">/ 5.0</div>
+        <div style="margin-top:8px;display:flex;gap:2px">
+          <div id="k-achieve-s1" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s"></div>
+          <div id="k-achieve-s2" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.08s"></div>
+          <div id="k-achieve-s3" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.16s"></div>
+          <div id="k-achieve-s4" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.24s"></div>
+          <div id="k-achieve-s5" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.32s"></div>
+        </div>
+      </div>
       <div class="kpi" id="k-missing-card"><div class="kpi-icon" id="k-missing-icon">⚠</div><div class="kpi-val" id="k-missing">—</div><div class="kpi-label" id="k-missing-label">振り返り未提出</div><div class="kpi-sub" id="k-missing-names" style="font-size:10px;line-height:1.4;word-break:break-all"></div></div>
     </div>
     <div class="sbox">
@@ -296,25 +317,55 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
 <div class="tab-panel" id="tab-coaching">
   <div class="content">
 
-    <!-- KPI行 -->
-    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi green">
-        <div class="kpi-icon">🔄</div>
-        <div class="kpi-val" id="ck-cycle">—</div>
-        <div class="kpi-label">サイクル接続率</div>
-        <div class="kpi-sub">③→次の宣言が繋がっている割合</div>
+    <!-- KPI行（バレットチャート）-->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+      <!-- サイクル接続率 -->
+      <div class="kpi green" style="padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span class="kpi-icon" style="margin-bottom:0">🔄</span>
+          <span class="kpi-label" style="margin-top:0">サイクル接続率</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span class="kpi-val" id="ck-cycle" style="font-size:22px">—</span>
+          <span style="font-size:10px;color:var(--ink-muted)">目標 100%</span>
+        </div>
+        <div style="background:rgba(10,124,92,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden">
+          <div id="ck-cycle-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div>
+          <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(10,124,92,0.4)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">③→次の宣言が繋がっている割合</div>
       </div>
-      <div class="kpi gold">
-        <div class="kpi-icon">✏</div>
-        <div class="kpi-val" id="ck-next">—</div>
-        <div class="kpi-label">③の平均具体性</div>
-        <div class="kpi-sub">/ 5.0　次への一手の質</div>
+      <!-- ③の平均具体性 -->
+      <div class="kpi gold" style="padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span class="kpi-icon" style="margin-bottom:0">✏</span>
+          <span class="kpi-label" style="margin-top:0">③の平均具体性</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span class="kpi-val" id="ck-next" style="font-size:22px">—</span>
+          <span style="font-size:10px;color:var(--ink-muted)">目標 5.0</span>
+        </div>
+        <div style="background:rgba(200,149,42,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden">
+          <div id="ck-next-bar" style="height:100%;border-radius:4px;background:var(--gold);transition:width .6s ease;width:0%"></div>
+          <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(200,149,42,0.5)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">次への一手の質（1〜5）</div>
       </div>
-      <div class="kpi">
-        <div class="kpi-icon">📈</div>
-        <div class="kpi-val" id="ck-spiral">—</div>
-        <div class="kpi-label">テーマ深化率</div>
-        <div class="kpi-sub">同テーマを深めている部員の割合</div>
+      <!-- テーマ深化率 -->
+      <div class="kpi" style="padding:16px 18px;border-top-color:var(--navy-lt)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span class="kpi-icon" style="margin-bottom:0">📈</span>
+          <span class="kpi-label" style="margin-top:0">テーマ深化率</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+          <span class="kpi-val" id="ck-spiral" style="font-size:22px">—</span>
+          <span style="font-size:10px;color:var(--ink-muted)">目標 100%</span>
+        </div>
+        <div style="background:rgba(42,82,152,0.12);border-radius:4px;height:10px;position:relative;overflow:hidden">
+          <div id="ck-spiral-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div>
+          <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(42,82,152,0.4)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">同テーマを深めている部員の割合</div>
       </div>
     </div>
 
@@ -505,9 +556,24 @@ function renderRecent(selectedDate){
   document.getElementById('k-declare').textContent=dL.length;
   document.getElementById('k-declare-date').textContent=latest;
   document.getElementById('k-reflect').textContent=rL.length;
+
+  // 振り返り提出バー
+  const reflectPct = dL.length ? Math.round(rL.length/dL.length*100) : 0;
+  document.getElementById('k-reflect-rate').textContent = dL.length ? '提出率 '+reflectPct+'%' : '提出率 —%';
+  const reflectBar = document.getElementById('k-reflect-bar');
+  if(reflectBar) reflectBar.style.width = reflectPct + '%';
+  const reflectDetail = document.getElementById('k-reflect-detail');
+  if(reflectDetail) reflectDetail.textContent = dL.length ? rL.length + '名 / ' + dL.length + '名が提出' : '';
+
+  // 平均達成感 + 5分割バー
   const scores=rL.map(getScore).filter(s=>s>0);
-  document.getElementById('k-achieve').textContent=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
-  document.getElementById('k-reflect-rate').textContent=dL.length?'提出率 '+Math.round(rL.length/dL.length*100)+'%':'提出率 —%';
+  const avgScore = scores.length ? parseFloat((scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)) : null;
+  document.getElementById('k-achieve').textContent = avgScore !== null ? avgScore.toFixed(1) : '—';
+  const achieveColors = ['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'];
+  for(let i=1;i<=5;i++){
+    const seg = document.getElementById('k-achieve-s'+i);
+    if(seg) seg.style.background = avgScore !== null && avgScore >= i ? achieveColors[i-1] : 'var(--border-lt)';
+  }
   const missing=allNames().filter(n=>new Set(dL.map(getName)).has(n)&&!new Set(rL.map(getName)).has(n));
   const card=document.getElementById('k-missing-card');
   const icon=document.getElementById('k-missing-icon');
@@ -1284,21 +1350,31 @@ function analyzeCoaching(){
   // 介入スコア降順でソート
   analyzed.sort((a, b) => b.score - a.score);
 
-  // KPI更新
+  // KPI更新（バレットチャートのバーも更新）
+  function setKPI(textId, barId, value, max, unit) {
+    const el  = document.getElementById(textId);
+    const bar = document.getElementById(barId);
+    if (!el) return;
+    const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+    el.textContent = value !== null ? value + unit : '—';
+    if (bar) bar.style.width = (value !== null ? pct : 0) + '%';
+  }
+
   const withNext  = analyzed.filter(a => a.nextTxt);
-  const avgNext   = withNext.length
-    ? (withNext.reduce((s, a) => s + a.nextScore, 0) / withNext.length).toFixed(1) : '—';
-  document.getElementById('ck-next').textContent  = avgNext;
+  const avgNextVal = withNext.length
+    ? parseFloat((withNext.reduce((s, a) => s + a.nextScore, 0) / withNext.length).toFixed(1)) : null;
+  setKPI('ck-next', 'ck-next-bar', avgNextVal, 5, '');
+  document.getElementById('ck-next').textContent = avgNextVal !== null ? avgNextVal.toFixed(1) : '—';
 
-  const withConn  = analyzed.filter(a => a.cycleConn !== 'unknown');
-  const connected = withConn.filter(a => a.cycleConn === 'high' || a.cycleConn === 'medium').length;
-  document.getElementById('ck-cycle').textContent =
-    withConn.length ? Math.round(connected / withConn.length * 100) + '%' : '—%';
+  const withConn   = analyzed.filter(a => a.cycleConn !== 'unknown');
+  const connected  = withConn.filter(a => a.cycleConn === 'high' || a.cycleConn === 'medium').length;
+  const cycleVal   = withConn.length ? Math.round(connected / withConn.length * 100) : null;
+  setKPI('ck-cycle', 'ck-cycle-bar', cycleVal, 100, '%');
 
-  const withDepth = analyzed.filter(a => a.themeDepth !== 'unknown');
-  const deepCount = withDepth.filter(a => a.themeDepth === 'deep' || a.themeDepth === 'partial').length;
-  document.getElementById('ck-spiral').textContent =
-    withDepth.length ? Math.round(deepCount / withDepth.length * 100) + '%' : '—%';
+  const withDepth  = analyzed.filter(a => a.themeDepth !== 'unknown');
+  const deepCount  = withDepth.filter(a => a.themeDepth === 'deep' || a.themeDepth === 'partial').length;
+  const spiralVal  = withDepth.length ? Math.round(deepCount / withDepth.length * 100) : null;
+  setKPI('ck-spiral', 'ck-spiral-bar', spiralVal, 100, '%');
 
   // カード描画
   const pl    = { high:'🔴 対話が必要', medium:'🟡 対話を検討', low:'🟢 成長を見守る' };
