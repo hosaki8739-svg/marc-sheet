@@ -56,8 +56,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
 .tbl th{background:var(--navy);color:rgba(255,255,255,.75);padding:9px 12px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 .tbl td{padding:9px 12px;border-bottom:1px solid var(--border-lt)}
 .tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:var(--bg)}
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
-.badge-ok{background:var(--green-pale);color:var(--green)}.badge-no{background:var(--border-lt);color:var(--ink-muted)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-ok{color:var(--green)}.badge-no{color:var(--red);font-weight:700}
 .av-1{color:#DC2626;font-weight:700}.av-2{color:#D97706;font-weight:700}.av-3{color:#A16207;font-weight:700}.av-4{color:#16A34A;font-weight:700}.av-5{color:#15803D;font-weight:700}
 .trend-up{color:var(--green);font-weight:700}.trend-down{color:var(--red);font-weight:700}.trend-flat{color:var(--ink-muted)}
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
@@ -212,7 +212,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="statusTable">
-          <thead><tr><th>部員</th><th>学年</th><th>宣言</th><th>振り返り</th><th>達成感</th><th>前回比</th><th>③ 次への一手</th><th>✊ 宣言内容</th></tr></thead>
+          <thead><tr><th>部員</th><th>学年</th><th>宣言</th><th>振り返り</th><th>達成感</th><th>前回比</th><th style="min-width:300px">✊ 宣言 → ① → ② → ③</th></tr></thead>
           <tbody id="statusBody"><tr><td colspan="7"><div class="empty"><div class="spinner"></div>データを収集してください</div></td></tr></tbody>
         </table>
       </div>
@@ -520,6 +520,26 @@ document.getElementById('dateFrom').addEventListener('change', renderAllCards);
 document.getElementById('dateTo').addEventListener('change', renderAllCards);
 document.getElementById('practiceSelect').addEventListener('change', function(){ renderRecent(this.value); });
 
+// スライドビューアー：イベント委譲
+document.addEventListener('click', function(e) {
+  const prev = e.target.closest('.slide-prev');
+  const next = e.target.closest('.slide-next');
+  if (!prev && !next) return;
+  const viewer = (prev || next).closest('.slide-viewer');
+  if (!viewer) return;
+  const track  = viewer.querySelector('.slide-track');
+  const dots   = viewer.querySelectorAll('.dot');
+  const slides = track.querySelectorAll('.slide');
+  let cur = parseInt(track.dataset.current || '0');
+  if (next) cur = Math.min(cur + 1, slides.length - 1);
+  if (prev) cur = Math.max(cur - 1, 0);
+  track.dataset.current = cur;
+  track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+  dots.forEach(function(d, i) {
+    d.style.background = i === cur ? 'var(--navy)' : 'var(--border)';
+  });
+});
+
 // ── JSONP ──
 function fetchGAS(params){
   return new Promise((resolve,reject)=>{
@@ -646,12 +666,42 @@ function renderRecent(selectedDate){
     return `<tr>
       <td style="font-weight:600">${name}</td>
       <td style="color:var(--ink-muted)">${p?p['学年']||'—':'—'}</td>
-      <td>${dc?'<span class="badge badge-ok">✓</span>':'<span class="badge badge-no">未</span>'}</td>
-      <td>${rf?'<span class="badge badge-ok">✓</span>':'<span class="badge badge-no">未</span>'}</td>
+      <td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
+      <td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
       <td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td>
       <td>${trendHtml}</td>
-      <td style="font-size:11px;color:var(--green);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${rf?(rf.next||rf['次への一手']||'—'):'—'}</td>
-      <td style="font-size:11px;color:var(--ink-soft);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${intent}</td>
+      <td style="min-width:300px;max-width:420px;padding:6px 12px">
+        <div class="slide-viewer" style="overflow:hidden;position:relative;">
+          <div class="slide-track" style="display:flex;transition:transform .3s ease;gap:0;" data-current="0">
+            <div class="slide" style="min-width:100%;font-size:11px;color:var(--primary);font-weight:600;line-height:1.5;padding-right:8px">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--ink-muted);display:block;margin-bottom:2px">✊ チャレンジ宣言</span>
+              ${intent||'—'}
+            </div>
+            <div class="slide" style="min-width:100%;font-size:11px;color:var(--ink-soft);line-height:1.5;padding-right:8px">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--ink-muted);display:block;margin-bottom:2px">① 試した結果</span>
+              ${rf?(rf.scene||rf['印象に残った場面']||'—'):'—'}
+            </div>
+            <div class="slide" style="min-width:100%;font-size:11px;color:var(--ink-soft);line-height:1.5;padding-right:8px">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--gold);display:block;margin-bottom:2px">② なぜそうなったか</span>
+              ${rf?(rf.why||rf['なぜそうなったか']||'—'):'—'}
+            </div>
+            <div class="slide" style="min-width:100%;font-size:11px;color:var(--green);font-weight:500;line-height:1.5;padding-right:8px">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--green);display:block;margin-bottom:2px">③ 次への一手</span>
+              ${rf?(rf.next||rf['次への一手']||'—'):'—'}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
+            <button class="slide-prev" style="padding:1px 7px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;font-size:11px;color:var(--ink-muted)">‹</button>
+            <div class="slide-dots" style="display:flex;gap:4px">
+              <span class="dot active" style="width:6px;height:6px;border-radius:50%;background:var(--navy)"></span>
+              <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--border)"></span>
+              <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--border)"></span>
+              <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--border)"></span>
+            </div>
+            <button class="slide-next" style="padding:1px 7px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;font-size:11px;color:var(--ink-muted)">›</button>
+          </div>
+        </div>
+      </td>
     </tr>`;
   }).join('');
   const rcEl=document.getElementById('recentCards');
