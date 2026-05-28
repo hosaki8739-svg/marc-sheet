@@ -396,7 +396,7 @@ const AP = ['','ap-1','ap-2','ap-3','ap-4','ap-5'];
 const GRADE_ORDER = {'3年':1,'2年':2,'1年':3};
 
 // ── ユーティリティ ──
-function nd(v){ return String(v||'').replace(/\//g,'-').slice(0,10); }
+function nd(v){ const s=String(v||'').replace(/\//g,'-').replace(/\.\d+$/,''); return s.length>=10?s.slice(0,10):''; }
 function getName(r){ return r['氏名']||r.name||''; }
 function getScore(r){ return parseInt(String(r.fulfillment||r['充実度']||'').replace('/5',''))||0; }
 function getDate(r){ return nd(r.date||r['稽古日']); }
@@ -774,7 +774,7 @@ function renderAutonomyChart(){
     // サイクル接続：最新の③と最新の宣言
     const latestDecl=store.d.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a)));
     const curIntent=latestDecl.length?(latestDecl[0].intent||latestDecl[0]['試したいこと']||''):'';
-    const conn=calcCycleConnection(nextTxt,curIntent);
+    const conn=calcCycleConn(nextTxt,curIntent);
     const connScore=conn==='high'?3:conn==='medium'?2:conn==='low'?1:0;
 
     return {name,x:nextScore||0,y:score||0,conn:connScore,r:6+connScore*2};
@@ -843,7 +843,8 @@ function renderGrowthTable(){
           if(prevR){
             const prevNext=prevR.next||prevR['次への一手']||'';
             const curIntent=dc.intent||dc['試したいこと']||'';
-            const conn=calcCycleConnection(prevNext,curIntent);
+            const prevScore2=getScore(prevR)||0;
+            const conn=calcCycleConn(prevNext,curIntent,prevScore2);
             if(conn==='high'||conn==='medium') connected++;
           }
         });
@@ -987,6 +988,7 @@ function calcNextScore(text) {
 //   達成感1〜3で別テーマ → 逃避の可能性（low）
 //   ③が空              → サイクル未閉（unknown）
 function calcCycleConn(nextText, nextIntent, latestScore) {
+  latestScore = latestScore || 0;
   if (!nextText) return 'unknown';  // ③未記入はサイクル未閉
   if (!nextIntent) return 'unknown'; // 次の宣言なし
 
