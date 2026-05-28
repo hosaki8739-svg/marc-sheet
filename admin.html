@@ -259,6 +259,20 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       </div>
     </div>
 
+    <!-- 部員コンピテンシー比較レーダー -->
+    <div class="sbox">
+      <div class="sbox-hdr">
+        <div class="sbox-title">部員コンピテンシー比較</div>
+        <div class="sbox-meta">自己評価（BARS）の比較</div>
+      </div>
+      <div class="sbox-body">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="radarToggleBar"></div>
+        <div style="max-width:500px;margin:0 auto">
+          <canvas id="allRadarChart" style="max-height:400px"></canvas>
+        </div>
+      </div>
+    </div>
+
     <div class="sbox">
       <div class="sbox-hdr"><div class="sbox-title">振り返り一覧</div></div>
       <div class="sbox-body" style="padding-bottom:6px">
@@ -583,11 +597,119 @@ function showMemberDetail(name){
       <div class="chip chip-w">${r.why||r['なぜそうなったか']||'—'}</div>
       ${r.next||r['次への一手']?`<div class="clabel" style="color:var(--green);margin-top:6px">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${r.next||r['次への一手']}</div>`:''}
     </div>`; }).join(''):'<div class="empty"><div class="empty-text">振り返りデータなし</div></div>';
-  document.getElementById('memberDetail').innerHTML=`<div class="det-hdr"><div class="det-av">${name.charAt(0)}</div><div><div class="det-name">${name}</div><div class="det-sub">${p?`${p['学年']||''} / ${p['段位級']||''} / 剣道歴${p['剣道歴']||'—'} / 得意：${p['得意技']||'—'}`:'プロフィールなし'}</div></div></div><div class="det-body">${p?`<div class="det-sec"><div class="det-sec-title">自己評価（BARS）</div>${barsHtml}</div><div class="det-sec"><div class="det-sec-title">課題感</div><div class="chip chip-w">${p['今の課題感']||'—'}</div></div><div class="det-sec"><div class="det-sec-title">個人目標</div><div class="chip chip-d">🎯 ${p['個人目標']||'—'}</div></div>`:''}<div class="det-sec"><div class="det-sec-title">振り返り履歴（最新3件）</div>${histHtml}</div></div>`;
+  // レーダーチャート描画（innerHTML後に実行）
+  const radarLabels = ['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき・体さばき','試合運び','気勢','精神的強さ'];
+  const radarKeys   = ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
+  const radarData   = p ? radarKeys.map(k => parseInt(p['自己評価_'+k])||0) : Array(10).fill(0);
+
+  document.getElementById('memberDetail').innerHTML=`<div class="det-hdr"><div class="det-av">${name.charAt(0)}</div><div><div class="det-name">${name}</div><div class="det-sub">${p?`${p['学年']||''} / ${p['段位級']||''} / 剣道歴${p['剣道歴']||'—'} / 得意：${p['得意技']||'—'}`:'プロフィールなし'}</div></div></div><div class="det-body">${p?`<div class="det-sec"><div class="det-sec-title">自己評価（BARS）</div><canvas id="memberRadarChart" style="max-height:240px;margin-bottom:10px"></canvas>${barsHtml}</div><div class="det-sec"><div class="det-sec-title">課題感</div><div class="chip chip-w">${p['今の課題感']||'—'}</div></div><div class="det-sec"><div class="det-sec-title">個人目標</div><div class="chip chip-d">🎯 ${p['個人目標']||'—'}</div></div>`:''}<div class="det-sec"><div class="det-sec-title">振り返り履歴（最新3件）</div>${histHtml}</div></div>`;
+  // レーダーチャートを描画
+  requestAnimationFrame(function() {
+    const rc = document.getElementById('memberRadarChart');
+    if (!rc) return;
+    if (charts.memberRadar) charts.memberRadar.destroy();
+    charts.memberRadar = new Chart(rc, {
+      type: 'radar',
+      data: {
+        labels: radarLabels,
+        datasets: [{
+          data: radarData,
+          backgroundColor: 'rgba(200,149,42,0.25)',
+          borderColor: 'rgba(200,149,42,0.9)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(200,149,42,0.9)',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          r: {
+            min: 0, max: 5,
+            ticks: { stepSize: 1, font: { size: 9 }, display: false },
+            pointLabels: { font: { size: 10, family: "'Noto Sans JP', sans-serif" }, color: '#3d5278' },
+            grid: { color: 'rgba(0,0,0,0.08)' },
+            angleLines: { color: 'rgba(0,0,0,0.08)' }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  });
+
 }
 
 // ── 傾向・分析 ──
-function renderTrend(){ renderTrendChart(); renderCycleChart(); renderNextChart(); renderAutonomyChart(); renderGrowthTable(); renderMatrix(); renderAllCards(); }
+function renderTrend(){ renderTrendChart(); renderCycleChart(); renderNextChart(); renderAutonomyChart(); renderGrowthTable(); renderMatrix(); renderAllRadar(); renderAllCards(); }
+
+function renderAllRadar(){
+  const radarLabels = ['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき','試合運び','気勢','精神的強さ'];
+  const radarKeys   = ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
+  const colors = ['#c8952a','#0a7c5c','#2a5298','#c0392b','#8e44ad','#e67e00','#1a7a8a','#c0392b','#2980b9','#27ae60'];
+  const names = sortedNames();
+  const toggleBar = document.getElementById('radarToggleBar');
+  if (!toggleBar) return;
+
+  // 全部員チェックボックス（初回は全員ON）
+  if (toggleBar.children.length === 0) {
+    names.forEach(function(name, i) {
+      const btn = document.createElement('button');
+      btn.textContent = name;
+      btn.dataset.name = name;
+      btn.dataset.active = 'true';
+      btn.style.cssText = 'padding:4px 10px;border-radius:999px;border:2px solid ' + colors[i%colors.length] + ';background:' + colors[i%colors.length] + ';color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;';
+      btn.addEventListener('click', function() {
+        const active = btn.dataset.active === 'true';
+        btn.dataset.active = active ? 'false' : 'true';
+        btn.style.background = active ? 'transparent' : colors[i%colors.length];
+        btn.style.color      = active ? colors[i%colors.length] : '#fff';
+        renderAllRadar();
+      });
+      toggleBar.appendChild(btn);
+    });
+  }
+
+  // アクティブな部員のデータを取得
+  const datasets = [];
+  Array.from(toggleBar.children).forEach(function(btn, i) {
+    if (btn.dataset.active !== 'true') return;
+    const name = btn.dataset.name;
+    const p    = store.p.find(function(r){ return getName(r) === name; });
+    if (!p) return;
+    const data = radarKeys.map(function(k){ return parseInt(p['自己評価_'+k])||0; });
+    datasets.push({
+      label: name, data: data,
+      backgroundColor: colors[i%colors.length].replace(')', ',0.1)').replace('rgb','rgba').replace('#','rgba(').replace(/^rgba\(([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i, function(m,r,g,b){ return 'rgba('+parseInt(r,16)+','+parseInt(g,16)+','+parseInt(b,16); }) + ',0.1)',
+      borderColor: colors[i%colors.length],
+      borderWidth: 2,
+      pointBackgroundColor: colors[i%colors.length],
+      pointRadius: 3
+    });
+  });
+
+  const ctx = document.getElementById('allRadarChart');
+  if (!ctx) return;
+  if (charts.allRadar) charts.allRadar.destroy();
+  charts.allRadar = new Chart(ctx, {
+    type: 'radar',
+    data: { labels: radarLabels, datasets: datasets },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          min: 0, max: 5,
+          ticks: { stepSize: 1, font: { size: 9 }, display: false },
+          pointLabels: { font: { size: 11, family: "'Noto Sans JP', sans-serif" }, color: '#3d5278' },
+          grid: { color: 'rgba(0,0,0,0.07)' },
+          angleLines: { color: 'rgba(0,0,0,0.07)' }
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11, family: "'Noto Sans JP', sans-serif" }, padding: 12 } }
+      }
+    }
+  });
+}
 
 function renderTrendChart(){
   const byDate={};
