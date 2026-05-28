@@ -396,7 +396,7 @@ const AP = ['','ap-1','ap-2','ap-3','ap-4','ap-5'];
 const GRADE_ORDER = {'3年':1,'2年':2,'1年':3};
 
 // ── ユーティリティ ──
-function nd(v){ const s=String(v||'').replace(/\//g,'-').replace(/\.\d+$/,''); return s.length>=10?s.slice(0,10):''; }
+function nd(v){ return String(v||'').replace(/\//g,'-').slice(0,10); }
 function getName(r){ return r['氏名']||r.name||''; }
 function getScore(r){ return parseInt(String(r.fulfillment||r['充実度']||'').replace('/5',''))||0; }
 function getDate(r){ return nd(r.date||r['稽古日']); }
