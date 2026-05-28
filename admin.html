@@ -844,9 +844,14 @@ function renderAllRadar(){
       }
       return;
     }
-    // データがある場合はcanvasを表示
+    // データがある場合はcanvasを表示し、エラーメッセージを削除
     const ctx3 = document.getElementById('allRadarChart');
-    if (ctx3) ctx3.style.display = '';
+    if (ctx3) {
+      ctx3.style.display = '';
+      // 直前のエラーメッセージ要素を削除
+      const prev = ctx3.previousSibling;
+      if (prev && prev.nodeType === 1 && prev.tagName !== 'CANVAS') prev.remove();
+    }
 
     charts.allRadar = new Chart(ctx, {
       type: 'radar',
