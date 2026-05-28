@@ -167,7 +167,16 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
 <div class="tab-panel active" id="tab-recent">
   <div class="content">
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-icon">✊</div><div class="kpi-val" id="k-declare">—</div><div class="kpi-label">チャレンジ宣言</div><div class="kpi-sub" id="k-declare-date">—</div></div>
+      <div class="kpi">
+        <div class="kpi-icon">✊</div>
+        <div class="kpi-val" id="k-declare">—</div>
+        <div class="kpi-label">チャレンジ宣言</div>
+        <div class="kpi-sub" id="k-declare-date">—</div>
+        <div style="margin-top:8px;background:rgba(42,82,152,0.12);border-radius:4px;height:5px;overflow:hidden">
+          <div id="k-declare-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div>
+        </div>
+        <div id="k-declare-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
+      </div>
       <div class="kpi green">
         <div class="kpi-icon">🔍</div>
         <div class="kpi-val" id="k-reflect">—</div>
@@ -555,6 +564,13 @@ function renderRecent(selectedDate){
   const rL=store.r.filter(r=>getDate(r)===latest);
   document.getElementById('k-declare').textContent=dL.length;
   document.getElementById('k-declare-date').textContent=latest;
+  // 宣言バー（宣言数/全部員数）
+  const totalMembers = allNames().length;
+  const declarePct = totalMembers > 0 ? Math.round(dL.length/totalMembers*100) : 0;
+  const declareBar = document.getElementById('k-declare-bar');
+  if(declareBar) declareBar.style.width = declarePct + '%';
+  const declareDetail = document.getElementById('k-declare-detail');
+  if(declareDetail) declareDetail.textContent = totalMembers > 0 ? dL.length + '名 / ' + totalMembers + '名が宣言' : '';
   document.getElementById('k-reflect').textContent=rL.length;
 
   // 振り返り提出バー
@@ -572,8 +588,18 @@ function renderRecent(selectedDate){
   const achieveColors = ['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'];
   for(let i=1;i<=5;i++){
     const seg = document.getElementById('k-achieve-s'+i);
-    // i以下（小数切り捨て）が点灯。4.5なら1〜4が点灯、5は灰色
-    if(seg) seg.style.background = avgScore !== null && Math.floor(avgScore) >= i ? achieveColors[i-1] : 'var(--border-lt)';
+    if(!seg || avgScore === null) { if(seg) seg.style.background='var(--border-lt)'; continue; }
+    if(avgScore >= i) {
+      // 完全点灯
+      seg.style.background = achieveColors[i-1];
+    } else if(avgScore > i-1) {
+      // 小数部分：グラデーションで半点灯（例：4.5なら5番目が50%）
+      // ハードストップで半分の四角を表現
+      const pct = Math.round((avgScore - (i-1)) * 100);
+      seg.style.background = 'linear-gradient(90deg, ' + achieveColors[i-1] + ' ' + pct + '%, var(--border-lt) ' + pct + '%)';
+    } else {
+      seg.style.background = 'var(--border-lt)';
+    }
   }
   const missing=allNames().filter(n=>new Set(dL.map(getName)).has(n)&&!new Set(rL.map(getName)).has(n));
   const card=document.getElementById('k-missing-card');
