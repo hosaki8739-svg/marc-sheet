@@ -520,17 +520,91 @@ document.getElementById('dateFrom').addEventListener('change', renderAllCards);
 document.getElementById('dateTo').addEventListener('change', renderAllCards);
 document.getElementById('practiceSelect').addEventListener('change', function(){ renderRecent(this.value); });
 
-// 展開行：イベント委譲
+// サイドパネル
+function openSidePanel(name, grade, dc, rf) {
+  const panel   = document.getElementById('sidePanel');
+  const overlay = document.getElementById('spOverlay');
+  const avatar  = document.getElementById('sp-avatar');
+  const spName  = document.getElementById('sp-name');
+  const spSub   = document.getElementById('sp-sub');
+  const spBody  = document.getElementById('sp-body');
+  if (!panel) return;
+
+  const intent = dc ? (dc['試したいこと']||dc.intent||'') : '';
+  const scene  = rf ? (rf.scene ||rf['印象に残った場面']||'') : '';
+  const why    = rf ? (rf.why   ||rf['なぜそうなったか']||'') : '';
+  const next   = rf ? (rf.next  ||rf['次への一手']||'') : '';
+  const f      = rf ? (parseInt(String(rf.fulfillment||'').replace('/5',''))||0) : 0;
+  const FL     = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
+  const FC     = ['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
+
+  avatar.textContent = name.charAt(0);
+  spName.textContent = name;
+  spSub.textContent  = grade + (f ? '　達成感：' + FL[f] : '');
+
+  spBody.innerHTML = [
+    intent ? `<div style="margin-bottom:16px;padding:12px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:5px">✊ チャレンジ宣言</div>
+      <div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.6">${intent}</div>
+    </div>` : '<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">チャレンジ宣言なし</div>',
+
+    f ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 12px;background:var(--bg-warm);border-radius:8px">
+      <span style="font-size:18px">⭐</span>
+      <span style="font-size:13px;font-weight:700;color:${FC[f]}">${FL[f]}</span>
+      <span style="font-size:11px;color:var(--ink-muted)">${f}/5</span>
+    </div>` : '',
+
+    scene ? `<div style="margin-bottom:14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:5px">① 試した結果</div>
+      <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${scene}</div>
+    </div>` : '',
+
+    why ? `<div style="margin-bottom:14px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:5px">② なぜそうなったか</div>
+      <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${why}</div>
+    </div>` : '',
+
+    next ? `<div style="padding:12px 14px;background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:5px">③ 次への一手</div>
+      <div style="font-size:13px;font-weight:600;color:#065f46;line-height:1.7">${next}</div>
+    </div>` : '<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">振り返り未提出</div>',
+  ].join('');
+
+  panel.style.right   = '0';
+  overlay.style.display = 'block';
+  setTimeout(function(){ overlay.style.opacity = '1'; }, 10);
+}
+
+function closeSidePanel() {
+  const panel   = document.getElementById('sidePanel');
+  const overlay = document.getElementById('spOverlay');
+  if (!panel) return;
+  panel.style.right     = '-420px';
+  overlay.style.opacity = '0';
+  setTimeout(function(){ overlay.style.display = 'none'; }, 250);
+}
+
+// 行クリック→サイドパネル
 document.addEventListener('click', function(e) {
+  // 閉じるボタン or オーバーレイ
+  if (e.target.id === 'spClose' || e.target.id === 'spOverlay') {
+    closeSidePanel(); return;
+  }
   const row = e.target.closest('.status-row');
   if (!row) return;
-  const detId  = row.dataset.det;
-  const detRow = document.getElementById(detId);
-  const arrow  = document.getElementById('arr-' + detId);
-  if (!detRow) return;
-  const isOpen = detRow.style.display !== 'none';
-  detRow.style.display = isOpen ? 'none' : 'table-row';
-  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
+  const name  = row.dataset.name;
+  const grade = row.dataset.grade;
+  const detId = row.dataset.det;
+  // データをdatasetから取得
+  const dcJson = row.dataset.dc ? JSON.parse(decodeURIComponent(row.dataset.dc)) : null;
+  const rfJson = row.dataset.rf ? JSON.parse(decodeURIComponent(row.dataset.rf)) : null;
+  openSidePanel(name, grade, dcJson, rfJson);
+
+  // アクティブ行ハイライト
+  document.querySelectorAll('.status-row').forEach(function(r) {
+    r.style.background = '';
+  });
+  row.style.background = 'var(--navy-pale)';
 });
 
 // ── JSONP ──
@@ -660,23 +734,18 @@ function renderRecent(selectedDate){
     const why   =rf?(rf.why   ||rf['なぜそうなったか']||''):'';
     const next  =rf?(rf.next  ||rf['次への一手']||''):'';
     const detId ='det-'+name.replace(/[^a-zA-Z0-9]/g,'_');
-    return `<tr class="status-row" data-det="${detId}" style="cursor:pointer">
-      <td style="width:24px;color:var(--ink-muted);font-size:11px;text-align:center;transition:transform .2s" id="arr-${detId}">›</td>
-      <td style="font-weight:600">${name}</td>
-      <td style="color:var(--ink-muted)">${p?p['学年']||'—':'—'}</td>
-      <td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
-      <td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
-      <td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td>
-      <td>${trendHtml}</td>
-    </tr>
-    <tr id="${detId}" style="display:none;background:var(--navy-pale)">
-      <td colspan="7" style="padding:10px 16px 12px 40px">
-        ${intent?`<div style="margin-bottom:7px"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-right:6px">✊ 宣言</span><span style="font-size:12px;font-weight:600;color:var(--navy)">${intent}</span></div>`:''}
-        ${scene?`<div style="margin-bottom:5px"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-right:6px">① 試した結果</span><span style="font-size:12px;color:var(--ink-soft)">${scene}</span></div>`:''}
-        ${why?`<div style="margin-bottom:5px"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-right:6px">② なぜ</span><span style="font-size:12px;color:var(--ink-soft)">${why}</span></div>`:''}
-        ${next?`<div><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-right:6px">③ 次への一手</span><span style="font-size:12px;color:var(--green);font-weight:500">${next}</span></div>`:''}
-      </td>
-    </tr>`;
+    const dcEnc = dc ? encodeURIComponent(JSON.stringify(dc)) : '';
+      const rfEnc = rf ? encodeURIComponent(JSON.stringify(rf)) : '';
+      const grade = p ? (p['学年']||'—') : '—';
+      return `<tr class="status-row" data-det="${detId}" data-name="${name}" data-grade="${grade}" data-dc="${dcEnc}" data-rf="${rfEnc}" style="cursor:pointer;transition:background .15s">
+        <td style="width:24px;color:var(--ink-muted);font-size:11px;text-align:center">›</td>
+        <td style="font-weight:600">${name}</td>
+        <td style="color:var(--ink-muted)">${grade}</td>
+        <td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
+        <td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
+        <td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td>
+        <td>${trendHtml}</td>
+      </tr>`;
   }).join('');
   const rcEl=document.getElementById('recentCards');
   if(!rL.length){ rcEl.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">直近稽古の振り返りがありません</div></div>'; return; }
@@ -1534,5 +1603,19 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 </script>
+<!-- サイドパネル -->
+<div id="sidePanel" style="position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--surface);box-shadow:-4px 0 24px rgba(15,32,68,.15);z-index:500;transition:right .25s ease;display:flex;flex-direction:column;overflow:hidden">
+  <div style="background:var(--navy);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <div id="sp-avatar" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+    <div style="flex:1;min-width:0">
+      <div id="sp-name" style="font-size:16px;font-weight:700;color:#fff"></div>
+      <div id="sp-sub" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px"></div>
+    </div>
+    <button id="spClose" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+  </div>
+  <div id="sp-body" style="flex:1;overflow-y:auto;padding:18px"></div>
+</div>
+<div id="spOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:499;display:none;opacity:0;transition:opacity .25s"></div>
+
 </body>
 </html>
