@@ -173,7 +173,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div class="kpi-val" id="k-reflect">—</div>
         <div class="kpi-label">振り返り提出</div>
         <div class="kpi-sub" id="k-reflect-rate">提出率 —%</div>
-        <div style="margin-top:8px;background:rgba(10,124,92,0.15);border-radius:4px;height:8px;overflow:hidden">
+        <div style="margin-top:8px;background:rgba(10,124,92,0.15);border-radius:4px;height:5px;overflow:hidden">
           <div id="k-reflect-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div>
         </div>
         <div id="k-reflect-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
@@ -184,11 +184,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div class="kpi-label">平均達成感</div>
         <div class="kpi-sub">/ 5.0</div>
         <div style="margin-top:8px;display:flex;gap:2px">
-          <div id="k-achieve-s1" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s"></div>
-          <div id="k-achieve-s2" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.08s"></div>
-          <div id="k-achieve-s3" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.16s"></div>
-          <div id="k-achieve-s4" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.24s"></div>
-          <div id="k-achieve-s5" style="flex:1;height:8px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.32s"></div>
+          <div id="k-achieve-s1" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s"></div>
+          <div id="k-achieve-s2" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.08s"></div>
+          <div id="k-achieve-s3" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.16s"></div>
+          <div id="k-achieve-s4" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.24s"></div>
+          <div id="k-achieve-s5" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.32s"></div>
         </div>
       </div>
       <div class="kpi" id="k-missing-card"><div class="kpi-icon" id="k-missing-icon">⚠</div><div class="kpi-val" id="k-missing">—</div><div class="kpi-label" id="k-missing-label">振り返り未提出</div><div class="kpi-sub" id="k-missing-names" style="font-size:10px;line-height:1.4;word-break:break-all"></div></div>
@@ -572,7 +572,8 @@ function renderRecent(selectedDate){
   const achieveColors = ['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'];
   for(let i=1;i<=5;i++){
     const seg = document.getElementById('k-achieve-s'+i);
-    if(seg) seg.style.background = avgScore !== null && avgScore >= i ? achieveColors[i-1] : 'var(--border-lt)';
+    // i以下（小数切り捨て）が点灯。4.5なら1〜4が点灯、5は灰色
+    if(seg) seg.style.background = avgScore !== null && Math.floor(avgScore) >= i ? achieveColors[i-1] : 'var(--border-lt)';
   }
   const missing=allNames().filter(n=>new Set(dL.map(getName)).has(n)&&!new Set(rL.map(getName)).has(n));
   const card=document.getElementById('k-missing-card');
