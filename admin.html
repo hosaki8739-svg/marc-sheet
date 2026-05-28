@@ -212,7 +212,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="statusTable">
-          <thead><tr><th>部員</th><th>学年</th><th>宣言</th><th>振り返り</th><th>達成感</th><th>前回比</th><th style="min-width:300px">✊ 宣言 → ① → ② → ③</th></tr></thead>
+          <thead><tr><th></th><th>部員</th><th>学年</th><th>宣言</th><th>振り返り</th><th>達成感</th><th>前回比</th></tr></thead>
           <tbody id="statusBody"><tr><td colspan="7"><div class="empty"><div class="spinner"></div>データを収集してください</div></td></tr></tbody>
         </table>
       </div>
@@ -520,24 +520,17 @@ document.getElementById('dateFrom').addEventListener('change', renderAllCards);
 document.getElementById('dateTo').addEventListener('change', renderAllCards);
 document.getElementById('practiceSelect').addEventListener('change', function(){ renderRecent(this.value); });
 
-// スライドビューアー：イベント委譲
+// 展開行：イベント委譲
 document.addEventListener('click', function(e) {
-  const prev = e.target.closest('.slide-prev');
-  const next = e.target.closest('.slide-next');
-  if (!prev && !next) return;
-  const viewer = (prev || next).closest('.slide-viewer');
-  if (!viewer) return;
-  const track  = viewer.querySelector('.slide-track');
-  const dots   = viewer.querySelectorAll('.dot');
-  const slides = track.querySelectorAll('.slide');
-  let cur = parseInt(track.dataset.current || '0');
-  if (next) cur = Math.min(cur + 1, slides.length - 1);
-  if (prev) cur = Math.max(cur - 1, 0);
-  track.dataset.current = cur;
-  track.style.transform = 'translateX(-' + (cur * 100) + '%)';
-  dots.forEach(function(d, i) {
-    d.style.background = i === cur ? 'var(--navy)' : 'var(--border)';
-  });
+  const row = e.target.closest('.status-row');
+  if (!row) return;
+  const detId  = row.dataset.det;
+  const detRow = document.getElementById(detId);
+  const arrow  = document.getElementById('arr-' + detId);
+  if (!detRow) return;
+  const isOpen = detRow.style.display !== 'none';
+  detRow.style.display = isOpen ? 'none' : 'table-row';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
 });
 
 // ── JSONP ──
@@ -656,51 +649,32 @@ function renderRecent(selectedDate){
     const diff=f&&prev?f-prev:null;
     let trendHtml='—';
     if(diff!==null){
-      if(diff>=2)       trendHtml='<span class="trend-up" title="+'+diff+'">↑</span>';
-      else if(diff===1) trendHtml='<span class="trend-up" title="+'+diff+'">↗</span>';
+      if(diff>=2)       trendHtml='<span class="trend-up">↑</span>';
+      else if(diff===1) trendHtml='<span class="trend-up">↗</span>';
       else if(diff===0) trendHtml='<span class="trend-flat">→</span>';
-      else if(diff===-1)trendHtml='<span class="trend-down" title="'+diff+'">↘</span>';
-      else              trendHtml='<span class="trend-down" title="'+diff+'">↓</span>';
+      else if(diff===-1)trendHtml='<span class="trend-down">↘</span>';
+      else              trendHtml='<span class="trend-down">↓</span>';
     }
-    const intent=dc?(dc['試したいこと']||dc.intent||'—'):'—';
-    return `<tr>
+    const intent=dc?(dc['試したいこと']||dc.intent||''):'';
+    const scene =rf?(rf.scene ||rf['印象に残った場面']||''):'';
+    const why   =rf?(rf.why   ||rf['なぜそうなったか']||''):'';
+    const next  =rf?(rf.next  ||rf['次への一手']||''):'';
+    const detId ='det-'+name.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<tr class="status-row" data-det="${detId}" style="cursor:pointer">
+      <td style="width:24px;color:var(--ink-muted);font-size:11px;text-align:center;transition:transform .2s" id="arr-${detId}">›</td>
       <td style="font-weight:600">${name}</td>
       <td style="color:var(--ink-muted)">${p?p['学年']||'—':'—'}</td>
       <td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
       <td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
       <td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td>
       <td>${trendHtml}</td>
-      <td style="min-width:300px;max-width:420px;padding:6px 12px">
-        <div class="slide-viewer" style="overflow:hidden;position:relative;">
-          <div class="slide-track" style="display:flex;transition:transform .3s ease;gap:0;" data-current="0">
-            <div class="slide" style="min-width:100%;font-size:11px;color:var(--primary);font-weight:600;line-height:1.5;padding-right:8px">
-              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--ink-muted);display:block;margin-bottom:2px">✊ チャレンジ宣言</span>
-              ${intent||'—'}
-            </div>
-            <div class="slide" style="min-width:100%;font-size:11px;color:var(--ink-soft);line-height:1.5;padding-right:8px">
-              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--ink-muted);display:block;margin-bottom:2px">① 試した結果</span>
-              ${rf?(rf.scene||rf['印象に残った場面']||'—'):'—'}
-            </div>
-            <div class="slide" style="min-width:100%;font-size:11px;color:var(--ink-soft);line-height:1.5;padding-right:8px">
-              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--gold);display:block;margin-bottom:2px">② なぜそうなったか</span>
-              ${rf?(rf.why||rf['なぜそうなったか']||'—'):'—'}
-            </div>
-            <div class="slide" style="min-width:100%;font-size:11px;color:var(--green);font-weight:500;line-height:1.5;padding-right:8px">
-              <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--green);display:block;margin-bottom:2px">③ 次への一手</span>
-              ${rf?(rf.next||rf['次への一手']||'—'):'—'}
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
-            <button class="slide-prev" style="padding:1px 7px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;font-size:11px;color:var(--ink-muted)">‹</button>
-            <div class="slide-dots" style="display:flex;gap:4px">
-              <span class="dot active" style="width:6px;height:6px;border-radius:50%;background:var(--navy)"></span>
-              <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--border)"></span>
-              <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--border)"></span>
-              <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--border)"></span>
-            </div>
-            <button class="slide-next" style="padding:1px 7px;border:1px solid var(--border);border-radius:4px;background:transparent;cursor:pointer;font-size:11px;color:var(--ink-muted)">›</button>
-          </div>
-        </div>
+    </tr>
+    <tr id="${detId}" style="display:none;background:var(--navy-pale)">
+      <td colspan="7" style="padding:10px 16px 12px 40px">
+        ${intent?`<div style="margin-bottom:7px"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-right:6px">✊ 宣言</span><span style="font-size:12px;font-weight:600;color:var(--navy)">${intent}</span></div>`:''}
+        ${scene?`<div style="margin-bottom:5px"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-right:6px">① 試した結果</span><span style="font-size:12px;color:var(--ink-soft)">${scene}</span></div>`:''}
+        ${why?`<div style="margin-bottom:5px"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-right:6px">② なぜ</span><span style="font-size:12px;color:var(--ink-soft)">${why}</span></div>`:''}
+        ${next?`<div><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-right:6px">③ 次への一手</span><span style="font-size:12px;color:var(--green);font-weight:500">${next}</span></div>`:''}
       </td>
     </tr>`;
   }).join('');
