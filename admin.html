@@ -839,7 +839,40 @@ function renderAllRadar(){
 
   const names    = sortedNames();
   const listEl   = document.getElementById('radarSelectList');
+  const ctx      = document.getElementById('allRadarChart');
   if (!listEl) return;
+
+  // store.pが空の場合：エラーメッセージ表示して終了
+  if (!store.p || !store.p.length) {
+    listEl.innerHTML = '';
+    names.forEach(function(name) {
+      const item = document.createElement('label');
+      item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--ink-soft);';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.disabled = true;
+      const span = document.createElement('span');
+      span.textContent = name;
+      item.appendChild(cb); item.appendChild(span);
+      listEl.appendChild(item);
+    });
+    if (ctx) {
+      ctx.style.display = 'none';
+      // 既存メッセージ削除
+      ctx.parentNode.querySelectorAll('div[data-radar-msg]').forEach(function(el){ el.remove(); });
+      const msg = document.createElement('div');
+      msg.setAttribute('data-radar-msg', '1');
+      msg.style.cssText = 'text-align:center;padding:30px;color:var(--ink-muted);font-size:12px;';
+      msg.innerHTML = '自己理解データがありません<br><span style="font-size:11px;">部員が自己理解タブを提出すると表示されます</span>';
+      ctx.parentNode.insertBefore(msg, ctx);
+    }
+    return;
+  }
+
+  // store.pがある場合：エラーメッセージを削除してcanvasを表示
+  if (ctx) {
+    ctx.style.display = '';
+    ctx.parentNode.querySelectorAll('div[data-radar-msg]').forEach(function(el){ el.remove(); });
+  }
 
   // 選択リスト構築（毎回再構築して最新データを反映）
   listEl.innerHTML = '';
@@ -925,18 +958,6 @@ function renderAllRadar(){
 
     if (!datasets.length) {
       charts.allRadar = null;
-      const ctx2 = document.getElementById('allRadarChart');
-      if (ctx2) {
-        // 既存のメッセージを全削除してから1つだけ追加
-        ctx2.parentNode.querySelectorAll('div').forEach(function(el) {
-          if (el.textContent.includes('自己理解データがありません')) el.remove();
-        });
-        const msg = document.createElement('div');
-        msg.style.cssText = 'text-align:center;padding:30px;color:var(--ink-muted);font-size:12px;';
-        msg.innerHTML = '⚠ 自己理解データがありません<br><span style="font-size:11px;">部員が自己理解タブを提出すると表示されます</span>';
-        ctx2.parentNode.insertBefore(msg, ctx2);
-        ctx2.style.display = 'none';
-      }
       return;
     }
     // データがある場合はcanvasを表示し、エラーメッセージを全削除
@@ -1573,7 +1594,7 @@ function analyzeCoaching(){
         <div>
           <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">推奨の声かけ</div>
           <div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${a.hint}</div>
-          ${a.missCount > 0 ? `<div style="font-size:10px;color:var(--red);margin-top:3px">振り返り未提出 ${a.missCount}回（宣言${a.totalDeclare}回中）</div>` : ''}
+    
         </div>
       </div>
 
