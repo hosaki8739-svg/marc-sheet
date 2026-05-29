@@ -260,7 +260,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       <div class="sbox-hdr"><div class="sbox-title">部員マトリクス</div><div class="sbox-meta">セル色＝達成感 / ✓＝宣言のみ / —＝未記録</div></div>
       <div class="sbox-body"><div class="mtx-wrap" id="matrixWrap"><div class="empty"><div class="empty-text">データを収集してください</div></div></div></div>
     </div>
-    <!-- ③具体性の推移 -->
+    <!-- 次の一手の具体性の推移 -->
     <div class="chart-row">
       <div class="chart-box">
         <div class="chart-title">③「次への一手」具体性の推移（チーム平均）</div>
@@ -268,7 +268,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div class="chart-sub">次の一手の具体性が上がるほど、自走型の学習者に近づいています</div>
       </div>
       <div class="chart-box">
-        <div class="chart-title">部員別 自走度マップ（③具体性 × サイクル接続）</div>
+        <div class="chart-title">部員別 自走度マップ（次の一手の具体性 × サイクル接続）</div>
         <canvas id="autonomyChart" style="max-height:180px"></canvas>
         <div class="chart-sub">右上が理想：「次の稽古でどう変えるか」が具体的でサイクルも繋がっている</div>
       </div>
@@ -282,7 +282,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="growthTable">
-          <thead><tr><th>稽古日</th><th>参加者</th><th>チャレンジ宣言</th><th>振り返り提出</th><th>平均達成感</th><th>平均③具体性</th><th>サイクル接続率</th></tr></thead>
+          <thead><tr><th>稽古日</th><th>参加者</th><th>チャレンジ宣言</th><th>振り返り提出</th><th>平均達成感</th><th>平均次の一手の具体性</th><th>サイクル接続率</th></tr></thead>
           <tbody id="growthTableBody"><tr><td colspan="7"><div class="empty"><div class="empty-text">データを収集してください</div></div></td></tr></tbody>
         </table>
       </div>
@@ -389,7 +389,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px">
           <div style="padding:10px 12px;background:var(--navy-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
             <div style="font-weight:700;color:var(--navy-lt);margin-bottom:3px">🔄 サイクル接続</div>
-            ③の内容が次のチャレンジ宣言に引き継がれているか
+            次の一手の内容が次のチャレンジ宣言に引き継がれているか
           </div>
           <div style="padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
             <div style="font-weight:700;color:var(--gold);margin-bottom:3px">✏ 次の一手の具体性</div>
@@ -925,9 +925,12 @@ function renderAllRadar(){
 
     if (!datasets.length) {
       charts.allRadar = null;
-      // チェックしているのにデータがない→store.pが空
       const ctx2 = document.getElementById('allRadarChart');
       if (ctx2) {
+        // 既存のメッセージを全削除してから1つだけ追加
+        ctx2.parentNode.querySelectorAll('div').forEach(function(el) {
+          if (el.textContent.includes('自己理解データがありません')) el.remove();
+        });
         const msg = document.createElement('div');
         msg.style.cssText = 'text-align:center;padding:30px;color:var(--ink-muted);font-size:12px;';
         msg.innerHTML = '⚠ 自己理解データがありません<br><span style="font-size:11px;">部員が自己理解タブを提出すると表示されます</span>';
@@ -936,13 +939,15 @@ function renderAllRadar(){
       }
       return;
     }
-    // データがある場合はcanvasを表示し、エラーメッセージを削除
+    // データがある場合はcanvasを表示し、エラーメッセージを全削除
     const ctx3 = document.getElementById('allRadarChart');
     if (ctx3) {
       ctx3.style.display = '';
-      // 直前のエラーメッセージ要素を削除
-      const prev = ctx3.previousSibling;
-      if (prev && prev.nodeType === 1 && prev.tagName !== 'CANVAS') prev.remove();
+      // 既存のエラーメッセージを全削除
+      const parent = ctx3.parentNode;
+      parent.querySelectorAll('div').forEach(function(el) {
+        if (el.textContent.includes('自己理解データがありません')) el.remove();
+      });
     }
 
     charts.allRadar = new Chart(ctx, {
@@ -1029,7 +1034,7 @@ function renderNextChart(){
 }
 
 function renderAutonomyChart(){
-  // 部員別 自走度マップ（バブルチャート風：横=③具体性, 縦=達成感）
+  // 部員別 自走度マップ（バブルチャート風：横=次の一手の具体性, 縦=達成感）
   const names=allNames();
   const points=names.map(name=>{
     const rows=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a)));
@@ -1089,7 +1094,7 @@ function renderGrowthTable(){
     const scores=rRows.map(getScore).filter(s=>s>0);
     const avgScore=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
 
-    // ③具体性平均
+    // 次の一手の具体性平均
     const nextScores=rRows.map(r=>{
       const nx=r.next||r['次への一手']||'';
       return nx?calcNextScore(nx):null;
