@@ -1433,12 +1433,12 @@ function coachingHint2(data, priority) {
   if (data.emotion === 'caution')
     return '「最近稽古で気になることある？」（話を聞く）';
   if (data.cycleConn === 'low')
-    return '「先週書いた③、今日の宣言に使えた？」';
+    return '「先週書いた次の一手、今日の宣言に使えた？」';
   if (data.nextScore <= 2)
-    return '「③をもっと具体的に。どの動作を変える？」';
+    return '「次の一手をもっと具体的な動作に書いてみよう」';
   if (priority === 'low')
     return '「その気づき、自分でも感じてた？」（承認）';
-  return '「③の内容を次の宣言に繋げてみよう」';
+  return '「次の一手の内容を次の宣言に繋げてみよう」';
 }
 
 // ── メイン分析 ──
@@ -1471,8 +1471,11 @@ function analyzeCoaching(){
     const curDecl= latestDeclare[name];
     const curIntent = curDecl ? (curDecl.intent || curDecl['試したいこと'] || '') : '';
 
-    const totalDeclare = store.d.filter(r2 => getName(r2) === name).length;
-    const totalLog     = store.r.filter(r2 => getName(r2) === name).length;
+    // ユニーク稽古日数で計算（同日重複を除外）
+    const declDates = [...new Set(store.d.filter(r2 => getName(r2) === name).map(r2 => getDate(r2)))];
+    const logDates  = [...new Set(store.r.filter(r2 => getName(r2) === name).map(r2 => getDate(r2)))];
+    const totalDeclare = declDates.length;
+    const totalLog     = logDates.length;
     const missCount    = Math.max(0, totalDeclare - totalLog);
     const latestScore  = getScore(r);
     const prevScore    = prevScoreMap[name] || 0;
