@@ -236,7 +236,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
             <span class="sort-label">並び順</span>
             <button class="sort-btn active" data-sort="grade">学年</button>
             <button class="sort-btn" data-sort="name">名前</button>
-            <button class="sort-btn" data-sort="achieve">達成感</button>
           </div>
         </div>
         <div class="ml-box" style="border-radius:0 0 var(--r) var(--r)">
@@ -266,12 +265,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       <div class="chart-box">
         <div class="chart-title">③「次への一手」具体性の推移（チーム平均）</div>
         <canvas id="nextChart" style="max-height:180px"></canvas>
-        <div class="chart-sub">③の具体性が上がるほど、自走型の学習者に近づいています</div>
+        <div class="chart-sub">次の一手の具体性が上がるほど、自走型の学習者に近づいています</div>
       </div>
       <div class="chart-box">
         <div class="chart-title">部員別 自走度マップ（③具体性 × サイクル接続）</div>
         <canvas id="autonomyChart" style="max-height:180px"></canvas>
-        <div class="chart-sub">右上が理想：③が具体的でサイクルも繋がっている</div>
+        <div class="chart-sub">右上が理想：「次の稽古でどう変えるか」が具体的でサイクルも繋がっている</div>
       </div>
     </div>
 
@@ -344,11 +343,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         </div>
         <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">③→次の宣言が繋がっている割合</div>
       </div>
-      <!-- ③の平均具体性 -->
+      <!-- 次の一手の具体性（平均） -->
       <div class="kpi gold" style="padding:16px 18px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <span class="kpi-icon" style="margin-bottom:0">✏</span>
-          <span class="kpi-label" style="margin-top:0">③の平均具体性</span>
+          <span class="kpi-label" style="margin-top:0">次の一手の具体性（平均）</span>
         </div>
         <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
           <span class="kpi-val" id="ck-next" style="font-size:22px">—</span>
@@ -393,7 +392,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
             ③の内容が次のチャレンジ宣言に引き継がれているか
           </div>
           <div style="padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
-            <div style="font-weight:700;color:var(--gold);margin-bottom:3px">✏ ③の具体性</div>
+            <div style="font-weight:700;color:var(--gold);margin-bottom:3px">✏ 次の一手の具体性</div>
             「もっと頑張る」でなく行動レベルで書けているか
           </div>
           <div style="padding:10px 12px;background:var(--green-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
@@ -429,15 +428,15 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
           <div style="padding:12px 14px;background:var(--red-pale);border-radius:var(--r);border-left:3px solid var(--red)">
             <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">🔴 対話が必要</div>
-            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">③が曖昧・サイクル切断・感情ネガティブ。<br>「次の稽古で一番試したいことは何？」と一緒に③を言語化する。</div>
+            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が曖昧・サイクル切断・感情ネガティブ。<br>「次の稽古で一番試したいことは何？」と一緒に言語化する。</div>
           </div>
           <div style="padding:12px 14px;background:var(--amber-pale);border-radius:var(--r);border-left:3px solid var(--amber)">
             <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:5px">🟡 対話を検討</div>
-            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">③はあるがサイクルが弱い。<br>「先週書いた③、今日の宣言に使えた？」と接続を意識させる。</div>
+            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」はあるがサイクルが弱い。<br>「先週書いた内容、今日の宣言に使えた？」と接続を意識させる。</div>
           </div>
           <div style="padding:12px 14px;background:var(--green-pale);border-radius:var(--r);border-left:3px solid var(--green)">
             <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:5px">🟢 成長を見守る</div>
-            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">③が具体的でサイクルも繋がっている。<br>「その成長、自分で気づいてる？」と自己認識を深める。</div>
+            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が具体的でサイクルも繋がっている。<br>「その成長、自分で気づいてる？」と自己認識を深める。</div>
           </div>
         </div>
       </div>
@@ -1072,7 +1071,7 @@ function renderAutonomyChart(){
         tooltip:{callbacks:{label:ctx=>{const d=ctx.raw; return d.name+' (③:'+d.x+'/達成感:'+d.y+')';}}}
       },
       scales:{
-        x:{min:0,max:5,title:{display:true,text:'③の具体性',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}},
+        x:{min:0,max:5,title:{display:true,text:'次の一手の具体性',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}},
         y:{min:0,max:5,title:{display:true,text:'達成感',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}}
       }
     }
@@ -1197,7 +1196,7 @@ function renderAlerts(){
 //  ③ 複数指標が同時に悪化したとき介入根拠が強くなる
 //     → 重み付きスコアで統合
 //  ④ 言語化の深さは自己調整能力の代理指標（Zimmerman, 2000）
-//     → ③の具体性＋因果語で測定
+//     → 次の一手の具体性＋因果語で測定
 // ===================================================
 
 // ── キーワード辞書 ──
@@ -1236,7 +1235,7 @@ function analyzeText(text) {
   };
 }
 
-// ── ③の具体性スコア（1〜5）──
+// ── 次の一手の具体性スコア（1〜5）──
 function calcNextScore(text) {
   if (!text) return 0;
   const a = analyzeText(text);
@@ -1366,7 +1365,7 @@ function calcInterventionScore(data) {
       detail: `最新スコアが${f}/5（低水準）` });
   }
 
-  // [25点] 言語化の深さ（③の具体性）
+  // [25点] 言語化の深さ（次の一手の具体性）
   const ns = data.nextScore;
   if (ns === 0) {
     score += 25;
@@ -1375,11 +1374,11 @@ function calcInterventionScore(data) {
   } else if (ns <= 2) {
     score += 15;
     reasons.push({ weight: 15, label: '言語化',
-      detail: `③の具体性が${ns}/5（「もっと頑張る」レベル）` });
+      detail: `次の一手の具体性が${ns}/5（「もっと頑張る」レベル）` });
   } else if (ns === 3) {
     score += 5;
     reasons.push({ weight: 5, label: '言語化',
-      detail: `③の具体性が${ns}/5（もう少し掘り下げが必要）` });
+      detail: `次の一手の具体性が${ns}/5（もう少し掘り下げが必要）` });
   }
 
   // [20点] 感情的サイン
@@ -1544,7 +1543,7 @@ function analyzeCoaching(){
 
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
         <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">③の具体性</div>
+          <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">次の一手の具体性</div>
           <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.nextScore)}">${a.nextScore||'—'}/5</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
