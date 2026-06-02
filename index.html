@@ -985,6 +985,62 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dateEl2) { dateEl2.value = today2; }
   renderLogUI();
 });
+
+// ===== FLATPICKR =====
+let fpInstance = null;
+
+function initFlatpickr() {
+  const el = document.getElementById('logDate');
+  if (!el || typeof flatpickr === 'undefined') return;
+  if (fpInstance) { fpInstance.destroy(); fpInstance = null; }
+
+  const declareDates = Object.keys(marc.declares);
+  const logDates     = Object.keys(marc.logs);
+
+  fpInstance = flatpickr(el, {
+    locale: 'ja',
+    dateFormat: 'Y-m-d',
+    defaultDate: el.value || new Date(),
+    disableMobile: true,
+    onReady: function(_, __, fp) {
+      setTimeout(function(){ applyFlatpickrDots(fp, declareDates, logDates); }, 50);
+    },
+    onMonthChange: function(_, __, fp) {
+      setTimeout(function(){ applyFlatpickrDots(fp, Object.keys(marc.declares), Object.keys(marc.logs)); }, 50);
+    },
+    onYearChange: function(_, __, fp) {
+      setTimeout(function(){ applyFlatpickrDots(fp, Object.keys(marc.declares), Object.keys(marc.logs)); }, 50);
+    },
+    onChange: function(selectedDates, dateStr) {
+      onLogDateChange();
+    }
+  });
+}
+
+function applyFlatpickrDots(fp, declareDates, logDates) {
+  if (!fp || !fp.calendarContainer) return;
+  fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(function(dayEl) {
+    if (!dayEl.dateObj) return;
+    const dateStr = dayEl.dateObj.getFullYear() + '-' +
+      String(dayEl.dateObj.getMonth()+1).padStart(2,'0') + '-' +
+      String(dayEl.dateObj.getDate()).padStart(2,'0');
+    dayEl.classList.remove('has-declare','has-log','has-both');
+    const hasDeclare = declareDates.includes(dateStr);
+    const hasLog     = logDates.includes(dateStr);
+    if (hasDeclare && hasLog) dayEl.classList.add('has-both');
+    else if (hasLog)          dayEl.classList.add('has-log');
+    else if (hasDeclare)      dayEl.classList.add('has-declare');
+  });
+}
+
+function refreshFlatpickr() {
+  if (fpInstance) {
+    applyFlatpickrDots(fpInstance, Object.keys(marc.declares), Object.keys(marc.logs));
+  } else {
+    initFlatpickr();
+  }
+}
+
 </script>
 </body>
 </html>
