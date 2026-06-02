@@ -843,17 +843,13 @@ function submitLog() {
   });
 }
 
-// ===== GAS SEND (fetch no-cors) =====
+// ===== GAS SEND (POST) =====
 function sendToGAS(data, callback) {
-  // URLパラメータとして送信（no-corsはレスポンスが読めないため常に成功扱い）
-  let url = GAS_URL + '?';
-  url += Object.keys(data).map(function(k) {
-    return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
-  }).join('&');
-
-  fetch(url, {
-    method: 'GET',
+  fetch(GAS_URL, {
+    method: 'POST',
     mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data),
   })
   .then(function() {
     // no-corsはレスポンスが読めないが送信は成功している
@@ -861,10 +857,7 @@ function sendToGAS(data, callback) {
   })
   .catch(function(err) {
     console.error('GAS送信エラー:', err);
-    // フォールバック：imgタグで送信
-    const img = new Image();
-    img.onload = img.onerror = function() { callback(true); };
-    img.src = url;
+    callback(false);
   });
 }
 
