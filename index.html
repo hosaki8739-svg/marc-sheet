@@ -372,7 +372,12 @@
         <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">稽古を行った当日の日付を入力してください</div>
-          <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;" onchange="onLogDateChange()">
+          <input type="hidden" id="logDate" value="">
+          <div id="logDateDisplay" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:16px;color:var(--ink);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="openDatePicker()">
+            <span id="logDateText">今日の日付を選択</span>
+            <span style="font-size:12px;color:var(--ink-muted);">📅</span>
+          </div>
+          <input type="date" id="logDateNative" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" onchange="onNativeDateChange(this.value)">
         </div>
         <div style="flex-shrink:0;text-align:right;">
           <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
@@ -728,6 +733,8 @@ function renderDateDots(currentDate) {
 function selectDate(d) {
   const dateEl = document.getElementById('logDate');
   if (dateEl) dateEl.value = d;
+  const display = document.getElementById('logDateText');
+  if (display) display.textContent = d.replace(/-/g, '/');
   renderPhaseUI(d);
   renderDateDots(d);
   renderHistory();
@@ -983,6 +990,24 @@ function clearProfileForm() {
   updateProgress();
 }
 
+// ===== DATE PICKER HELPER =====
+function openDatePicker() {
+  const native = document.getElementById('logDateNative');
+  if (native) {
+    native.value = document.getElementById('logDate').value || new Date().toISOString().slice(0,10);
+    native.showPicker ? native.showPicker() : native.click();
+  }
+}
+
+function onNativeDateChange(val) {
+  if (!val) return;
+  const hidden = document.getElementById('logDate');
+  const display = document.getElementById('logDateText');
+  if (hidden) hidden.value = val;
+  if (display) display.textContent = val.replace(/-/g, '/');
+  onLogDateChange();
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   const dateBar = document.getElementById('logDate')?.closest('div[style]');
@@ -1006,6 +1031,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUserData(storedName);
   }
   const today2 = new Date().toISOString().slice(0,10);
+  const hiddenDate = document.getElementById('logDate');
+  if (hiddenDate) hiddenDate.value = today2;
+  const displayDate = document.getElementById('logDateText');
+  if (displayDate) displayDate.textContent = today2.replace(/-/g, '/');
   // Flatpickr初期化（ページロード時）
     renderLogUI();
 });
