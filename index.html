@@ -639,18 +639,21 @@ function applyPrevData(data) {
   setTimeout(updateProgress, 200);
 }
 
-// ===== FETCH USER DATA =====
+// ===== FETCH USER DATA (JSONP) =====
 function fetchUserData(name) {
-  const url = GAS_URL + '?name=' + encodeURIComponent(name);
-  fetch(url, { method: 'GET', mode: 'cors' })
-  .then(function(res) { return res.json(); })
-  .then(function(json) {
-    if (json.status !== 'ok') { showToast('データの取得に失敗しました'); return; }
-    // dataが空またはBARSが全部0の場合は復元しない
+  const cb = '_marcUser_' + Date.now();
+  const sc = document.createElement('script');
+  const timer = setTimeout(function() {
+    delete window[cb];
+    try { document.head.removeChild(sc); } catch(e) {}
+  }, 8000);
+  window[cb] = function(json) {
+    clearTimeout(timer);
+    delete window[cb];
+    try { document.head.removeChild(sc); } catch(e) {}
+    if (json.status !== 'ok') return;
     const hasData = json.data && Object.keys(json.data).length > 0 && json.data['氏名'];
-    if (hasData) {
-      applyPrevData(json.data);
-    }
+    if (hasData) applyPrevData(json.data);
     marc.declares = {};
     (json.declares || []).forEach(function(r) {
       const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
@@ -664,13 +667,15 @@ function fetchUserData(name) {
     marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) { return Object.assign({ date: d }, marc.logs[d]); });
     marc.loaded = true;
     renderLogUI();
-    // データが実際にある場合のみトーストを表示
     if (hasData) showToast('📋 ' + name + ' さんのデータを復元しました');
-  })
-  .catch(function(err) {
-    console.error('データ取得エラー:', err);
-    showToast('データの取得に失敗しました');
-  });
+  };
+  sc.onerror = function() {
+    clearTimeout(timer);
+    delete window[cb];
+    try { document.head.removeChild(sc); } catch(e) {}
+  };
+  sc.src = GAS_URL + '?name=' + encodeURIComponent(name) + '&callback=' + cb;
+  document.head.appendChild(sc);
 }
 
 // ===== PHASE =====
@@ -959,14 +964,18 @@ document.addEventListener('DOMContentLoaded', () => {
     dot.style.cssText = 'margin-top:8px;flex-basis:100%;';
     dateBar.appendChild(dot);
   }
-  // ページロード時は名前フィールドを空にする（別の人が使う場合の誤復元を防ぐ）
+  // ページロード時：名前をフォームに入力してGASからデータ復元
   marc.name = '';
   const storedName = localStorage.getItem('marc_user_name') || '';
   if (storedName) {
-    // ログタブの記録者表示のみ更新（フォームは空のまま）
     marc.name = storedName;
+    const ni = document.getElementById('nameInput');
+    if (ni) ni.value = storedName;
     const lu = document.getElementById('logUserName');
     if (lu) { lu.textContent = storedName; lu.style.color = 'var(--primary)'; }
+    // GASからデータを取得して復元
+    clearProfileForm();
+    fetchUserData(storedName);
   }
   const dateEl2 = document.getElementById('logDate');
   const today2 = new Date().toISOString().slice(0,10);
