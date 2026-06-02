@@ -372,7 +372,7 @@
         <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">稽古を行った当日の日付を入力してください</div>
-          <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;" onchange="onLogDateChange()">
+          <input type="text" id="logDate" style="margin:0;width:100%;min-width:0;" placeholder="日付を選択" readonly>
         </div>
         <div style="flex-shrink:0;text-align:right;">
           <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
@@ -694,7 +694,7 @@ function renderLogUI() {
   renderDateDots();
   renderHistory();
   updateLogCount();
-  if (typeof refreshFlatpickr === 'function') refreshFlatpickr();
+  setTimeout(applyFlatpickrDots, 50);
 }
 
 function onLogDateChange() { renderLogUI(); }
@@ -926,8 +926,6 @@ function switchTab(tab, el) {
       if (logName) { logName.textContent = marc.name; logName.style.color = 'var(--primary)'; }
     }
     renderLogUI();
-    // Flatpickr初期化（タブ切り替え時）
-    setTimeout(initFlatpickr, 100);
   }
 }
 
@@ -980,50 +978,50 @@ document.addEventListener('DOMContentLoaded', () => {
     clearProfileForm();
     fetchUserData(storedName);
   }
-  const dateEl2 = document.getElementById('logDate');
   const today2 = new Date().toISOString().slice(0,10);
-  if (dateEl2) { dateEl2.value = today2; }
+  // Flatpickr初期化（ページロード時）
+  function waitAndInitFlatpickr() {
+    if (typeof flatpickr === 'undefined') {
+      setTimeout(waitAndInitFlatpickr, 100);
+      return;
+    }
+    const el = document.getElementById('logDate');
+    if (!el) return;
+    window.fpInstance = flatpickr(el, {
+      locale: 'ja',
+      dateFormat: 'Y-m-d',
+      defaultDate: today2,
+      disableMobile: false,
+      onReady: function(_, __, fp) {
+        window.fpCalendar = fp;
+        setTimeout(function(){ applyFlatpickrDots(); }, 100);
+      },
+      onMonthChange: function() {
+        setTimeout(function(){ applyFlatpickrDots(); }, 50);
+      },
+      onYearChange: function() {
+        setTimeout(function(){ applyFlatpickrDots(); }, 50);
+      },
+      onChange: function(dates, dateStr) {
+        onLogDateChange();
+      }
+    });
+  }
+  waitAndInitFlatpickr();
   renderLogUI();
 });
 
-// ===== FLATPICKR =====
-let fpInstance = null;
-
-function initFlatpickr() {
-  const el = document.getElementById('logDate');
-  if (!el || typeof flatpickr === 'undefined') return;
-  if (fpInstance) { fpInstance.destroy(); fpInstance = null; }
-
+function applyFlatpickrDots() {
+  const fp = window.fpInstance;
+  if (!fp || !fp.calendarContainer) return;
   const declareDates = Object.keys(marc.declares);
   const logDates     = Object.keys(marc.logs);
-
-  fpInstance = flatpickr(el, {
-    locale: 'ja',
-    dateFormat: 'Y-m-d',
-    defaultDate: el.value || new Date(),
-    disableMobile: true,
-    onReady: function(_, __, fp) {
-      setTimeout(function(){ applyFlatpickrDots(fp, declareDates, logDates); }, 50);
-    },
-    onMonthChange: function(_, __, fp) {
-      setTimeout(function(){ applyFlatpickrDots(fp, Object.keys(marc.declares), Object.keys(marc.logs)); }, 50);
-    },
-    onYearChange: function(_, __, fp) {
-      setTimeout(function(){ applyFlatpickrDots(fp, Object.keys(marc.declares), Object.keys(marc.logs)); }, 50);
-    },
-    onChange: function(selectedDates, dateStr) {
-      onLogDateChange();
-    }
-  });
-}
-
-function applyFlatpickrDots(fp, declareDates, logDates) {
-  if (!fp || !fp.calendarContainer) return;
   fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(function(dayEl) {
     if (!dayEl.dateObj) return;
-    const dateStr = dayEl.dateObj.getFullYear() + '-' +
-      String(dayEl.dateObj.getMonth()+1).padStart(2,'0') + '-' +
-      String(dayEl.dateObj.getDate()).padStart(2,'0');
+    const d = dayEl.dateObj;
+    const dateStr = d.getFullYear() + '-' +
+      String(d.getMonth()+1).padStart(2,'0') + '-' +
+      String(d.getDate()).padStart(2,'0');
     dayEl.classList.remove('has-declare','has-log','has-both');
     const hasDeclare = declareDates.includes(dateStr);
     const hasLog     = logDates.includes(dateStr);
@@ -1033,13 +1031,6 @@ function applyFlatpickrDots(fp, declareDates, logDates) {
   });
 }
 
-function refreshFlatpickr() {
-  if (fpInstance) {
-    applyFlatpickrDots(fpInstance, Object.keys(marc.declares), Object.keys(marc.logs));
-  } else {
-    initFlatpickr();
-  }
-}
 
 </script>
 </body>
