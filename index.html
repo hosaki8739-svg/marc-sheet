@@ -689,7 +689,15 @@ function phaseFor(dateStr) {
 
 function renderLogUI() {
   const dateEl = document.getElementById('logDate');
-  const d = (dateEl && dateEl.value) ? dateEl.value.slice(0,10) : '';
+  let d = (dateEl && dateEl.value) ? dateEl.value.slice(0,10) : '';
+  // 日付が空の場合は宣言済みの最新日付を使う
+  if (!d) {
+    const pending = Object.keys(marc.declares).filter(function(x){ return !marc.logs[x]; }).sort().reverse();
+    if (pending.length) {
+      d = pending[0];
+      if (dateEl) dateEl.value = d;
+    }
+  }
   renderPhaseUI(d);
   renderDateDots();
   renderHistory();
