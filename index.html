@@ -372,7 +372,7 @@
         <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">稽古を行った当日の日付を入力してください</div>
-          <input type="text" id="logDate" style="margin:0;width:100%;min-width:0;" placeholder="日付を選択" readonly>
+          <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;" onchange="onLogDateChange()">
         </div>
         <div style="flex-shrink:0;text-align:right;">
           <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
@@ -694,7 +694,6 @@ function renderLogUI() {
   renderDateDots();
   renderHistory();
   updateLogCount();
-  setTimeout(applyFlatpickrDots, 50);
 }
 
 function onLogDateChange() { renderLogUI(); }
@@ -980,58 +979,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const today2 = new Date().toISOString().slice(0,10);
   // Flatpickr初期化（ページロード時）
-  function waitAndInitFlatpickr() {
-    if (typeof flatpickr === 'undefined') {
-      setTimeout(waitAndInitFlatpickr, 100);
-      return;
-    }
-    const el = document.getElementById('logDate');
-    if (!el) return;
-    window.fpInstance = flatpickr(el, {
-      locale: 'ja',
-      dateFormat: 'Y-m-d',
-      defaultDate: today2,
-      disableMobile: false,
-      onReady: function(_, __, fp) {
-        window.fpCalendar = fp;
-        setTimeout(function(){ applyFlatpickrDots(); }, 100);
-      },
-      onMonthChange: function() {
-        setTimeout(function(){ applyFlatpickrDots(); }, 50);
-      },
-      onYearChange: function() {
-        setTimeout(function(){ applyFlatpickrDots(); }, 50);
-      },
-      onChange: function(dates, dateStr) {
-        onLogDateChange();
-      }
-    });
-  }
-  waitAndInitFlatpickr();
-  renderLogUI();
+    renderLogUI();
 });
 
-function applyFlatpickrDots() {
-  const fp = window.fpInstance;
-  if (!fp || !fp.calendarContainer) return;
-  const declareDates = Object.keys(marc.declares);
-  const logDates     = Object.keys(marc.logs);
-  fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(function(dayEl) {
-    if (!dayEl.dateObj) return;
-    const d = dayEl.dateObj;
-    const dateStr = d.getFullYear() + '-' +
-      String(d.getMonth()+1).padStart(2,'0') + '-' +
-      String(d.getDate()).padStart(2,'0');
-    dayEl.classList.remove('has-declare','has-log','has-both');
-    const hasDeclare = declareDates.includes(dateStr);
-    const hasLog     = logDates.includes(dateStr);
-    if (hasDeclare && hasLog) dayEl.classList.add('has-both');
-    else if (hasLog)          dayEl.classList.add('has-log');
-    else if (hasDeclare)      dayEl.classList.add('has-declare');
-  });
-}
-
-
-</script>
-</body>
-</html>
