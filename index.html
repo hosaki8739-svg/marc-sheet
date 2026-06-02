@@ -694,6 +694,7 @@ function renderLogUI() {
   renderDateDots();
   renderHistory();
   updateLogCount();
+  if (typeof refreshFlatpickr === 'function') refreshFlatpickr();
 }
 
 function onLogDateChange() { renderLogUI(); }
@@ -925,6 +926,8 @@ function switchTab(tab, el) {
       if (logName) { logName.textContent = marc.name; logName.style.color = 'var(--primary)'; }
     }
     renderLogUI();
+    // Flatpickr初期化（タブ切り替え時）
+    setTimeout(initFlatpickr, 100);
   }
 }
 
