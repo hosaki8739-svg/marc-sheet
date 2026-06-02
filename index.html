@@ -646,7 +646,11 @@ function fetchUserData(name) {
   .then(function(res) { return res.json(); })
   .then(function(json) {
     if (json.status !== 'ok') { showToast('データの取得に失敗しました'); return; }
-    if (json.data && Object.keys(json.data).length > 0) applyPrevData(json.data);
+    // dataが空またはBARSが全部0の場合は復元しない
+    const hasData = json.data && Object.keys(json.data).length > 0 && json.data['氏名'];
+    if (hasData) {
+      applyPrevData(json.data);
+    }
     marc.declares = {};
     (json.declares || []).forEach(function(r) {
       const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
@@ -660,7 +664,8 @@ function fetchUserData(name) {
     marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) { return Object.assign({ date: d }, marc.logs[d]); });
     marc.loaded = true;
     renderLogUI();
-    showToast('📋 ' + name + ' さんのデータを復元しました');
+    // データが実際にある場合のみトーストを表示
+    if (hasData) showToast('📋 ' + name + ' さんのデータを復元しました');
   })
   .catch(function(err) {
     console.error('データ取得エラー:', err);
@@ -925,8 +930,24 @@ function onNameInput(el) {
   saveName(v);
   if (v.length >= 2) {
     clearTimeout(window._nameTimer);
-    window._nameTimer = setTimeout(function() { fetchUserData(v); }, 1000);
+    window._nameTimer = setTimeout(function() {
+      // フォームをクリアしてからフェッチ（前の人のデータが残らないように）
+      clearProfileForm();
+      fetchUserData(v);
+    }, 1000);
   }
+}
+
+function clearProfileForm() {
+  const ids = ['gakuNenSelect','kumiInput','dankyuSelect','kendoReki','kikiteSelect','kadaikan','kojinMokuhyo'];
+  ids.forEach(function(id) { const el = document.getElementById(id); if(el) el.value = ''; });
+  // 得意技リセット
+  document.querySelectorAll('#wazaSelector .rank-btn.active').forEach(function(b){ b.classList.remove('active'); });
+  // BARS リセット
+  document.querySelectorAll('.bars-star.lit').forEach(function(s){ s.classList.remove('lit'); });
+  document.querySelectorAll('.bars-anchor-row.selected').forEach(function(r){ r.classList.remove('selected'); });
+  document.querySelectorAll('[id^="bars-label-"]').forEach(function(el){ el.innerHTML = '← 上の行動説明を読んで、当てはまる★を選んでください'; });
+  updateProgress();
 }
 
 // ===== INIT =====
@@ -938,11 +959,12 @@ document.addEventListener('DOMContentLoaded', () => {
     dot.style.cssText = 'margin-top:8px;flex-basis:100%;';
     dateBar.appendChild(dot);
   }
+  // ページロード時は名前フィールドを空にする（別の人が使う場合の誤復元を防ぐ）
+  marc.name = '';
   const storedName = localStorage.getItem('marc_user_name') || '';
   if (storedName) {
+    // ログタブの記録者表示のみ更新（フォームは空のまま）
     marc.name = storedName;
-    const ni = document.getElementById('nameInput');
-    if (ni) ni.value = storedName;
     const lu = document.getElementById('logUserName');
     if (lu) { lu.textContent = storedName; lu.style.color = 'var(--primary)'; }
   }
