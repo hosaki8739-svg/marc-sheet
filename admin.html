@@ -142,6 +142,41 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   body{background:#fff}
   .card,.sbox,.kpi,.det-box,.chart-box,.ml-box{box-shadow:none;border:1px solid #ddd}
 }
+
+/* ===== 印刷プレビューオーバーレイ ===== */
+#printOverlay{display:none;position:fixed;inset:0;background:rgba(15,32,68,.6);z-index:1000;overflow-y:auto;padding:20px;}
+#printOverlay.show{display:block;}
+#printDoc{background:#fff;width:297mm;margin:0 auto;padding:14mm 12mm;font-family:'Noto Sans JP',sans-serif;color:#0f2044;}
+.print-doc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10mm;padding-bottom:4mm;border-bottom:2px solid #0f2044;}
+.print-doc-title{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;color:#0f2044;}
+.print-doc-meta{font-size:10px;color:#7a8ea8;}
+.print-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5mm;}
+.print-card{border:1px solid #dde4f0;border-radius:6px;overflow:hidden;break-inside:avoid;}
+.print-card-hdr{background:#0a7c5c;padding:6px 10px;display:flex;align-items:center;gap:7px;}
+.print-card-av{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.print-card-name{font-size:12px;font-weight:700;color:#fff;flex:1;}
+.print-card-date{font-size:9px;color:rgba(255,255,255,.6);}
+.print-card-body{padding:7px 10px;font-size:10px;line-height:1.65;}
+.print-chip{padding:4px 7px;border-radius:0 4px 4px 0;margin-bottom:5px;font-size:10px;line-height:1.55;display:block;}
+.print-chip-d{background:#e8eef8;border-left:2px solid #2a5298;color:#1a3560;font-weight:600;}
+.print-chip-s{background:#f8fafc;border-left:2px solid #dde4f0;color:#3d5278;}
+.print-chip-w{background:#fdf3dc;border-left:2px solid #c8952a;color:#3d5278;}
+.print-chip-g{background:#e6f5f0;border-left:2px solid #0a7c5c;color:#3d5278;}
+.print-clabel{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;margin-top:5px;color:#7a8ea8;}
+.print-clabel:first-child{margin-top:0;}
+.print-pill{display:inline-block;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:700;margin-left:4px;}
+.print-overlay-btn{position:fixed;bottom:24px;right:24px;display:flex;gap:10px;z-index:1001;}
+.print-overlay-btn button{padding:10px 20px;border-radius:999px;border:none;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.print-do-btn{background:#0f2044;color:#fff;}
+.print-close-btn{background:#fff;color:#0f2044;border:2px solid #0f2044!important;}
+
+@media print{
+  #printOverlay{display:block!important;position:static;background:none;padding:0;}
+  #printDoc{width:100%;margin:0;padding:10mm 8mm;}
+  .print-overlay-btn{display:none!important;}
+  .hdr,.tab-bar,.alert-bar,.tab-panel{display:none!important;}
+  body{background:#fff;}
+}
 </style>
 </head>
 <body>
@@ -212,7 +247,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       </div>
     </div>
     <div class="sbox">
-      <div class="sbox-hdr"><div class="sbox-title">直近の振り返り</div></div>
+      <div class="sbox-hdr"><div class="sbox-title">直近の振り返り</div><button onclick="printRecentCards()" style="padding:5px 14px;border-radius:999px;border:1.5px solid var(--navy);background:transparent;color:var(--navy);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;">🖨 印刷</button></div>
       <div class="sbox-body"><div class="cards-grid" id="recentCards"><div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">データを収集してください</div></div></div></div>
     </div>
   </div>
@@ -801,11 +836,68 @@ function analyzeCoaching(){
   cycleMap.innerHTML=`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>部員</th><th>③ 次への一手（前回）</th><th></th><th>✊ 最新のチャレンジ宣言</th><th>接続</th></tr></thead><tbody>${analyzed.map(a=>`<tr><td style="font-weight:600;font-size:12px;white-space:nowrap">${a.name}</td><td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nextTxt||'<span style="color:var(--ink-muted)">未記入</span>'}</td><td style="font-size:13px">→</td><td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.curIntent||'<span style="color:var(--ink-muted)">宣言なし</span>'}</td><td style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${connColor[a.cycleConn]};white-space:nowrap">${connBarStr[a.cycleConn]}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
+// ===== 印刷機能 =====
+function printRecentCards(){
+  const latest = latestPracticeDate();
+  const rL = store.r.filter(r=>getDate(r)===latest);
+  if(!rL.length){ alert('印刷するデータがありません。先にデータを収集してください。'); return; }
+
+  const FL2 = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
+  const AP2 = ['','ap-1','ap-2','ap-3','ap-4','ap-5'];
+  const fColors = ['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
+
+  document.getElementById('printDocMeta').textContent = '稽古日：' + latest + '　印刷：' + new Date().toLocaleDateString('ja-JP');
+
+  const grid = document.getElementById('printGrid');
+  grid.innerHTML = rL.map(r => {
+    const n = getName(r), f = getScore(r);
+    const intent = r.intent || r['試したいこと'] || '';
+    const scene  = r.scene  || r['印象に残った場面'] || '—';
+    const why    = r.why    || r['なぜそうなったか'] || '—';
+    const next   = r.next   || r['次への一手'] || '';
+    const pillHtml = f ? '<span class="print-pill" style="background:'+fColors[f]+';color:#fff;">'+FL2[f]+'</span>' : '';
+    return '<div class="print-card">'+
+      '<div class="print-card-hdr">'+
+        '<div class="print-card-av">'+n.charAt(0)+'</div>'+
+        '<div class="print-card-name">'+n+pillHtml+'</div>'+
+        '<div class="print-card-date">'+getDate(r)+'</div>'+
+      '</div>'+
+      '<div class="print-card-body">'+
+        (intent ? '<div class="print-clabel">✊ チャレンジ宣言</div><div class="print-chip print-chip-d">'+intent+'</div>' : '')+
+        '<div class="print-clabel">① 試した結果</div><div class="print-chip print-chip-s">'+scene+'</div>'+
+        '<div class="print-clabel">② なぜそうなったか</div><div class="print-chip print-chip-w">'+why+'</div>'+
+        (next ? '<div class="print-clabel">③ 次の稽古でどう変えるか</div><div class="print-chip print-chip-g">'+next+'</div>' : '')+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('printOverlay').classList.add('show');
+}
+
+function closePrintOverlay(){
+  document.getElementById('printOverlay').classList.remove('show');
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   var btn=document.getElementById('analyzeBtn');
   if(btn){btn.addEventListener('click',function(e){e.stopPropagation();analyzeCoaching();});}
 });
 </script>
+
+<!-- 印刷オーバーレイ -->
+<div id="printOverlay">
+  <div id="printDoc">
+    <div class="print-doc-hdr">
+      <div class="print-doc-title">⚔ MARC 直近の振り返り</div>
+      <div class="print-doc-meta" id="printDocMeta"></div>
+    </div>
+    <div class="print-grid" id="printGrid"></div>
+  </div>
+  <div class="print-overlay-btn">
+    <button class="print-close-btn" onclick="closePrintOverlay()">✕ 閉じる</button>
+    <button class="print-do-btn" onclick="window.print()">🖨 印刷する</button>
+  </div>
+</div>
 
 <div id="sidePanel" style="position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--surface);box-shadow:-4px 0 24px rgba(15,32,68,.15);z-index:500;transition:right .25s ease;display:flex;flex-direction:column;overflow:hidden">
   <div style="background:var(--navy);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0">
