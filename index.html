@@ -641,11 +641,10 @@ function applyPrevData(data) {
 
 // ===== FETCH USER DATA =====
 function fetchUserData(name) {
-  const cb = '_marcUser_' + Date.now();
-  const sc = document.createElement('script');
-  window[cb] = function(json) {
-    delete window[cb];
-    try { document.head.removeChild(sc); } catch(e) {}
+  const url = GAS_URL + '?name=' + encodeURIComponent(name);
+  fetch(url, { method: 'GET', mode: 'cors' })
+  .then(function(res) { return res.json(); })
+  .then(function(json) {
     if (json.status !== 'ok') { showToast('データの取得に失敗しました'); return; }
     if (json.data && Object.keys(json.data).length > 0) applyPrevData(json.data);
     marc.declares = {};
@@ -662,10 +661,11 @@ function fetchUserData(name) {
     marc.loaded = true;
     renderLogUI();
     showToast('📋 ' + name + ' さんのデータを復元しました');
-  };
-  sc.onerror = function() { delete window[cb]; try { document.head.removeChild(sc); } catch(e) {} showToast('GAS接続に失敗しました'); };
-  sc.src = GAS_URL + '?name=' + encodeURIComponent(name) + '&callback=' + cb;
-  document.head.appendChild(sc);
+  })
+  .catch(function(err) {
+    console.error('データ取得エラー:', err);
+    showToast('データの取得に失敗しました');
+  });
 }
 
 // ===== PHASE =====
@@ -843,30 +843,29 @@ function submitLog() {
   });
 }
 
-// ===== GAS SEND (JSONP) =====
+// ===== GAS SEND (fetch no-cors) =====
 function sendToGAS(data, callback) {
-  const cb = '_marcSend_' + Date.now();
-  const sc = document.createElement('script');
-  let done = false;
-  const timer = setTimeout(function() {
-    if (done) return; done = true;
-    delete window[cb]; try { document.head.removeChild(sc); } catch(e) {}
+  // URLパラメータとして送信（no-corsはレスポンスが読めないため常に成功扱い）
+  let url = GAS_URL + '?';
+  url += Object.keys(data).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
+  }).join('&');
+
+  fetch(url, {
+    method: 'GET',
+    mode: 'no-cors',
+  })
+  .then(function() {
+    // no-corsはレスポンスが読めないが送信は成功している
     callback(true);
-  }, 5000);
-  window[cb] = function(json) {
-    if (done) return; done = true; clearTimeout(timer);
-    delete window[cb]; try { document.head.removeChild(sc); } catch(e) {}
-    callback(json.status === 'ok');
-  };
-  sc.onerror = function() {
-    if (done) return; done = true; clearTimeout(timer);
-    delete window[cb]; try { document.head.removeChild(sc); } catch(e) {}
-    callback(true);
-  };
-  let url = GAS_URL + '?callback=' + cb;
-  Object.keys(data).forEach(function(k) { url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(data[k]); });
-  sc.src = url;
-  document.head.appendChild(sc);
+  })
+  .catch(function(err) {
+    console.error('GAS送信エラー:', err);
+    // フォールバック：imgタグで送信
+    const img = new Image();
+    img.onload = img.onerror = function() { callback(true); };
+    img.src = url;
+  });
 }
 
 function startNewLog() {
