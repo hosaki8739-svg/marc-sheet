@@ -79,7 +79,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
 .achieve-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
 .md{display:grid;grid-template-columns:230px 1fr;gap:14px;align-items:start}
 .ml-box{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
-.ml-hdr{padding:9px 14px;background:var(--navy);color:rgba(255,255,255,.65);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
 .ml-item{display:flex;align-items:center;gap:9px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border-lt);transition:background .15s}
 .ml-item:last-child{border-bottom:none}.ml-item:hover{background:var(--bg)}.ml-item.active{background:var(--navy-pale)}
 .ml-name{font-size:12px;font-weight:600;color:var(--ink);flex:1}
@@ -163,7 +162,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   <button class="tab-btn" data-tab="coaching">🎤 コーチング支援</button>
 </div>
 
-<!-- 直近の稽古 -->
 <div class="tab-panel active" id="tab-recent">
   <div class="content">
     <div class="kpi-row">
@@ -172,9 +170,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div class="kpi-val" id="k-declare">—</div>
         <div class="kpi-label">チャレンジ宣言</div>
         <div class="kpi-sub" id="k-declare-date">—</div>
-        <div style="margin-top:8px;background:rgba(42,82,152,0.12);border-radius:4px;height:5px;overflow:hidden">
-          <div id="k-declare-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div>
-        </div>
+        <div style="margin-top:8px;background:rgba(42,82,152,0.12);border-radius:4px;height:5px;overflow:hidden"><div id="k-declare-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div></div>
         <div id="k-declare-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
       </div>
       <div class="kpi green">
@@ -182,9 +178,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
         <div class="kpi-val" id="k-reflect">—</div>
         <div class="kpi-label">振り返り提出</div>
         <div class="kpi-sub" id="k-reflect-rate">提出率 —%</div>
-        <div style="margin-top:8px;background:rgba(10,124,92,0.15);border-radius:4px;height:5px;overflow:hidden">
-          <div id="k-reflect-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div>
-        </div>
+        <div style="margin-top:8px;background:rgba(10,124,92,0.15);border-radius:4px;height:5px;overflow:hidden"><div id="k-reflect-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div></div>
         <div id="k-reflect-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
       </div>
       <div class="kpi gold">
@@ -219,14 +213,11 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
     </div>
     <div class="sbox">
       <div class="sbox-hdr"><div class="sbox-title">直近の振り返り</div></div>
-      <div class="sbox-body">
-        <div class="cards-grid" id="recentCards"><div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">データを収集してください</div></div></div>
-      </div>
+      <div class="sbox-body"><div class="cards-grid" id="recentCards"><div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">データを収集してください</div></div></div></div>
     </div>
   </div>
 </div>
 
-<!-- 部員別詳細 -->
 <div class="tab-panel" id="tab-member">
   <div class="content">
     <div class="md">
@@ -249,7 +240,6 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   </div>
 </div>
 
-<!-- 傾向・分析 -->
 <div class="tab-panel" id="tab-trend">
   <div class="content">
     <div class="chart-row">
@@ -260,51 +250,21 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
       <div class="sbox-hdr"><div class="sbox-title">部員マトリクス</div><div class="sbox-meta">セル色＝達成感 / ✓＝宣言のみ / —＝未記録</div></div>
       <div class="sbox-body"><div class="mtx-wrap" id="matrixWrap"><div class="empty"><div class="empty-text">データを収集してください</div></div></div></div>
     </div>
-    <!-- 次の一手の具体性の推移 -->
     <div class="chart-row">
-      <div class="chart-box">
-        <div class="chart-title">③「次への一手」具体性の推移（チーム平均）</div>
-        <canvas id="nextChart" style="max-height:180px"></canvas>
-        <div class="chart-sub">次の一手の具体性が上がるほど、自走型の学習者に近づいています</div>
-      </div>
-      <div class="chart-box">
-        <div class="chart-title">部員別 自走度マップ（次の一手の具体性 × サイクル接続）</div>
-        <canvas id="autonomyChart" style="max-height:180px"></canvas>
-        <div class="chart-sub">右上が理想：「次の稽古でどう変えるか」が具体的でサイクルも繋がっている</div>
-      </div>
+      <div class="chart-box"><div class="chart-title">③「次への一手」具体性の推移（チーム平均）</div><canvas id="nextChart" style="max-height:180px"></canvas><div class="chart-sub">次の一手の具体性が上がるほど、自走型の学習者に近づいています</div></div>
+      <div class="chart-box"><div class="chart-title">部員別 自走度マップ（次の一手の具体性 × サイクル接続）</div><canvas id="autonomyChart" style="max-height:180px"></canvas><div class="chart-sub">右上が理想：「次の稽古でどう変えるか」が具体的でサイクルも繋がっている</div></div>
     </div>
-
-    <!-- 成長指標サマリーテーブル -->
     <div class="sbox">
-      <div class="sbox-hdr">
-        <div class="sbox-title">稽古ごとの成長指標</div>
-        <div class="sbox-meta">宣言の具体性・達成感・③の質を稽古単位で追跡</div>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="tbl" id="growthTable">
-          <thead><tr><th>稽古日</th><th>参加者</th><th>チャレンジ宣言</th><th>振り返り提出</th><th>平均達成感</th><th>平均次の一手の具体性</th><th>サイクル接続率</th></tr></thead>
-          <tbody id="growthTableBody"><tr><td colspan="7"><div class="empty"><div class="empty-text">データを収集してください</div></div></td></tr></tbody>
-        </table>
-      </div>
+      <div class="sbox-hdr"><div class="sbox-title">稽古ごとの成長指標</div><div class="sbox-meta">宣言の具体性・達成感・③の質を稽古単位で追跡</div></div>
+      <div style="overflow-x:auto"><table class="tbl" id="growthTable"><thead><tr><th>稽古日</th><th>参加者</th><th>チャレンジ宣言</th><th>振り返り提出</th><th>平均達成感</th><th>平均次の一手の具体性</th><th>サイクル接続率</th></tr></thead><tbody id="growthTableBody"><tr><td colspan="7"><div class="empty"><div class="empty-text">データを収集してください</div></div></td></tr></tbody></table></div>
     </div>
-
-    <!-- 部員コンピテンシー比較レーダー -->
     <div class="sbox">
-      <div class="sbox-hdr">
-        <div class="sbox-title">部員コンピテンシー比較</div>
-        <div class="sbox-meta">最大5名まで選択して比較</div>
-      </div>
+      <div class="sbox-hdr"><div class="sbox-title">部員コンピテンシー比較</div><div class="sbox-meta">最大5名まで選択して比較</div></div>
       <div class="sbox-body">
-        <div style="margin-bottom:12px">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px">比較する部員を選択（最大5名）</div>
-          <div id="radarSelectList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;"></div>
-        </div>
-        <div style="max-width:520px;margin:0 auto">
-          <canvas id="allRadarChart" style="max-height:420px"></canvas>
-        </div>
+        <div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px">比較する部員を選択（最大5名）</div><div id="radarSelectList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;"></div></div>
+        <div style="max-width:520px;margin:0 auto"><canvas id="allRadarChart" style="max-height:420px"></canvas></div>
       </div>
     </div>
-
     <div class="sbox">
       <div class="sbox-hdr"><div class="sbox-title">振り返り一覧</div></div>
       <div class="sbox-body" style="padding-bottom:6px">
@@ -321,134 +281,58 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink)
   </div>
 </div>
 
-<!-- コーチング支援 -->
 <div class="tab-panel" id="tab-coaching">
   <div class="content">
-
-    <!-- KPI行（バレットチャート）-->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-      <!-- サイクル接続率 -->
       <div class="kpi green" style="padding:16px 18px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          <span class="kpi-icon" style="margin-bottom:0">🔄</span>
-          <span class="kpi-label" style="margin-top:0">サイクル接続率</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span class="kpi-val" id="ck-cycle" style="font-size:22px">—</span>
-          <span style="font-size:10px;color:var(--ink-muted)">目標 100%</span>
-        </div>
-        <div style="background:rgba(10,124,92,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden">
-          <div id="ck-cycle-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div>
-          <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(10,124,92,0.4)"></div>
-        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="kpi-icon" style="margin-bottom:0">🔄</span><span class="kpi-label" style="margin-top:0">サイクル接続率</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="kpi-val" id="ck-cycle" style="font-size:22px">—</span><span style="font-size:10px;color:var(--ink-muted)">目標 100%</span></div>
+        <div style="background:rgba(10,124,92,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden"><div id="ck-cycle-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div><div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(10,124,92,0.4)"></div></div>
         <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">③→次の宣言が繋がっている割合</div>
       </div>
-      <!-- 次の一手の具体性（平均） -->
       <div class="kpi gold" style="padding:16px 18px">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          <span class="kpi-icon" style="margin-bottom:0">✏</span>
-          <span class="kpi-label" style="margin-top:0">次の一手の具体性（平均）</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span class="kpi-val" id="ck-next" style="font-size:22px">—</span>
-          <span style="font-size:10px;color:var(--ink-muted)">目標 5.0</span>
-        </div>
-        <div style="background:rgba(200,149,42,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden">
-          <div id="ck-next-bar" style="height:100%;border-radius:4px;background:var(--gold);transition:width .6s ease;width:0%"></div>
-          <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(200,149,42,0.5)"></div>
-        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="kpi-icon" style="margin-bottom:0">✏</span><span class="kpi-label" style="margin-top:0">次の一手の具体性（平均）</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="kpi-val" id="ck-next" style="font-size:22px">—</span><span style="font-size:10px;color:var(--ink-muted)">目標 5.0</span></div>
+        <div style="background:rgba(200,149,42,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden"><div id="ck-next-bar" style="height:100%;border-radius:4px;background:var(--gold);transition:width .6s ease;width:0%"></div><div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(200,149,42,0.5)"></div></div>
         <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">次への一手の質（1〜5）</div>
       </div>
-      <!-- テーマ深化率 -->
       <div class="kpi" style="padding:16px 18px;border-top-color:var(--navy-lt)">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          <span class="kpi-icon" style="margin-bottom:0">📈</span>
-          <span class="kpi-label" style="margin-top:0">テーマ深化率</span>
-        </div>
-        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
-          <span class="kpi-val" id="ck-spiral" style="font-size:22px">—</span>
-          <span style="font-size:10px;color:var(--ink-muted)">目標 100%</span>
-        </div>
-        <div style="background:rgba(42,82,152,0.12);border-radius:4px;height:10px;position:relative;overflow:hidden">
-          <div id="ck-spiral-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div>
-          <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(42,82,152,0.4)"></div>
-        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="kpi-icon" style="margin-bottom:0">📈</span><span class="kpi-label" style="margin-top:0">テーマ深化率</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="kpi-val" id="ck-spiral" style="font-size:22px">—</span><span style="font-size:10px;color:var(--ink-muted)">目標 100%</span></div>
+        <div style="background:rgba(42,82,152,0.12);border-radius:4px;height:10px;position:relative;overflow:hidden"><div id="ck-spiral-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div><div style="position:absolute;top:0;right:0;width:2px;height:100%;background:rgba(42,82,152,0.4)"></div></div>
         <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">同テーマを深めている部員の割合</div>
       </div>
     </div>
-
-    <!-- 分析ボタン -->
     <div class="sbox">
-      <div class="sbox-hdr">
-        <div class="sbox-title">🎤 部員別コーチング診断</div>
-        <div class="sbox-meta">③「次への一手」を軸に自走度を4軸で評価</div>
-        <button class="hdr-btn" id="analyzeBtn" style="padding:7px 18px;font-size:12px">📊 分析する</button>
-      </div>
+      <div class="sbox-hdr"><div class="sbox-title">🎤 部員別コーチング診断</div><div class="sbox-meta">③「次への一手」を軸に自走度を4軸で評価</div><button class="hdr-btn" id="analyzeBtn" style="padding:7px 18px;font-size:12px">📊 分析する</button></div>
       <div class="sbox-body">
-        <!-- 4軸の説明 -->
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px">
-          <div style="padding:10px 12px;background:var(--navy-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
-            <div style="font-weight:700;color:var(--navy-lt);margin-bottom:3px">🔄 サイクル接続</div>
-            次の一手の内容が次のチャレンジ宣言に引き継がれているか
-          </div>
-          <div style="padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
-            <div style="font-weight:700;color:var(--gold);margin-bottom:3px">✏ 次の一手の具体性</div>
-            「もっと頑張る」でなく行動レベルで書けているか
-          </div>
-          <div style="padding:10px 12px;background:var(--green-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
-            <div style="font-weight:700;color:var(--green);margin-bottom:3px">📈 テーマ深化</div>
-            同じ課題を繰り返し深めているか・毎回バラバラか
-          </div>
-          <div style="padding:10px 12px;background:var(--red-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7">
-            <div style="font-weight:700;color:var(--red);margin-bottom:3px">⚠ 感情サイン</div>
-            落ち込み・自信喪失・意欲低下のシグナル
-          </div>
+          <div style="padding:10px 12px;background:var(--navy-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--navy-lt);margin-bottom:3px">🔄 サイクル接続</div>次の一手の内容が次のチャレンジ宣言に引き継がれているか</div>
+          <div style="padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--gold);margin-bottom:3px">✏ 次の一手の具体性</div>「もっと頑張る」でなく行動レベルで書けているか</div>
+          <div style="padding:10px 12px;background:var(--green-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--green);margin-bottom:3px">📈 テーマ深化</div>同じ課題を繰り返し深めているか・毎回バラバラか</div>
+          <div style="padding:10px 12px;background:var(--red-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--red);margin-bottom:3px">⚠ 感情サイン</div>落ち込み・自信喪失・意欲低下のシグナル</div>
         </div>
-        <div id="coachingResult">
-          <div class="empty"><div class="empty-icon">📊</div><div class="empty-text">「分析する」ボタンを押してください</div></div>
-        </div>
+        <div id="coachingResult"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">「分析する」ボタンを押してください</div></div></div>
       </div>
     </div>
-
-    <!-- サイクル接続マップ -->
     <div class="sbox">
-      <div class="sbox-hdr">
-        <div class="sbox-title">🔄 サイクル接続マップ</div>
-        <div class="sbox-meta">③（前回）→ チャレンジ宣言（今回）の接続を可視化</div>
-      </div>
-      <div class="sbox-body" id="cycleMapBody">
-        <div class="empty"><div class="empty-text">「分析する」を押してください</div></div>
-      </div>
+      <div class="sbox-hdr"><div class="sbox-title">🔄 サイクル接続マップ</div><div class="sbox-meta">③（前回）→ チャレンジ宣言（今回）の接続を可視化</div></div>
+      <div class="sbox-body" id="cycleMapBody"><div class="empty"><div class="empty-text">「分析する」を押してください</div></div></div>
     </div>
-
-    <!-- 声かけリファレンス -->
     <div class="sbox">
       <div class="sbox-hdr"><div class="sbox-title">声かけリファレンス</div></div>
       <div class="sbox-body">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
-          <div style="padding:12px 14px;background:var(--red-pale);border-radius:var(--r);border-left:3px solid var(--red)">
-            <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">🔴 対話が必要</div>
-            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が曖昧・サイクル切断・感情ネガティブ。<br>「次の稽古で一番試したいことは何？」と一緒に言語化する。</div>
-          </div>
-          <div style="padding:12px 14px;background:var(--amber-pale);border-radius:var(--r);border-left:3px solid var(--amber)">
-            <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:5px">🟡 対話を検討</div>
-            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」はあるがサイクルが弱い。<br>「先週書いた内容、今日の宣言に使えた？」と接続を意識させる。</div>
-          </div>
-          <div style="padding:12px 14px;background:var(--green-pale);border-radius:var(--r);border-left:3px solid var(--green)">
-            <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:5px">🟢 成長を見守る</div>
-            <div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が具体的でサイクルも繋がっている。<br>「その成長、自分で気づいてる？」と自己認識を深める。</div>
-          </div>
+          <div style="padding:12px 14px;background:var(--red-pale);border-radius:var(--r);border-left:3px solid var(--red)"><div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">🔴 対話が必要</div><div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が曖昧・サイクル切断・感情ネガティブ。<br>「次の稽古で一番試したいことは何？」と一緒に言語化する。</div></div>
+          <div style="padding:12px 14px;background:var(--amber-pale);border-radius:var(--r);border-left:3px solid var(--amber)"><div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:5px">🟡 対話を検討</div><div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」はあるがサイクルが弱い。<br>「先週書いた内容、今日の宣言に使えた？」と接続を意識させる。</div></div>
+          <div style="padding:12px 14px;background:var(--green-pale);border-radius:var(--r);border-left:3px solid var(--green)"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:5px">🟢 成長を見守る</div><div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が具体的でサイクルも繋がっている。<br>「その成長、自分で気づいてる？」と自己認識を深める。</div></div>
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-// =====================================================
-//  MARC 顧問ダッシュボード
-// =====================================================
 const GAS = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
 const store = { d:[], r:[], p:[] };
 let charts = {};
@@ -457,12 +341,13 @@ const FL = ['','できなかった','少しできた','まあまあ','かなり'
 const AP = ['','ap-1','ap-2','ap-3','ap-4','ap-5'];
 const GRADE_ORDER = {'3年':1,'2年':2,'1年':3};
 
-// ── ユーティリティ ──
 function nd(v){ return String(v||'').replace(/\//g,'-').slice(0,10); }
 function getName(r){ return r['氏名']||r.name||''; }
 function getScore(r){ return parseInt(String(r.fulfillment||r['充実度']||'').replace('/5',''))||0; }
 function getDate(r){ return nd(r.date||r['稽古日']); }
-function gradeNum(n){ const p=store.p.find(r=>getName(r)===n); return p?(GRADE_ORDER[p['学年']]||9):9; }
+
+// ★修正済み：findをfilter().slice(-1)[0]に変更（最新行を取得）
+function gradeNum(n){ const p=store.p.filter(r=>getName(r)===n).slice(-1)[0]; return p?(GRADE_ORDER[p['学年']]||9):9; }
 function latestScore(n){ const rows=store.r.filter(r=>getName(r)===n).sort((a,b)=>getDate(b).localeCompare(getDate(a))); return rows.length?getScore(rows[0]):0; }
 function allNames(){ return [...new Set([...store.d,...store.r,...store.p].map(getName).filter(Boolean))]; }
 function sortedNames(){
@@ -495,7 +380,6 @@ function setWeekRange(){
   document.getElementById('dateTo').value=today.toISOString().slice(0,10);
 }
 
-// ── イベント委譲（inline onclick不使用）──
 document.addEventListener('click', function(e){
   const t=e.target;
   const tabBtn=t.closest('[data-tab]');
@@ -519,94 +403,41 @@ document.getElementById('dateFrom').addEventListener('change', renderAllCards);
 document.getElementById('dateTo').addEventListener('change', renderAllCards);
 document.getElementById('practiceSelect').addEventListener('change', function(){ renderRecent(this.value); });
 
-// サイドパネル
 function openSidePanel(name, grade, dc, rf) {
-  const panel   = document.getElementById('sidePanel');
-  const overlay = document.getElementById('spOverlay');
-  const avatar  = document.getElementById('sp-avatar');
-  const spName  = document.getElementById('sp-name');
-  const spSub   = document.getElementById('sp-sub');
-  const spBody  = document.getElementById('sp-body');
-  if (!panel) return;
-
-  const intent = dc ? (dc['試したいこと']||dc.intent||'') : '';
-  const scene  = rf ? (rf.scene ||rf['印象に残った場面']||'') : '';
-  const why    = rf ? (rf.why   ||rf['なぜそうなったか']||'') : '';
-  const next   = rf ? (rf.next  ||rf['次への一手']||'') : '';
-  const f      = rf ? (parseInt(String(rf.fulfillment||'').replace('/5',''))||0) : 0;
-  const FL     = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
-  const FC     = ['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
-
-  avatar.textContent = name.charAt(0);
-  spName.textContent = name;
-  spSub.textContent  = grade + (f ? '　達成感：' + FL[f] : '');
-
-  spBody.innerHTML = [
-    intent ? `<div style="margin-bottom:16px;padding:12px 14px;background:var(--navy-pale);border-left:4px solid var(--primary);border-radius:0 8px 8px 0">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:5px">✊ チャレンジ宣言</div>
-      <div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.6">${intent}</div>
-    </div>` : '<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">チャレンジ宣言なし</div>',
-
-    f ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 12px;background:var(--bg-warm);border-radius:8px">
-      <span style="font-size:18px">⭐</span>
-      <span style="font-size:13px;font-weight:700;color:${FC[f]}">${FL[f]}</span>
-      <span style="font-size:11px;color:var(--ink-muted)">${f}/5</span>
-    </div>` : '',
-
-    scene ? `<div style="margin-bottom:14px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:5px">① 試した結果</div>
-      <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${scene}</div>
-    </div>` : '',
-
-    why ? `<div style="margin-bottom:14px">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:5px">② なぜそうなったか</div>
-      <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${why}</div>
-    </div>` : '',
-
-    next ? `<div style="padding:12px 14px;background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0">
-      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:5px">③ 次への一手</div>
-      <div style="font-size:13px;font-weight:600;color:#065f46;line-height:1.7">${next}</div>
-    </div>` : '<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">振り返り未提出</div>',
+  const panel=document.getElementById('sidePanel'),overlay=document.getElementById('spOverlay'),avatar=document.getElementById('sp-avatar'),spName=document.getElementById('sp-name'),spSub=document.getElementById('sp-sub'),spBody=document.getElementById('sp-body');
+  if(!panel) return;
+  const intent=dc?(dc['試したいこと']||dc.intent||''):'',scene=rf?(rf.scene||rf['印象に残った場面']||''):'',why=rf?(rf.why||rf['なぜそうなったか']||''):'',next=rf?(rf.next||rf['次への一手']||''):'',f=rf?(parseInt(String(rf.fulfillment||'').replace('/5',''))||0):0;
+  const FL2=['','できなかった','少しできた','まあまあ','かなり','完全に'],FC=['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
+  avatar.textContent=name.charAt(0); spName.textContent=name; spSub.textContent=grade+(f?'　達成感：'+FL2[f]:'');
+  spBody.innerHTML=[
+    intent?`<div style="margin-bottom:16px;padding:12px 14px;background:var(--navy-pale);border-left:4px solid var(--navy-lt);border-radius:0 8px 8px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:5px">✊ チャレンジ宣言</div><div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.6">${intent}</div></div>`:'<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">チャレンジ宣言なし</div>',
+    f?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 12px;background:#f9f7f4;border-radius:8px"><span style="font-size:18px">⭐</span><span style="font-size:13px;font-weight:700;color:${FC[f]}">${FL2[f]}</span><span style="font-size:11px;color:var(--ink-muted)">${f}/5</span></div>`:'',
+    scene?`<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:5px">① 試した結果</div><div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${scene}</div></div>`:'',
+    why?`<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:5px">② なぜそうなったか</div><div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${why}</div></div>`:'',
+    next?`<div style="padding:12px 14px;background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:5px">③ 次への一手</div><div style="font-size:13px;font-weight:600;color:#065f46;line-height:1.7">${next}</div></div>`:'<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">振り返り未提出</div>',
   ].join('');
-
-  panel.style.right   = '0';
-  overlay.style.display = 'block';
-  setTimeout(function(){ overlay.style.opacity = '1'; }, 10);
+  panel.style.right='0'; overlay.style.display='block';
+  setTimeout(function(){ overlay.style.opacity='1'; },10);
 }
 
-function closeSidePanel() {
-  const panel   = document.getElementById('sidePanel');
-  const overlay = document.getElementById('spOverlay');
-  if (!panel) return;
-  panel.style.right     = '-420px';
-  overlay.style.opacity = '0';
-  setTimeout(function(){ overlay.style.display = 'none'; }, 250);
+function closeSidePanel(){
+  const panel=document.getElementById('sidePanel'),overlay=document.getElementById('spOverlay');
+  if(!panel) return;
+  panel.style.right='-420px'; overlay.style.opacity='0';
+  setTimeout(function(){ overlay.style.display='none'; },250);
 }
 
-// 行クリック→サイドパネル
-document.addEventListener('click', function(e) {
-  // 閉じるボタン or オーバーレイ
-  if (e.target.id === 'spClose' || e.target.id === 'spOverlay') {
-    closeSidePanel(); return;
-  }
-  const row = e.target.closest('.status-row');
-  if (!row) return;
-  const name  = row.dataset.name;
-  const grade = row.dataset.grade;
-  const detId = row.dataset.det;
-  // データをdatasetから取得
-  const dcJson = row.dataset.dc ? JSON.parse(decodeURIComponent(row.dataset.dc)) : null;
-  const rfJson = row.dataset.rf ? JSON.parse(decodeURIComponent(row.dataset.rf)) : null;
-  openSidePanel(name, grade, dcJson, rfJson);
-
-  // アクティブ行ハイライト
-  document.querySelectorAll('.status-row').forEach(function(r) {
-    r.style.background = '';
-  });
-  row.style.background = 'var(--navy-pale)';
+document.addEventListener('click', function(e){
+  if(e.target.id==='spClose'||e.target.id==='spOverlay'){ closeSidePanel(); return; }
+  const row=e.target.closest('.status-row');
+  if(!row) return;
+  const dcJson=row.dataset.dc?JSON.parse(decodeURIComponent(row.dataset.dc)):null;
+  const rfJson=row.dataset.rf?JSON.parse(decodeURIComponent(row.dataset.rf)):null;
+  openSidePanel(row.dataset.name, row.dataset.grade, dcJson, rfJson);
+  document.querySelectorAll('.status-row').forEach(function(r){ r.style.background=''; });
+  row.style.background='var(--navy-pale)';
 });
 
-// ── JSONP ──
 function fetchGAS(params){
   return new Promise((resolve,reject)=>{
     const cb='_marc_'+Date.now()+'_'+Math.floor(Math.random()*99999);
@@ -637,527 +468,209 @@ async function collectAll(){
   btn.disabled=false; btn.textContent='🔄 データを収集';
 }
 
-// ── 直近の稽古 ──
 function renderRecent(selectedDate){
   const latest=selectedDate||latestPracticeDate();
   const sel=document.getElementById('practiceSelect');
   const dates=allPracticeDates();
-  if(dates.length){
-    sel.innerHTML=dates.map(d=>`<option value="${d}"${d===latest?' selected':''}>${d}${store.r.some(r=>getDate(r)===d)?' ✓':' （宣言のみ）'}</option>`).join('');
-  }
+  if(dates.length){ sel.innerHTML=dates.map(d=>`<option value="${d}"${d===latest?' selected':''}>${d}${store.r.some(r=>getDate(r)===d)?' ✓':' （宣言のみ）'}</option>`).join(''); }
   if(!latest) return;
-  const dL=store.d.filter(r=>getDate(r)===latest);
-  const rL=store.r.filter(r=>getDate(r)===latest);
+  const dL=store.d.filter(r=>getDate(r)===latest),rL=store.r.filter(r=>getDate(r)===latest);
   document.getElementById('k-declare').textContent=dL.length;
   document.getElementById('k-declare-date').textContent=latest;
-  // 宣言バー（宣言数/全部員数）
-  const totalMembers = allNames().length;
-  const declarePct = totalMembers > 0 ? Math.round(dL.length/totalMembers*100) : 0;
-  const declareBar = document.getElementById('k-declare-bar');
-  if(declareBar) declareBar.style.width = declarePct + '%';
-  const declareDetail = document.getElementById('k-declare-detail');
-  if(declareDetail) declareDetail.textContent = totalMembers > 0 ? dL.length + '名 / ' + totalMembers + '名が宣言' : '';
+  const totalMembers=allNames().length,declarePct=totalMembers>0?Math.round(dL.length/totalMembers*100):0;
+  const declareBar=document.getElementById('k-declare-bar');
+  if(declareBar) declareBar.style.width=declarePct+'%';
+  const declareDetail=document.getElementById('k-declare-detail');
+  if(declareDetail) declareDetail.textContent=totalMembers>0?dL.length+'名 / '+totalMembers+'名が宣言':'';
   document.getElementById('k-reflect').textContent=rL.length;
-
-  // 振り返り提出バー
-  const reflectPct = dL.length ? Math.round(rL.length/dL.length*100) : 0;
-  document.getElementById('k-reflect-rate').textContent = dL.length ? '提出率 '+reflectPct+'%' : '提出率 —%';
-  const reflectBar = document.getElementById('k-reflect-bar');
-  if(reflectBar) reflectBar.style.width = reflectPct + '%';
-  const reflectDetail = document.getElementById('k-reflect-detail');
-  if(reflectDetail) reflectDetail.textContent = dL.length ? rL.length + '名 / ' + dL.length + '名が提出' : '';
-
-  // 平均達成感 + 5分割バー
+  const reflectPct=dL.length?Math.round(rL.length/dL.length*100):0;
+  document.getElementById('k-reflect-rate').textContent=dL.length?'提出率 '+reflectPct+'%':'提出率 —%';
+  const reflectBar=document.getElementById('k-reflect-bar');
+  if(reflectBar) reflectBar.style.width=reflectPct+'%';
+  const reflectDetail=document.getElementById('k-reflect-detail');
+  if(reflectDetail) reflectDetail.textContent=dL.length?rL.length+'名 / '+dL.length+'名が提出':'';
   const scores=rL.map(getScore).filter(s=>s>0);
-  const avgScore = scores.length ? parseFloat((scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)) : null;
-  document.getElementById('k-achieve').textContent = avgScore !== null ? avgScore.toFixed(1) : '—';
-  const achieveColors = ['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'];
+  const avgScore=scores.length?parseFloat((scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)):null;
+  document.getElementById('k-achieve').textContent=avgScore!==null?avgScore.toFixed(1):'—';
+  const achieveColors=['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'];
   for(let i=1;i<=5;i++){
-    const seg = document.getElementById('k-achieve-s'+i);
-    if(!seg || avgScore === null) { if(seg) seg.style.background='var(--border-lt)'; continue; }
-    if(avgScore >= i) {
-      // 完全点灯
-      seg.style.background = achieveColors[i-1];
-    } else if(avgScore > i-1) {
-      // 小数部分：グラデーションで半点灯（例：4.5なら5番目が50%）
-      // ハードストップで半分の四角を表現
-      const pct = Math.round((avgScore - (i-1)) * 100);
-      seg.style.background = 'linear-gradient(90deg, ' + achieveColors[i-1] + ' ' + pct + '%, var(--border-lt) ' + pct + '%)';
-    } else {
-      seg.style.background = 'var(--border-lt)';
-    }
+    const seg=document.getElementById('k-achieve-s'+i);
+    if(!seg||avgScore===null){if(seg)seg.style.background='var(--border-lt)';continue;}
+    if(avgScore>=i){seg.style.background=achieveColors[i-1];}
+    else if(avgScore>i-1){const pct=Math.round((avgScore-(i-1))*100);seg.style.background='linear-gradient(90deg, '+achieveColors[i-1]+' '+pct+'%, var(--border-lt) '+pct+'%)';}
+    else{seg.style.background='var(--border-lt)';}
   }
   const missing=allNames().filter(n=>new Set(dL.map(getName)).has(n)&&!new Set(rL.map(getName)).has(n));
-  const card=document.getElementById('k-missing-card');
-  const icon=document.getElementById('k-missing-icon');
-  const lbl=document.getElementById('k-missing-label');
-  const nms=document.getElementById('k-missing-names');
-  const mv=document.getElementById('k-missing');
+  const card=document.getElementById('k-missing-card'),icon=document.getElementById('k-missing-icon'),lbl=document.getElementById('k-missing-label'),nms=document.getElementById('k-missing-names'),mv=document.getElementById('k-missing');
   mv.textContent=missing.length;
-  if(missing.length===0&&rL.length>0){
-    card.style.cssText='border-top:3px solid var(--green)'; icon.textContent='🎉'; mv.style.color='var(--green)';
-    lbl.textContent='全員が振り返り提出！'; nms.textContent='素晴らしいサイクルです'; nms.style.color='var(--green)';
-  } else if(missing.length>0){
-    card.style.cssText='border-top:3px solid var(--red)'; icon.textContent='⚠'; mv.style.color='var(--red)';
-    lbl.textContent='振り返り未提出'; nms.textContent=missing.join('・'); nms.style.color='';
-  } else {
-    card.style.cssText='border-top:3px solid var(--border)'; icon.textContent='📋'; mv.textContent='—'; mv.style.color='var(--ink-muted)';
-    lbl.textContent='振り返り未提出'; nms.textContent='まだ宣言がありません'; nms.style.color='var(--ink-muted)';
-  }
-  const rDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort();
-  const li=rDates.indexOf(latest);
-  const prevDate=li>0?rDates[li-1]:'';
+  if(missing.length===0&&rL.length>0){card.style.cssText='border-top:3px solid var(--green)';icon.textContent='🎉';mv.style.color='var(--green)';lbl.textContent='全員が振り返り提出！';nms.textContent='素晴らしいサイクルです';nms.style.color='var(--green)';}
+  else if(missing.length>0){card.style.cssText='border-top:3px solid var(--red)';icon.textContent='⚠';mv.style.color='var(--red)';lbl.textContent='振り返り未提出';nms.textContent=missing.join('・');nms.style.color='';}
+  else{card.style.cssText='border-top:3px solid var(--border)';icon.textContent='📋';mv.textContent='—';mv.style.color='var(--ink-muted)';lbl.textContent='振り返り未提出';nms.textContent='まだ宣言がありません';nms.style.color='var(--ink-muted)';}
+  const rDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort(),li=rDates.indexOf(latest),prevDate=li>0?rDates[li-1]:'';
   const pMap={};
   if(prevDate) store.r.filter(r=>getDate(r)===prevDate).forEach(r=>{ pMap[getName(r)]=getScore(r); });
   const dMap={},rMap={};
   dL.forEach(r=>{ if(!dMap[getName(r)]) dMap[getName(r)]=r; });
   rL.forEach(r=>{ if(!rMap[getName(r)]) rMap[getName(r)]=r; });
-  const names=sortedNames();
-  const tbody=document.getElementById('statusBody');
+  const names=sortedNames(),tbody=document.getElementById('statusBody');
   if(!names.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">データがありません</div></div></td></tr>'; return; }
   tbody.innerHTML=names.map(name=>{
-    const p=store.p.find(r=>getName(r)===name);
-    const dc=dMap[name],rf=rMap[name];
-    const f=rf?getScore(rf):0,prev=pMap[name]||0;
-    const diff=f&&prev?f-prev:null;
+    // ★修正済み：最新行を取得
+    const p=store.p.filter(r=>getName(r)===name).slice(-1)[0];
+    const dc=dMap[name],rf=rMap[name],f=rf?getScore(rf):0,prev=pMap[name]||0,diff=f&&prev?f-prev:null;
     let trendHtml='—';
-    if(diff!==null){
-      if(diff>=2)       trendHtml='<span class="trend-up">↑</span>';
-      else if(diff===1) trendHtml='<span class="trend-up">↗</span>';
-      else if(diff===0) trendHtml='<span class="trend-flat">→</span>';
-      else if(diff===-1)trendHtml='<span class="trend-down">↘</span>';
-      else              trendHtml='<span class="trend-down">↓</span>';
-    }
-    const intent=dc?(dc['試したいこと']||dc.intent||''):'';
-    const scene =rf?(rf.scene ||rf['印象に残った場面']||''):'';
-    const why   =rf?(rf.why   ||rf['なぜそうなったか']||''):'';
-    const next  =rf?(rf.next  ||rf['次への一手']||''):'';
-    const detId ='det-'+name.replace(/[^a-zA-Z0-9]/g,'_');
-    const dcEnc = dc ? encodeURIComponent(JSON.stringify(dc)) : '';
-      const rfEnc = rf ? encodeURIComponent(JSON.stringify(rf)) : '';
-      const grade = p ? (p['学年']||'—') : '—';
-      return `<tr class="status-row" data-det="${detId}" data-name="${name}" data-grade="${grade}" data-dc="${dcEnc}" data-rf="${rfEnc}" style="cursor:pointer;transition:background .15s">
-        <td style="width:24px;color:var(--ink-muted);font-size:11px;text-align:center">›</td>
-        <td style="font-weight:600">${name}</td>
-        <td style="color:var(--ink-muted)">${grade}</td>
-        <td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
-        <td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
-        <td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td>
-        <td>${trendHtml}</td>
-      </tr>`;
+    if(diff!==null){if(diff>=2)trendHtml='<span class="trend-up">↑</span>';else if(diff===1)trendHtml='<span class="trend-up">↗</span>';else if(diff===0)trendHtml='<span class="trend-flat">→</span>';else if(diff===-1)trendHtml='<span class="trend-down">↘</span>';else trendHtml='<span class="trend-down">↓</span>';}
+    const dcEnc=dc?encodeURIComponent(JSON.stringify(dc)):'',rfEnc=rf?encodeURIComponent(JSON.stringify(rf)):'',grade=p?(p['学年']||'—'):'—';
+    return `<tr class="status-row" data-name="${name}" data-grade="${grade}" data-dc="${dcEnc}" data-rf="${rfEnc}" style="cursor:pointer;transition:background .15s"><td style="width:24px;color:var(--ink-muted);font-size:11px;text-align:center">›</td><td style="font-weight:600">${name}</td><td style="color:var(--ink-muted)">${grade}</td><td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td><td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td><td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td><td>${trendHtml}</td></tr>`;
   }).join('');
   const rcEl=document.getElementById('recentCards');
   if(!rL.length){ rcEl.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">直近稽古の振り返りがありません</div></div>'; return; }
   rcEl.innerHTML=rL.map(r=>buildCard(r)).join('');
 }
 
-// ── 部員別詳細 ──
 function renderMemberList(){
-  const names=sortedNames();
-  const el=document.getElementById('memberListItems');
+  const names=sortedNames(),el=document.getElementById('memberListItems');
   if(!names.length){ el.innerHTML='<div class="empty"><div class="empty-text">データがありません</div></div>'; return; }
   el.innerHTML=names.map(name=>{
-    const p=store.p.find(r=>getName(r)===name);
-    const f=latestScore(name);
-    const dotColor=f>=4?'var(--green)':f>=3?'var(--gold)':f>=1?'var(--red)':'var(--border)';
-    return `<div class="ml-item" data-name="${name}">
-      <div class="card-av" style="width:28px;height:28px;background:var(--navy-lt);font-size:11px">${name.charAt(0)}</div>
-      <div style="flex:1;min-width:0"><div class="ml-name">${name}</div><div class="ml-sub">${p?p['学年']||'':''} ${p?p['段位級']||'':''}</div></div>
-      <div class="ml-dot" style="background:${dotColor}"></div>
-    </div>`;
+    // ★修正済み：最新行を取得
+    const p=store.p.filter(r=>getName(r)===name).slice(-1)[0];
+    const f=latestScore(name),dotColor=f>=4?'var(--green)':f>=3?'var(--gold)':f>=1?'var(--red)':'var(--border)';
+    return `<div class="ml-item" data-name="${name}"><div class="card-av" style="width:28px;height:28px;background:var(--navy-lt);font-size:11px">${name.charAt(0)}</div><div style="flex:1;min-width:0"><div class="ml-name">${name}</div><div class="ml-sub">${p?p['学年']||'':''} ${p?p['段位級']||'':''}</div></div><div class="ml-dot" style="background:${dotColor}"></div></div>`;
   }).join('');
 }
 
 function showMemberDetail(name){
-  const p=store.p.find(r=>getName(r)===name);
+  // ★修正済み：最新行を取得
+  const p=store.p.filter(r=>getName(r)===name).slice(-1)[0];
   const reflects=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a))).slice(0,3);
   const bk=[{k:'自己評価_kire',lb:'打突の冴え'},{k:'自己評価_tenouchi',lb:'手の内'},{k:'自己評価_zanshin',lb:'残心'},{k:'自己評価_maai',lb:'間合い'},{k:'自己評価_seme',lb:'攻め'},{k:'自己評価_kikai',lb:'機会'},{k:'自己評価_footwork',lb:'足さばき'},{k:'自己評価_shiai',lb:'試合運び'},{k:'自己評価_kisei',lb:'気勢'},{k:'自己評価_mental',lb:'精神力'}];
   const barsHtml=p?'<div class="bars-grid">'+bk.map(b=>{ const v=parseInt(p[b.k])||0; return `<div class="brow"><div class="blbl">${b.lb}</div><div class="btrack"><div class="bfill" style="width:${v/5*100}%"></div></div><div class="bnum">${v}/5</div></div>`; }).join('')+'</div>':'';
-  const histHtml=reflects.length?reflects.map(r=>{ const f=getScore(r); return `<div style="padding:10px 0;border-bottom:1px solid var(--border-lt)">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted)">${getDate(r)}</span>
-        ${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}
-      </div>
-      ${r.intent||r['試したいこと']?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${r.intent||r['試したいこと']}</div>`:''}
-      <div class="clabel clabel-s" style="margin-top:6px">① 試した結果</div>
-      <div class="chip chip-s">${r.scene||r['印象に残った場面']||'—'}</div>
-      <div class="clabel clabel-w" style="margin-top:6px">② なぜそうなったか</div>
-      <div class="chip chip-w">${r.why||r['なぜそうなったか']||'—'}</div>
-      ${r.next||r['次への一手']?`<div class="clabel" style="color:var(--green);margin-top:6px">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${r.next||r['次への一手']}</div>`:''}
-    </div>`; }).join(''):'<div class="empty"><div class="empty-text">振り返りデータなし</div></div>';
-  // レーダーチャート描画（innerHTML後に実行）
-  const radarLabels = ['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき・体さばき','試合運び','気勢','精神的強さ'];
-  const radarKeys   = ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
-  const radarData   = p ? radarKeys.map(k => parseInt(p['自己評価_'+k])||0) : Array(10).fill(0);
-
+  const histHtml=reflects.length?reflects.map(r=>{ const f=getScore(r); return `<div style="padding:10px 0;border-bottom:1px solid var(--border-lt)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted)">${getDate(r)}</span>${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}</div>${r.intent||r['試したいこと']?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${r.intent||r['試したいこと']}</div>`:''}<div class="clabel clabel-s" style="margin-top:6px">① 試した結果</div><div class="chip chip-s">${r.scene||r['印象に残った場面']||'—'}</div><div class="clabel clabel-w" style="margin-top:6px">② なぜそうなったか</div><div class="chip chip-w">${r.why||r['なぜそうなったか']||'—'}</div>${r.next||r['次への一手']?`<div class="clabel" style="color:var(--green);margin-top:6px">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${r.next||r['次への一手']}</div>`:''}</div>`; }).join(''):'<div class="empty"><div class="empty-text">振り返りデータなし</div></div>';
+  const radarLabels=['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき・体さばき','試合運び','気勢','精神的強さ'];
+  const radarKeys=['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
+  const radarData=p?radarKeys.map(k=>parseInt(p['自己評価_'+k])||0):Array(10).fill(0);
   document.getElementById('memberDetail').innerHTML=`<div class="det-hdr"><div class="det-av">${name.charAt(0)}</div><div><div class="det-name">${name}</div><div class="det-sub">${p?`${p['学年']||''} / ${p['段位級']||''} / 剣道歴${p['剣道歴']||'—'} / 得意：${p['得意技']||'—'}`:'プロフィールなし'}</div></div></div><div class="det-body">${p?`<div class="det-sec"><div class="det-sec-title">自己評価（BARS）</div><canvas id="memberRadarChart" style="max-height:240px;margin-bottom:10px"></canvas>${barsHtml}</div><div class="det-sec"><div class="det-sec-title">課題感</div><div class="chip chip-w">${p['今の課題感']||'—'}</div></div><div class="det-sec"><div class="det-sec-title">個人目標</div><div class="chip chip-d">🎯 ${p['個人目標']||'—'}</div></div>`:''}<div class="det-sec"><div class="det-sec-title">振り返り履歴（最新3件）</div>${histHtml}</div></div>`;
-  // レーダーチャートを描画
-  requestAnimationFrame(function() {
-    const rc = document.getElementById('memberRadarChart');
-    if (!rc) return;
-    if (charts.memberRadar) charts.memberRadar.destroy();
-    charts.memberRadar = new Chart(rc, {
-      type: 'radar',
-      data: {
-        labels: radarLabels,
-        datasets: [{
-          data: radarData,
-          backgroundColor: 'rgba(200,149,42,0.25)',
-          borderColor: 'rgba(200,149,42,0.9)',
-          borderWidth: 2,
-          pointBackgroundColor: 'rgba(200,149,42,0.9)',
-          pointRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          r: {
-            min: 0, max: 5,
-            ticks: { stepSize: 1, font: { size: 9 }, display: false },
-            pointLabels: { font: { size: 10, family: "'Noto Sans JP', sans-serif" }, color: '#3d5278' },
-            grid: { color: 'rgba(0,0,0,0.08)' },
-            angleLines: { color: 'rgba(0,0,0,0.08)' }
-          }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
+  requestAnimationFrame(function(){
+    const rc=document.getElementById('memberRadarChart');
+    if(!rc) return;
+    if(charts.memberRadar) charts.memberRadar.destroy();
+    charts.memberRadar=new Chart(rc,{type:'radar',data:{labels:radarLabels,datasets:[{data:radarData,backgroundColor:'rgba(200,149,42,0.25)',borderColor:'rgba(200,149,42,0.9)',borderWidth:2,pointBackgroundColor:'rgba(200,149,42,0.9)',pointRadius:4}]},options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:9},display:false},pointLabels:{font:{size:10,family:"'Noto Sans JP', sans-serif"},color:'#3d5278'},grid:{color:'rgba(0,0,0,0.08)'},angleLines:{color:'rgba(0,0,0,0.08)'}}},plugins:{legend:{display:false}}}});
   });
-
 }
 
-// ── 傾向・分析 ──
 function renderTrend(){ renderTrendChart(); renderCycleChart(); renderNextChart(); renderAutonomyChart(); renderGrowthTable(); renderMatrix(); renderAllRadar(); renderAllCards(); }
 
 function renderAllRadar(){
-  const radarLabels = ['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき','試合運び','気勢','精神的強さ'];
-  const radarKeys   = ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
-  const borderColors = ['#c8952a','#0a7c5c','#2a5298','#c0392b','#8e44ad'];
-  const bgColors     = ['rgba(200,149,42,.2)','rgba(10,124,92,.2)','rgba(42,82,152,.2)','rgba(192,57,43,.2)','rgba(142,68,173,.2)'];
-  const MAX_SELECT   = 5;
-
-  const names    = sortedNames();
-  const listEl   = document.getElementById('radarSelectList');
-  const ctx      = document.getElementById('allRadarChart');
-  if (!listEl) return;
-
-  // store.pが空の場合：エラーメッセージ表示して終了
-  if (!store.p || !store.p.length) {
-    listEl.innerHTML = '';
-    names.forEach(function(name) {
-      const item = document.createElement('label');
-      item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--ink-soft);';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.disabled = true;
-      const span = document.createElement('span');
-      span.textContent = name;
-      item.appendChild(cb); item.appendChild(span);
-      listEl.appendChild(item);
-    });
-    if (ctx) {
-      ctx.style.display = 'none';
-      // 既存メッセージ削除
-      ctx.parentNode.querySelectorAll('div[data-radar-msg]').forEach(function(el){ el.remove(); });
-      const msg = document.createElement('div');
-      msg.setAttribute('data-radar-msg', '1');
-      msg.style.cssText = 'text-align:center;padding:30px;color:var(--ink-muted);font-size:12px;';
-      msg.innerHTML = '自己理解データがありません<br><span style="font-size:11px;">部員が自己理解タブを提出すると表示されます</span>';
-      ctx.parentNode.insertBefore(msg, ctx);
-    }
+  const radarLabels=['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき','試合運び','気勢','精神的強さ'];
+  const radarKeys=['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
+  const borderColors=['#c8952a','#0a7c5c','#2a5298','#c0392b','#8e44ad'];
+  const bgColors=['rgba(200,149,42,.2)','rgba(10,124,92,.2)','rgba(42,82,152,.2)','rgba(192,57,43,.2)','rgba(142,68,173,.2)'];
+  const MAX_SELECT=5;
+  const names=sortedNames(),listEl=document.getElementById('radarSelectList'),ctx=document.getElementById('allRadarChart');
+  if(!listEl) return;
+  if(!store.p||!store.p.length){
+    listEl.innerHTML='';
+    names.forEach(function(name){const item=document.createElement('label');item.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--ink-soft);';const cb=document.createElement('input');cb.type='checkbox';cb.disabled=true;const span=document.createElement('span');span.textContent=name;item.appendChild(cb);item.appendChild(span);listEl.appendChild(item);});
+    if(ctx){ctx.style.display='none';ctx.parentNode.querySelectorAll('div[data-radar-msg]').forEach(function(el){el.remove();});const msg=document.createElement('div');msg.setAttribute('data-radar-msg','1');msg.style.cssText='text-align:center;padding:30px;color:var(--ink-muted);font-size:12px;';msg.innerHTML='自己理解データがありません<br><span style="font-size:11px;">部員が自己理解タブを提出すると表示されます</span>';ctx.parentNode.insertBefore(msg,ctx);}
     return;
   }
-
-  // store.pがある場合：エラーメッセージを削除してcanvasを表示
-  if (ctx) {
-    ctx.style.display = '';
-    ctx.parentNode.querySelectorAll('div[data-radar-msg]').forEach(function(el){ el.remove(); });
-  }
-
-  // 選択リスト構築（毎回再構築して最新データを反映）
-  listEl.innerHTML = '';
-  if (!names.length) {
-    listEl.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);">データを収集してください</div>';
-    return;
-  }
-  {
-    names.forEach(function(name) {
-      const item = document.createElement('label');
-      item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-soft);transition:all .15s;user-select:none;';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = name;
-      cb.style.cssText = 'width:14px;height:14px;cursor:pointer;accent-color:var(--navy);';
-      cb.addEventListener('change', function() {
-        // 5名制限
-        const checked = listEl.querySelectorAll('input:checked');
-        if (checked.length > MAX_SELECT) {
-          cb.checked = false;
-          showToast('⚠ 最大5名まで選択できます');
-          return;
-        }
-        updateRadarColors();
-        drawAllRadar();
-      });
-      const span = document.createElement('span');
-      span.textContent = name;
-      item.appendChild(cb);
-      item.appendChild(span);
-      listEl.appendChild(item);
+  if(ctx){ctx.style.display='';ctx.parentNode.querySelectorAll('div[data-radar-msg]').forEach(function(el){el.remove();});}
+  listEl.innerHTML='';
+  if(!names.length){listEl.innerHTML='<div style="font-size:12px;color:var(--ink-muted);">データを収集してください</div>';return;}
+  names.forEach(function(name){
+    const item=document.createElement('label');
+    item.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-soft);transition:all .15s;user-select:none;';
+    const cb=document.createElement('input');
+    cb.type='checkbox';cb.value=name;cb.style.cssText='width:14px;height:14px;cursor:pointer;accent-color:var(--navy);';
+    cb.addEventListener('change',function(){
+      const checked=listEl.querySelectorAll('input:checked');
+      if(checked.length>MAX_SELECT){cb.checked=false;return;}
+      updateRadarColors();drawAllRadar();
     });
-  }
-
-  updateRadarColors();
-  drawAllRadar();
-
-  function updateRadarColors() {
-    let colorIdx = 0;
-    Array.from(listEl.children).forEach(function(item) {
-      const cb = item.querySelector('input');
-      if (cb && cb.checked) {
-        const col = borderColors[colorIdx % borderColors.length];
-        item.style.borderColor = col;
-        item.style.background  = col;
-        item.style.color       = '#fff';
-        colorIdx++;
-      } else {
-        item.style.borderColor = 'var(--border)';
-        item.style.background  = '';
-        item.style.color       = 'var(--ink-soft)';
-      }
-    });
-  }
-
-  function drawAllRadar() {
-    const datasets = [];
-    let colorIdx = 0;
-    Array.from(listEl.children).forEach(function(item) {
-      const cb = item.querySelector('input');
-      if (!cb || !cb.checked) return;
-      const name = cb.value;
-      const p    = store.p.find(function(r){ return getName(r) === name; });
-      if (!p) return;
-      const data = radarKeys.map(function(k){ return parseInt(p['自己評価_'+k])||0; });
-      const col  = borderColors[colorIdx % borderColors.length];
-      const bg   = bgColors[colorIdx % bgColors.length];
+    const span=document.createElement('span');span.textContent=name;
+    item.appendChild(cb);item.appendChild(span);listEl.appendChild(item);
+  });
+  updateRadarColors();drawAllRadar();
+  function updateRadarColors(){let colorIdx=0;Array.from(listEl.children).forEach(function(item){const cb=item.querySelector('input');if(cb&&cb.checked){const col=borderColors[colorIdx%borderColors.length];item.style.borderColor=col;item.style.background=col;item.style.color='#fff';colorIdx++;}else{item.style.borderColor='var(--border)';item.style.background='';item.style.color='var(--ink-soft)';}});}
+  function drawAllRadar(){
+    const datasets=[];let colorIdx=0;
+    Array.from(listEl.children).forEach(function(item){
+      const cb=item.querySelector('input');
+      if(!cb||!cb.checked) return;
+      const name=cb.value;
+      // ★修正済み：最新行を取得
+      const p=store.p.filter(function(r){return getName(r)===name;}).slice(-1)[0];
+      if(!p) return;
+      const data=radarKeys.map(function(k){return parseInt(p['自己評価_'+k])||0;});
+      const col=borderColors[colorIdx%borderColors.length],bg=bgColors[colorIdx%bgColors.length];
       colorIdx++;
-      datasets.push({
-        label: name, data: data,
-        backgroundColor: bg,
-        borderColor: col,
-        borderWidth: 2.5,
-        pointBackgroundColor: col,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      });
+      datasets.push({label:name,data:data,backgroundColor:bg,borderColor:col,borderWidth:2.5,pointBackgroundColor:col,pointRadius:4,pointHoverRadius:6});
     });
-
-    const ctx = document.getElementById('allRadarChart');
-    if (!ctx) return;
-    if (charts.allRadar) charts.allRadar.destroy();
-
-    if (!datasets.length) {
-      charts.allRadar = null;
-      return;
-    }
-    // データがある場合はcanvasを表示し、エラーメッセージを全削除
-    const ctx3 = document.getElementById('allRadarChart');
-    if (ctx3) {
-      ctx3.style.display = '';
-      // 既存のエラーメッセージを全削除
-      const parent = ctx3.parentNode;
-      parent.querySelectorAll('div').forEach(function(el) {
-        if (el.textContent.includes('自己理解データがありません')) el.remove();
-      });
-    }
-
-    charts.allRadar = new Chart(ctx, {
-      type: 'radar',
-      data: { labels: radarLabels, datasets: datasets },
-      options: {
-        responsive: true,
-        scales: {
-          r: {
-            min: 0, max: 5,
-            ticks: { stepSize: 1, display: false },
-            pointLabels: {
-              font: { size: 11, family: "'Noto Sans JP', sans-serif" },
-              color: '#3d5278'
-            },
-            grid: { color: 'rgba(0,0,0,0.08)' },
-            angleLines: { color: 'rgba(0,0,0,0.08)' }
-          }
-        },
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              font: { size: 12, family: "'Noto Sans JP', sans-serif" },
-              padding: 14, boxWidth: 14
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(ctx) {
-                return ctx.dataset.label + ': ' + radarLabels[ctx.dataIndex] + ' ' + ctx.raw + '/5';
-              }
-            }
-          }
-        }
-      }
-    });
+    const ctx=document.getElementById('allRadarChart');
+    if(!ctx) return;
+    if(charts.allRadar) charts.allRadar.destroy();
+    if(!datasets.length){charts.allRadar=null;return;}
+    charts.allRadar=new Chart(ctx,{type:'radar',data:{labels:radarLabels,datasets:datasets},options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},pointLabels:{font:{size:11,family:"'Noto Sans JP', sans-serif"},color:'#3d5278'},grid:{color:'rgba(0,0,0,0.08)'},angleLines:{color:'rgba(0,0,0,0.08)'}}},plugins:{legend:{position:'bottom',labels:{font:{size:12,family:"'Noto Sans JP', sans-serif"},padding:14,boxWidth:14}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+radarLabels[ctx.dataIndex]+' '+ctx.raw+'/5';}}}}}});
   }
 }
 
 function renderTrendChart(){
   const byDate={};
-  store.r.forEach(r=>{ const dt=getDate(r),f=getScore(r); if(!dt||!f) return; if(!byDate[dt]){byDate[dt]={sum:0,cnt:0};} byDate[dt].sum+=f; byDate[dt].cnt++; });
+  store.r.forEach(r=>{const dt=getDate(r),f=getScore(r);if(!dt||!f)return;if(!byDate[dt]){byDate[dt]={sum:0,cnt:0};}byDate[dt].sum+=f;byDate[dt].cnt++;});
   const dates=Object.keys(byDate).sort(),avgs=dates.map(d=>(byDate[d].sum/byDate[d].cnt).toFixed(2));
   const ctx=document.getElementById('trendChart');
-  if(charts.trend) charts.trend.destroy();
+  if(charts.trend)charts.trend.destroy();
   charts.trend=new Chart(ctx,{type:'line',data:{labels:dates.map(d=>d.slice(5)),datasets:[{label:'チーム平均',data:avgs,borderColor:'#0a7c5c',backgroundColor:'rgba(10,124,92,.1)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#0a7c5c',fill:true,tension:.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 }
 
 function renderCycleChart(){
   const dates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort();
-  const rates=dates.map(dt=>{ const dc=new Set(store.d.filter(r=>getDate(r)===dt).map(getName)),rf=new Set(store.r.filter(r=>getDate(r)===dt).map(getName)); if(!dc.size) return 0; return Math.round([...dc].filter(n=>rf.has(n)).length/dc.size*100); });
+  const rates=dates.map(dt=>{const dc=new Set(store.d.filter(r=>getDate(r)===dt).map(getName)),rf=new Set(store.r.filter(r=>getDate(r)===dt).map(getName));if(!dc.size)return 0;return Math.round([...dc].filter(n=>rf.has(n)).length/dc.size*100);});
   const ctx=document.getElementById('cycleChart');
-  if(charts.cycle) charts.cycle.destroy();
+  if(charts.cycle)charts.cycle.destroy();
   charts.cycle=new Chart(ctx,{type:'bar',data:{labels:dates.map(d=>d.slice(5)),datasets:[{data:rates,backgroundColor:rates.map(r=>r>=80?'#6EE7B7':r>=50?'#FCD34D':'#FCA5A5'),borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{stepSize:20,callback:v=>v+'%',font:{size:10}},grid:{color:'#f0f4fa'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 }
 
-
 function renderNextChart(){
-  // 稽古日ごとの③平均具体性
   const byDate={};
-  store.r.forEach(r=>{
-    const dt=getDate(r), nx=r.next||r['次への一手']||'';
-    if(!dt) return;
-    if(!byDate[dt]){byDate[dt]={sum:0,cnt:0};}
-    if(nx){ byDate[dt].sum+=calcNextScore(nx); byDate[dt].cnt++; }
-  });
-  const dates=Object.keys(byDate).sort();
-  const avgs=dates.map(d=>byDate[d].cnt?(byDate[d].sum/byDate[d].cnt).toFixed(2):null);
+  store.r.forEach(r=>{const dt=getDate(r),nx=r.next||r['次への一手']||'';if(!dt)return;if(!byDate[dt]){byDate[dt]={sum:0,cnt:0};}if(nx){byDate[dt].sum+=calcNextScore(nx);byDate[dt].cnt++;}});
+  const dates=Object.keys(byDate).sort(),avgs=dates.map(d=>byDate[d].cnt?(byDate[d].sum/byDate[d].cnt).toFixed(2):null);
   const ctx=document.getElementById('nextChart');
-  if(charts.next) charts.next.destroy();
-  charts.next=new Chart(ctx,{
-    type:'line',
-    data:{labels:dates.map(d=>d.slice(5)),datasets:[{
-      label:'③平均具体性',data:avgs,
-      borderColor:'#c8952a',backgroundColor:'rgba(200,149,42,.1)',
-      borderWidth:2,pointRadius:5,pointBackgroundColor:'#c8952a',
-      fill:true,tension:.3,spanGaps:true
-    }]},
-    options:{responsive:true,plugins:{legend:{display:false}},
-      scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}},
-              x:{ticks:{font:{size:10}},grid:{display:false}}}}
-  });
+  if(charts.next)charts.next.destroy();
+  charts.next=new Chart(ctx,{type:'line',data:{labels:dates.map(d=>d.slice(5)),datasets:[{label:'③平均具体性',data:avgs,borderColor:'#c8952a',backgroundColor:'rgba(200,149,42,.1)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#c8952a',fill:true,tension:.3,spanGaps:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 }
 
 function renderAutonomyChart(){
-  // 部員別 自走度マップ（バブルチャート風：横=次の一手の具体性, 縦=達成感）
   const names=allNames();
   const points=names.map(name=>{
     const rows=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a)));
-    if(!rows.length) return null;
-    const latest=rows[0];
-    const nextTxt=latest.next||latest['次への一手']||'';
-    const nextScore=calcNextScore(nextTxt);
-    const score=getScore(latest);
-
-    // サイクル接続：最新の③と最新の宣言
+    if(!rows.length)return null;
+    const latest=rows[0],nextTxt=latest.next||latest['次への一手']||'',nextScore=calcNextScore(nextTxt),score=getScore(latest);
     const latestDecl=store.d.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a)));
     const curIntent=latestDecl.length?(latestDecl[0].intent||latestDecl[0]['試したいこと']||''):'';
-    const conn=calcCycleConn(nextTxt,curIntent);
-    const connScore=conn==='high'?3:conn==='medium'?2:conn==='low'?1:0;
-
-    return {name,x:nextScore||0,y:score||0,conn:connScore,r:6+connScore*2};
+    const conn=calcCycleConn(nextTxt,curIntent),connScore=conn==='high'?3:conn==='medium'?2:conn==='low'?1:0;
+    return{name,x:nextScore||0,y:score||0,conn:connScore,r:6+connScore*2};
   }).filter(Boolean);
-
   const ctx=document.getElementById('autonomyChart');
-  if(charts.autonomy) charts.autonomy.destroy();
-
-  const bgColors=points.map(p=>{
-    if(p.x>=4&&p.y>=4) return 'rgba(10,124,92,0.7)';  // 右上: 緑
-    if(p.x<=2||p.y<=2) return 'rgba(192,57,43,0.7)';  // 左下: 赤
-    return 'rgba(200,149,42,0.7)';                      // 中間: 金
-  });
-
-  charts.autonomy=new Chart(ctx,{
-    type:'bubble',
-    data:{datasets:[{
-      label:'部員',
-      data:points.map(p=>({x:p.x,y:p.y,r:p.r,name:p.name})),
-      backgroundColor:bgColors,borderColor:'rgba(255,255,255,0.8)',borderWidth:2
-    }]},
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>{const d=ctx.raw; return d.name+' (③:'+d.x+'/達成感:'+d.y+')';}}}
-      },
-      scales:{
-        x:{min:0,max:5,title:{display:true,text:'次の一手の具体性',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}},
-        y:{min:0,max:5,title:{display:true,text:'達成感',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}}
-      }
-    }
-  });
+  if(charts.autonomy)charts.autonomy.destroy();
+  const bgColors=points.map(p=>{if(p.x>=4&&p.y>=4)return'rgba(10,124,92,0.7)';if(p.x<=2||p.y<=2)return'rgba(192,57,43,0.7)';return'rgba(200,149,42,0.7)';});
+  charts.autonomy=new Chart(ctx,{type:'bubble',data:{datasets:[{label:'部員',data:points.map(p=>({x:p.x,y:p.y,r:p.r,name:p.name})),backgroundColor:bgColors,borderColor:'rgba(255,255,255,0.8)',borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const d=ctx.raw;return d.name+' (③:'+d.x+'/達成感:'+d.y+')';}}}},scales:{x:{min:0,max:5,title:{display:true,text:'次の一手の具体性',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}},y:{min:0,max:5,title:{display:true,text:'達成感',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}}}}});
 }
 
 function renderGrowthTable(){
   const dates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort().reverse();
   const tbody=document.getElementById('growthTableBody');
-  if(!dates.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">データがありません</div></div></td></tr>'; return; }
-
+  if(!dates.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">データがありません</div></div></td></tr>';return;}
   tbody.innerHTML=dates.map(dt=>{
-    const dRows=store.d.filter(r=>getDate(r)===dt);
-    const rRows=store.r.filter(r=>getDate(r)===dt);
-    const scores=rRows.map(getScore).filter(s=>s>0);
-    const avgScore=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
-
-    // 次の一手の具体性平均
-    const nextScores=rRows.map(r=>{
-      const nx=r.next||r['次への一手']||'';
-      return nx?calcNextScore(nx):null;
-    }).filter(s=>s!==null);
+    const dRows=store.d.filter(r=>getDate(r)===dt),rRows=store.r.filter(r=>getDate(r)===dt);
+    const scores=rRows.map(getScore).filter(s=>s>0),avgScore=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
+    const nextScores=rRows.map(r=>{const nx=r.next||r['次への一手']||'';return nx?calcNextScore(nx):null;}).filter(s=>s!==null);
     const avgNext=nextScores.length?(nextScores.reduce((a,b)=>a+b,0)/nextScores.length).toFixed(1):'—';
-
-    // サイクル接続率（前回→今回）
-    const sortedDates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort();
-    const prevIdx=sortedDates.indexOf(dt)-1;
+    const sortedDates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort(),prevIdx=sortedDates.indexOf(dt)-1;
     let connRate='—';
-    if(prevIdx>=0){
-      const prevDt=sortedDates[prevIdx];
-      const prevReflects=store.r.filter(r=>getDate(r)===prevDt);
-      if(prevReflects.length>0){
-        let connected=0;
-        dRows.forEach(dc=>{
-          const n=getName(dc);
-          const prevR=prevReflects.find(r=>getName(r)===n);
-          if(prevR){
-            const prevNext=prevR.next||prevR['次への一手']||'';
-            const curIntent=dc.intent||dc['試したいこと']||'';
-            const prevScore2=getScore(prevR)||0;
-            const conn=calcCycleConn(prevNext,curIntent,prevScore2);
-            if(conn==='high'||conn==='medium') connected++;
-          }
-        });
-        const base=dRows.filter(dc=>prevReflects.some(r=>getName(r)===getName(dc))).length;
-        connRate=base?Math.round(connected/base*100)+'%':'—';
-      }
-    }
-
+    if(prevIdx>=0){const prevDt=sortedDates[prevIdx],prevReflects=store.r.filter(r=>getDate(r)===prevDt);if(prevReflects.length>0){let connected=0;dRows.forEach(dc=>{const n=getName(dc),prevR=prevReflects.find(r=>getName(r)===n);if(prevR){const prevNext=prevR.next||prevR['次への一手']||'',curIntent=dc.intent||dc['試したいこと']||'',prevScore2=getScore(prevR)||0,conn=calcCycleConn(prevNext,curIntent,prevScore2);if(conn==='high'||conn==='medium')connected++;}});const base=dRows.filter(dc=>prevReflects.some(r=>getName(r)===getName(dc))).length;connRate=base?Math.round(connected/base*100)+'%':'—';}}
     const rateColor=v=>parseInt(v)>=70?'var(--green)':parseInt(v)>=40?'var(--amber)':'var(--red)';
-
-    return `<tr>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap">${dt}</td>
-      <td style="text-align:center">${dRows.length}名</td>
-      <td style="text-align:center"><span class="badge badge-ok">${dRows.length}件</span></td>
-      <td style="text-align:center"><span class="badge ${rRows.length===dRows.length?'badge-ok':'badge-no'}">${rRows.length}件</span></td>
-      <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${avgScore!=='—'?'var(--gold)':'var(--ink-muted)'}">${avgScore}</td>
-      <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${avgNext!=='—'?'var(--green)':'var(--ink-muted)'}">${avgNext}/5</td>
-      <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${connRate!=='—'?rateColor(connRate):'var(--ink-muted)'}">${connRate}</td>
-    </tr>`;
+    return `<tr><td style="font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap">${dt}</td><td style="text-align:center">${dRows.length}名</td><td style="text-align:center"><span class="badge badge-ok">${dRows.length}件</span></td><td style="text-align:center"><span class="badge ${rRows.length===dRows.length?'badge-ok':'badge-no'}">${rRows.length}件</span></td><td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${avgScore!=='—'?'var(--gold)':'var(--ink-muted)'}">${avgScore}</td><td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${avgNext!=='—'?'var(--green)':'var(--ink-muted)'}">${avgNext}/5</td><td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${connRate!=='—'?rateColor(connRate):'var(--ink-muted)'}">${connRate}</td></tr>`;
   }).join('');
 }
 
@@ -1165,480 +678,139 @@ function renderMatrix(){
   const wrap=document.getElementById('matrixWrap');
   const dates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort().reverse().slice(0,8);
   const names=sortedNames();
-  if(!dates.length||!names.length){ wrap.innerHTML='<div class="empty"><div class="empty-text">データがありません</div></div>'; return; }
+  if(!dates.length||!names.length){wrap.innerHTML='<div class="empty"><div class="empty-text">データがありません</div></div>';return;}
   const rMap={},dMap={};
-  store.r.forEach(r=>{ const n=getName(r),dt=getDate(r),f=getScore(r); if(!rMap[n])rMap[n]={}; if(!rMap[n][dt]||f>rMap[n][dt])rMap[n][dt]=f; });
-  store.d.forEach(r=>{ const n=getName(r),dt=getDate(r); if(!dMap[n])dMap[n]={}; dMap[n][dt]=true; });
+  store.r.forEach(r=>{const n=getName(r),dt=getDate(r),f=getScore(r);if(!rMap[n])rMap[n]={};if(!rMap[n][dt]||f>rMap[n][dt])rMap[n][dt]=f;});
+  store.d.forEach(r=>{const n=getName(r),dt=getDate(r);if(!dMap[n])dMap[n]={};dMap[n][dt]=true;});
   let h='<table class="mtx"><thead><tr><th class="n">部員</th>'+dates.map(dt=>'<th>'+dt.slice(5)+'</th>').join('')+'</tr></thead><tbody>';
-  names.forEach(name=>{ h+=`<tr><td class="n">${name}</td>`+dates.map(dt=>{ const s=rMap[name]?.[dt],dk=dMap[name]?.[dt]; if(s) return `<td><div class="mc mc-${s}">${s}</div></td>`; if(dk) return `<td><div class="mc mc-ok">✓</div></td>`; return `<td><div class="mc mc-nil">—</div></td>`; }).join('')+'</tr>'; });
-  h+='</tbody></table>'; wrap.innerHTML=h;
+  names.forEach(name=>{h+=`<tr><td class="n">${name}</td>`+dates.map(dt=>{const s=rMap[name]?.[dt],dk=dMap[name]?.[dt];if(s)return`<td><div class="mc mc-${s}">${s}</div></td>`;if(dk)return`<td><div class="mc mc-ok">✓</div></td>`;return`<td><div class="mc mc-nil">—</div></td>`;}).join('')+'</tr>';});
+  h+='</tbody></table>';wrap.innerHTML=h;
 }
 
 function renderAllCards(){
   const from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
   const rows=filterByRange(store.r,from,to).slice().sort((a,b)=>getDate(b).localeCompare(getDate(a)));
   const el=document.getElementById('allCards');
-  if(!rows.length){ el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">該当データがありません</div></div>'; return; }
+  if(!rows.length){el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">該当データがありません</div></div>';return;}
   el.innerHTML=rows.map(r=>buildCard(r)).join('');
 }
 
 function buildCard(row){
-  const n=getName(row),dt=getDate(row);
-  const s=row.scene||row['印象に残った場面']||'—';
-  const w=row.why||row['なぜそうなったか']||'—';
-  const nx=row.next||row['次への一手']||'';
-  const i=row.intent||row['試したいこと']||'';
-  const f=getScore(row);
-  return `<div class="card">
-    <div class="card-hdr reflect">
-      <div class="card-av">${n.charAt(0)}</div>
-      <div style="flex:1;min-width:0"><div class="card-name">${n}</div><div class="card-meta">${dt}</div></div>
-      ${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}
-    </div>
-    <div class="card-body">
-      ${i?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${i}</div>`:''}
-      <div class="clabel clabel-s">① 試した結果</div><div class="chip chip-s">${s}</div>
-      <div class="clabel clabel-w">② なぜそうなったか</div><div class="chip chip-w">${w}</div>
-      ${nx?`<div class="clabel" style="color:var(--green)">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${nx}</div>`:''}
-    </div>
-  </div>`;
+  const n=getName(row),dt=getDate(row),s=row.scene||row['印象に残った場面']||'—',w=row.why||row['なぜそうなったか']||'—',nx=row.next||row['次への一手']||'',i=row.intent||row['試したいこと']||'',f=getScore(row);
+  return `<div class="card"><div class="card-hdr reflect"><div class="card-av">${n.charAt(0)}</div><div style="flex:1;min-width:0"><div class="card-name">${n}</div><div class="card-meta">${dt}</div></div>${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}</div><div class="card-body">${i?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${i}</div>`:''}<div class="clabel clabel-s">① 試した結果</div><div class="chip chip-s">${s}</div><div class="clabel clabel-w">② なぜそうなったか</div><div class="chip chip-w">${w}</div>${nx?`<div class="clabel" style="color:var(--green)">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${nx}</div>`:''}</div></div>`;
 }
 
 function renderAlerts(){
-  const low=latestPerMember(store.r).filter(r=>{ const f=getScore(r); return f>0&&f<=2; });
+  const low=latestPerMember(store.r).filter(r=>{const f=getScore(r);return f>0&&f<=2;});
   const bar=document.getElementById('alertBar');
-  if(low.length){ bar.className='alert-bar amber'; bar.innerHTML='⚠ 達成感が低い部員がいます：'+low.map(getName).join('・')+'　→ コーチング支援タブで詳細を確認できます'; }
-  else { bar.className='alert-bar hidden'; bar.innerHTML=''; }
+  if(low.length){bar.className='alert-bar amber';bar.innerHTML='⚠ 達成感が低い部員がいます：'+low.map(getName).join('・')+'　→ コーチング支援タブで詳細を確認できます';}
+  else{bar.className='alert-bar hidden';bar.innerHTML='';}
 }
 
-// ===================================================
-//  コーチング支援（根拠ベース・重み付きスコア分析）
-//
-//  設計根拠：
-//  ① 参加行動（行動指標）が最も先行するサイン
-//     → 「宣言したのに振り返りを出さない」は離脱の最初の兆候
-//  ② トレンド（方向性）が単発スコアより重要
-//     → 前回比で悪化しているときが本当の危険信号
-//  ③ 複数指標が同時に悪化したとき介入根拠が強くなる
-//     → 重み付きスコアで統合
-//  ④ 言語化の深さは自己調整能力の代理指標（Zimmerman, 2000）
-//     → 次の一手の具体性＋因果語で測定
-// ===================================================
+const NEG_WORDS=['わからない','わからなかった','できない','できなかった','難しい','難しかった','焦','苦手','うまくいかない','消極的','自信がない','迷','崩れた','失敗','反撃','取り返された'];
+const POS_WORDS=['気づいた','わかった','できた','つかめた','感じた','変わった','改善','つながった','余裕','落ち着','手応え','決まった'];
+const CAUSAL_WORDS=['から','ので','ため','なぜなら','原因','理由','ことで','することで','意識して','意識したら'];
+const ACTION_WORDS=['意識する','試す','使う','取り組む','確認する','心がける','繰り返す','やってみる'];
+const SPECIFIC_WORDS=['瞬間','直後','直前','ときに','場合','たら','足を','手を','体を','間合い','竹刀','踏み込み','引き','出ばな','小手','面','胴'];
 
-// ── キーワード辞書 ──
-const NEG_WORDS = [
-  'わからない','わからなかった','できない','できなかった',
-  '難しい','難しかった','焦','苦手','うまくいかない',
-  '消極的','自信がない','迷','崩れた','失敗','反撃','取り返された'
-];
-const POS_WORDS = [
-  '気づいた','わかった','できた','つかめた','感じた',
-  '変わった','改善','つながった','余裕','落ち着','手応え','決まった'
-];
-const CAUSAL_WORDS = [
-  'から','ので','ため','なぜなら','原因','理由',
-  'ことで','することで','意識して','意識したら'
-];
-const ACTION_WORDS = [
-  '意識する','試す','使う','取り組む','確認する',
-  '心がける','繰り返す','やってみる'
-];
-const SPECIFIC_WORDS = [
-  '瞬間','直後','直前','ときに','場合','たら',
-  '足を','手を','体を','間合い','竹刀','踏み込み',
-  '引き','出ばな','小手','面','胴'
-];
+function analyzeText(text){if(!text)return{neg:0,pos:0,causal:0,action:0,specific:0,len:0};return{neg:NEG_WORDS.filter(w=>text.includes(w)).length,pos:POS_WORDS.filter(w=>text.includes(w)).length,causal:CAUSAL_WORDS.filter(w=>text.includes(w)).length,action:ACTION_WORDS.filter(w=>text.includes(w)).length,specific:SPECIFIC_WORDS.filter(w=>text.includes(w)).length,len:text.length};}
 
-function analyzeText(text) {
-  if (!text) return { neg:0, pos:0, causal:0, action:0, specific:0, len:0 };
-  return {
-    neg:      NEG_WORDS.filter(w => text.includes(w)).length,
-    pos:      POS_WORDS.filter(w => text.includes(w)).length,
-    causal:   CAUSAL_WORDS.filter(w => text.includes(w)).length,
-    action:   ACTION_WORDS.filter(w => text.includes(w)).length,
-    specific: SPECIFIC_WORDS.filter(w => text.includes(w)).length,
-    len:      text.length
-  };
+function calcNextScore(text){if(!text)return 0;const a=analyzeText(text);let s=0;if(a.len>=30)s++;if(a.len>=60)s++;if(a.action>=1)s++;if(a.specific>=1)s++;if(a.action>=1&&a.specific>=1)s++;return Math.max(1,Math.min(5,s));}
+
+function calcCycleConn(nextText,nextIntent,latestScore){
+  latestScore=latestScore||0;
+  if(!nextText)return'unknown';if(!nextIntent)return'unknown';
+  const keywords=[];
+  for(let i=0;i<nextText.length-1;i++){const w2=nextText.slice(i,i+2),w3=nextText.slice(i,i+3);if(/[一-鿿぀-ゟ]{2}/.test(w2))keywords.push(w2);if(/[一-鿿぀-ゟ]{3}/.test(w3))keywords.push(w3);}
+  const hits=keywords.filter(w=>nextIntent.includes(w)).length,sameTheme=hits>=2,score=latestScore||0;
+  if(score>=4)return'high';else if(score>=3)return sameTheme?'high':'medium';else if(score>=1)return sameTheme?'high':'low';
+  return sameTheme?'medium':'low';
 }
 
-// ── 次の一手の具体性スコア（1〜5）──
-function calcNextScore(text) {
-  if (!text) return 0;
-  const a = analyzeText(text);
-  let s = 0;
-  if (a.len >= 30) s++;
-  if (a.len >= 60) s++;
-  if (a.action >= 1) s++;
-  if (a.specific >= 1) s++;
-  if (a.action >= 1 && a.specific >= 1) s++;
-  return Math.max(1, Math.min(5, s));
+function calcThemeDepth(name){
+  const rows=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(a).localeCompare(getDate(b)));
+  if(rows.length<2)return'unknown';
+  let deepening=0,total=0;
+  for(let i=0;i<rows.length-1;i++){const nx=rows[i].next||rows[i]['次への一手']||'',ni=rows[i+1].intent||rows[i+1]['試したいこと']||'';if(nx&&ni){total++;const prevScore=getScore(rows[i])||0,conn=calcCycleConn(nx,ni,prevScore);if(conn==='high'||conn==='medium')deepening++;}}
+  if(total===0)return'unknown';const rate=deepening/total;if(rate>=0.7)return'deep';if(rate>=0.4)return'partial';return'scattered';
 }
 
-// ── サイクル接続（達成感×テーマ移行で判定）──
-// 設計根拠：
-//   達成感4〜5で新テーマ → 正常な成長的発展（high）
-//   達成感4〜5で同テーマ → さらなる深化（high）
-//   達成感1〜3で同テーマ → 正しい継続（high）
-//   達成感1〜3で別テーマ → 逃避の可能性（low）
-//   ③が空              → サイクル未閉（unknown）
-function calcCycleConn(nextText, nextIntent, latestScore) {
-  latestScore = latestScore || 0;
-  if (!nextText) return 'unknown';  // ③未記入はサイクル未閉
-  if (!nextIntent) return 'unknown'; // 次の宣言なし
+function calcEmotion(scene,why){const a=analyzeText((scene||'')+(why||''));if(a.neg>=3||(a.neg>=1&&a.pos===0))return'caution';if(a.pos>=2||(a.pos>=1&&a.causal>=1))return'positive';return'neutral';}
 
-  // キーワード一致で「同テーマか」を判定
-  const keywords = [];
-  for (let i = 0; i < nextText.length - 1; i++) {
-    const w2 = nextText.slice(i, i+2);
-    const w3 = nextText.slice(i, i+3);
-    if (/[一-鿿぀-ゟ]{2}/.test(w2)) keywords.push(w2);
-    if (/[一-鿿぀-ゟ]{3}/.test(w3)) keywords.push(w3);
-  }
-  const hits = keywords.filter(w => nextIntent.includes(w)).length;
-  const sameTheme = hits >= 2;
-  const score = latestScore || 0;
-
-  if (score >= 4) {
-    // 達成感高：テーマ移行は正常な成長。同テーマでも発展。常にhigh
-    return 'high';
-  } else if (score >= 3) {
-    // 達成感中：同テーマ継続が望ましい
-    return sameTheme ? 'high' : 'medium';
-  } else if (score >= 1) {
-    // 達成感低：同テーマ継続なら正しい深化、別テーマなら逃避の可能性
-    return sameTheme ? 'high' : 'low';
-  }
-  // スコアなし
-  return sameTheme ? 'medium' : 'low';
+function calcInterventionScore(data){
+  let score=0;const reasons=[];
+  const missRatio=data.totalDeclare>0?data.missCount/data.totalDeclare:0;
+  if(missRatio>=0.5){score+=30;reasons.push({weight:30,label:'参加行動',detail:`宣言${data.totalDeclare}回中${data.missCount}回振り返り未提出（${Math.round(missRatio*100)}%）`});}
+  else if(missRatio>=0.25){score+=15;reasons.push({weight:15,label:'参加行動',detail:`振り返り未提出が${Math.round(missRatio*100)}%（要注意水準）`});}
+  const f=data.latestScore,prev=data.prevScore;
+  if(f>0&&prev>0){const diff=f-prev;if(diff<=-2){score+=25;reasons.push({weight:25,label:'達成感トレンド',detail:`前回${prev}→今回${f}（${diff}点の急落）`});}else if(diff===-1){score+=12;reasons.push({weight:12,label:'達成感トレンド',detail:`前回${prev}→今回${f}（1点低下）`});}}
+  if(f>0&&f<=2){score+=10;reasons.push({weight:10,label:'達成感水準',detail:`最新スコアが${f}/5（低水準）`});}
+  const ns=data.nextScore;
+  if(ns===0){score+=25;reasons.push({weight:25,label:'言語化',detail:'③「次への一手」が未記入（自己調整サイクルが閉じていない）'});}
+  else if(ns<=2){score+=15;reasons.push({weight:15,label:'言語化',detail:`次の一手の具体性が${ns}/5（「もっと頑張る」レベル）`});}
+  else if(ns===3){score+=5;reasons.push({weight:5,label:'言語化',detail:`次の一手の具体性が${ns}/5（もう少し掘り下げが必要）`});}
+  if(data.emotion==='caution'){score+=20;reasons.push({weight:20,label:'感情サイン',detail:`ネガティブワード検出（${data.negWords.slice(0,3).join('・')}）`});}
+  return{score:Math.min(100,score),reasons};
 }
 
-// ── テーマ深化 ──
-function calcThemeDepth(name) {
-  const rows = store.r.filter(r => getName(r) === name)
-    .sort((a, b) => getDate(a).localeCompare(getDate(b)));
-  if (rows.length < 2) return 'unknown';
-  let deepening = 0, total = 0;
-  for (let i = 0; i < rows.length - 1; i++) {
-    const nx  = rows[i].next   || rows[i]['次への一手']    || '';
-    const ni  = rows[i+1].intent || rows[i+1]['試したいこと'] || '';
-    if (nx && ni) {
-      total++;
-      // テーマ深化は前回の達成感を考慮して判定
-      const prevScore = getScore(rows[i]) || 0;
-      const conn = calcCycleConn(nx, ni, prevScore);
-      if (conn === 'high' || conn === 'medium') deepening++;
-    }
-  }
-  if (total === 0) return 'unknown';
-  const rate = deepening / total;
-  if (rate >= 0.7) return 'deep';
-  if (rate >= 0.4) return 'partial';
-  return 'scattered';
+function priorityFromScore(score){if(score>=50)return'high';if(score>=25)return'medium';return'low';}
+
+function coachingHint2(data,priority){
+  if(data.missCount>=2)return'「最近稽古どう？振り返り書けてる？」（参加を確認）';
+  if(data.nextScore===0)return'「次の稽古で一番試したいこと、一緒に考えよう」';
+  if(data.emotion==='caution')return'「最近稽古で気になることある？」（話を聞く）';
+  if(data.cycleConn==='low')return'「先週書いた次の一手、今日の宣言に使えた？」';
+  if(data.nextScore<=2)return'「次の一手をもっと具体的な動作に書いてみよう」';
+  if(priority==='low')return'「その気づき、自分でも感じてた？」（承認）';
+  return'「次の一手の内容を次の宣言に繋げてみよう」';
 }
 
-// ── 感情サイン ──
-function calcEmotion(scene, why) {
-  const a = analyzeText((scene||'') + (why||''));
-  if (a.neg >= 3 || (a.neg >= 1 && a.pos === 0)) return 'caution';
-  if (a.pos >= 2 || (a.pos >= 1 && a.causal >= 1)) return 'positive';
-  return 'neutral';
-}
-
-// ──────────────────────────────────────────────────
-//  重み付き介入スコア（0〜100点）
-//  高いほど介入の優先度が高い
-//
-//  配点根拠：
-//  [30点] 参加行動：最も先行する離脱サイン（行動指標優先）
-//  [25点] 達成感トレンド：方向性の悪化が単発スコアより重要
-//  [25点] 言語化の深さ：自己調整能力の代理指標（Zimmerman）
-//  [20点] 感情的サイン：心理的安全の低下を検出
-// ──────────────────────────────────────────────────
-function calcInterventionScore(data) {
-  let score = 0;
-  const reasons = [];
-
-  // [30点] 参加行動
-  const missRatio = data.totalDeclare > 0
-    ? data.missCount / data.totalDeclare : 0;
-  if (missRatio >= 0.5) {
-    score += 30;
-    reasons.push({ weight: 30, label: '参加行動',
-      detail: `宣言${data.totalDeclare}回中${data.missCount}回振り返り未提出（${Math.round(missRatio*100)}%）` });
-  } else if (missRatio >= 0.25) {
-    score += 15;
-    reasons.push({ weight: 15, label: '参加行動',
-      detail: `振り返り未提出が${Math.round(missRatio*100)}%（要注意水準）` });
-  }
-
-  // [25点] 達成感トレンド
-  const f = data.latestScore, prev = data.prevScore;
-  if (f > 0 && prev > 0) {
-    const diff = f - prev;
-    if (diff <= -2) {
-      score += 25;
-      reasons.push({ weight: 25, label: '達成感トレンド',
-        detail: `前回${prev}→今回${f}（${diff}点の急落）` });
-    } else if (diff === -1) {
-      score += 12;
-      reasons.push({ weight: 12, label: '達成感トレンド',
-        detail: `前回${prev}→今回${f}（1点低下）` });
-    }
-  }
-  if (f > 0 && f <= 2) {
-    score += 10;
-    reasons.push({ weight: 10, label: '達成感水準',
-      detail: `最新スコアが${f}/5（低水準）` });
-  }
-
-  // [25点] 言語化の深さ（次の一手の具体性）
-  const ns = data.nextScore;
-  if (ns === 0) {
-    score += 25;
-    reasons.push({ weight: 25, label: '言語化',
-      detail: '③「次への一手」が未記入（自己調整サイクルが閉じていない）' });
-  } else if (ns <= 2) {
-    score += 15;
-    reasons.push({ weight: 15, label: '言語化',
-      detail: `次の一手の具体性が${ns}/5（「もっと頑張る」レベル）` });
-  } else if (ns === 3) {
-    score += 5;
-    reasons.push({ weight: 5, label: '言語化',
-      detail: `次の一手の具体性が${ns}/5（もう少し掘り下げが必要）` });
-  }
-
-  // [20点] 感情的サイン
-  if (data.emotion === 'caution') {
-    score += 20;
-    reasons.push({ weight: 20, label: '感情サイン',
-      detail: `ネガティブワード検出（${data.negWords.slice(0,3).join('・')}）` });
-  }
-
-  return { score: Math.min(100, score), reasons };
-}
-
-// ── 優先度ラベル ──
-function priorityFromScore(score) {
-  if (score >= 50) return 'high';
-  if (score >= 25) return 'medium';
-  return 'low';
-}
-
-// ── 声かけヒント ──
-function coachingHint2(data, priority) {
-  if (data.missCount >= 2)
-    return '「最近稽古どう？振り返り書けてる？」（参加を確認）';
-  if (data.nextScore === 0)
-    return '「次の稽古で一番試したいこと、一緒に考えよう」';
-  if (data.emotion === 'caution')
-    return '「最近稽古で気になることある？」（話を聞く）';
-  if (data.cycleConn === 'low')
-    return '「先週書いた次の一手、今日の宣言に使えた？」';
-  if (data.nextScore <= 2)
-    return '「次の一手をもっと具体的な動作に書いてみよう」';
-  if (priority === 'low')
-    return '「その気づき、自分でも感じてた？」（承認）';
-  return '「次の一手の内容を次の宣言に繋げてみよう」';
-}
-
-// ── メイン分析 ──
 function analyzeCoaching(){
-  const result   = document.getElementById('coachingResult');
-  const cycleMap = document.getElementById('cycleMapBody');
-  const latest   = latestPerMember(store.r);
-  if (!latest.length) {
-    result.innerHTML = '<div class="empty"><div class="empty-text">振り返りデータがありません。まずデータを収集してください。</div></div>';
-    return;
-  }
-
-  // 各部員のデータ収集
-  const latestDeclare = {};
-  latestPerMember(store.d).forEach(r => { latestDeclare[getName(r)] = r; });
-
-  // 前回スコアマップ
-  const reflectDates = [...new Set(store.r.map(getDate).filter(Boolean))].sort();
-  const prevScoreMap = {};
-  if (reflectDates.length >= 2) {
-    const pd = reflectDates[reflectDates.length - 2];
-    store.r.filter(r => getDate(r) === pd).forEach(r => { prevScoreMap[getName(r)] = getScore(r); });
-  }
-
-  const analyzed = latest.map(r => {
-    const name   = getName(r);
-    const scene  = r.scene  || r['印象に残った場面'] || '';
-    const why    = r.why    || r['なぜそうなったか'] || '';
-    const nextTxt= r.next   || r['次への一手']      || '';
-    const curDecl= latestDeclare[name];
-    const curIntent = curDecl ? (curDecl.intent || curDecl['試したいこと'] || '') : '';
-
-    // ユニーク稽古日数で計算（同日重複を除外）
-    const declDates = [...new Set(store.d.filter(r2 => getName(r2) === name).map(r2 => getDate(r2)))];
-    const logDates  = [...new Set(store.r.filter(r2 => getName(r2) === name).map(r2 => getDate(r2)))];
-    const totalDeclare = declDates.length;
-    const totalLog     = logDates.length;
-    const missCount    = Math.max(0, totalDeclare - totalLog);
-    const latestScore  = getScore(r);
-    const prevScore    = prevScoreMap[name] || 0;
-    const nextScore    = calcNextScore(nextTxt);
-    const cycleConn    = calcCycleConn(nextTxt, curIntent, latestScore);
-    const themeDepth   = calcThemeDepth(name);
-    const emotion      = calcEmotion(scene, why);
-    const negWords     = NEG_WORDS.filter(w => (scene + why).includes(w));
-    const posWords     = POS_WORDS.filter(w => (scene + why).includes(w));
-
-    const data = {
-      name, scene, why, nextTxt, curIntent,
-      totalDeclare, missCount,
-      latestScore, prevScore,
-      nextScore, cycleConn, themeDepth, emotion,
-      negWords, posWords
-    };
-    const { score, reasons } = calcInterventionScore(data);
-    const priority = priorityFromScore(score);
-    const hint     = coachingHint2(data, priority);
-
-    return { ...data, score, reasons, priority, hint };
+  const result=document.getElementById('coachingResult'),cycleMap=document.getElementById('cycleMapBody'),latest=latestPerMember(store.r);
+  if(!latest.length){result.innerHTML='<div class="empty"><div class="empty-text">振り返りデータがありません。まずデータを収集してください。</div></div>';return;}
+  const latestDeclare={};latestPerMember(store.d).forEach(r=>{latestDeclare[getName(r)]=r;});
+  const reflectDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort(),prevScoreMap={};
+  if(reflectDates.length>=2){const pd=reflectDates[reflectDates.length-2];store.r.filter(r=>getDate(r)===pd).forEach(r=>{prevScoreMap[getName(r)]=getScore(r);});}
+  const analyzed=latest.map(r=>{
+    const name=getName(r),scene=r.scene||r['印象に残った場面']||'',why=r.why||r['なぜそうなったか']||'',nextTxt=r.next||r['次への一手']||'',curDecl=latestDeclare[name],curIntent=curDecl?(curDecl.intent||curDecl['試したいこと']||''):'';
+    const declDates=[...new Set(store.d.filter(r2=>getName(r2)===name).map(r2=>getDate(r2)))],logDates=[...new Set(store.r.filter(r2=>getName(r2)===name).map(r2=>getDate(r2)))];
+    const totalDeclare=declDates.length,totalLog=logDates.length,missCount=Math.max(0,totalDeclare-totalLog),latestScore=getScore(r),prevScore=prevScoreMap[name]||0,nextScore=calcNextScore(nextTxt),cycleConn=calcCycleConn(nextTxt,curIntent,latestScore),themeDepth=calcThemeDepth(name),emotion=calcEmotion(scene,why),negWords=NEG_WORDS.filter(w=>(scene+why).includes(w)),posWords=POS_WORDS.filter(w=>(scene+why).includes(w));
+    const data={name,scene,why,nextTxt,curIntent,totalDeclare,missCount,latestScore,prevScore,nextScore,cycleConn,themeDepth,emotion,negWords,posWords};
+    const{score,reasons}=calcInterventionScore(data),priority=priorityFromScore(score),hint=coachingHint2(data,priority);
+    return{...data,score,reasons,priority,hint};
   });
-
-  // 介入スコア降順でソート
-  analyzed.sort((a, b) => b.score - a.score);
-
-  // KPI更新（バレットチャートのバーも更新）
-  function setKPI(textId, barId, value, max, unit) {
-    const el  = document.getElementById(textId);
-    const bar = document.getElementById(barId);
-    if (!el) return;
-    const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-    el.textContent = value !== null ? value + unit : '—';
-    if (bar) bar.style.width = (value !== null ? pct : 0) + '%';
-  }
-
-  const withNext  = analyzed.filter(a => a.nextTxt);
-  const avgNextVal = withNext.length
-    ? parseFloat((withNext.reduce((s, a) => s + a.nextScore, 0) / withNext.length).toFixed(1)) : null;
-  setKPI('ck-next', 'ck-next-bar', avgNextVal, 5, '');
-  document.getElementById('ck-next').textContent = avgNextVal !== null ? avgNextVal.toFixed(1) : '—';
-
-  const withConn   = analyzed.filter(a => a.cycleConn !== 'unknown');
-  const connected  = withConn.filter(a => a.cycleConn === 'high' || a.cycleConn === 'medium').length;
-  const cycleVal   = withConn.length ? Math.round(connected / withConn.length * 100) : null;
-  setKPI('ck-cycle', 'ck-cycle-bar', cycleVal, 100, '%');
-
-  const withDepth  = analyzed.filter(a => a.themeDepth !== 'unknown');
-  const deepCount  = withDepth.filter(a => a.themeDepth === 'deep' || a.themeDepth === 'partial').length;
-  const spiralVal  = withDepth.length ? Math.round(deepCount / withDepth.length * 100) : null;
-  setKPI('ck-spiral', 'ck-spiral-bar', spiralVal, 100, '%');
-
-  // カード描画
-  const pl    = { high:'🔴 対話が必要', medium:'🟡 対話を検討', low:'🟢 成長を見守る' };
-  const pc    = { high:'high', medium:'medium', low:'low' };
-  const ec    = {
-    caution:  'background:#FEE2E2;color:#DC2626',
-    neutral:  'background:var(--border-lt);color:var(--ink-muted)',
-    positive: 'background:var(--green-pale);color:var(--green)'
-  };
-  const el    = { caution:'⚠ 要注意', neutral:'→ 通常', positive:'✓ ポジティブ' };
-  const connLabel  = { high:'🔗 高', medium:'🔗 中', low:'⚡ 低', unknown:'— 不足' };
-  const connColor  = { high:'var(--green)', medium:'var(--amber)', low:'var(--red)', unknown:'var(--ink-muted)' };
-  const depthLabel = { deep:'📈 深化中', partial:'↔ 部分的', scattered:'🔀 分散', unknown:'— 不明' };
-  const depthColor2= { deep:'var(--green)', partial:'var(--amber)', scattered:'var(--red)', unknown:'var(--ink-muted)' };
-  const barCol     = v => v <= 2 ? 'var(--red)' : v === 3 ? 'var(--amber)' : 'var(--green)';
-
-  result.innerHTML = analyzed.map(a => {
-    // 介入根拠リスト
-    const reasonsHtml = a.reasons.length
-      ? '<div style="margin-bottom:10px;background:rgba(255,255,255,.7);border-radius:7px;padding:8px 12px;">'
-        + '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">介入根拠（スコア: ' + a.score + '/100）</div>'
-        + a.reasons.map(r =>
-            '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;font-size:11px;">'
-            + '<span style="background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px;">+' + r.weight + '</span>'
-            + '<span style="color:var(--ink-soft)"><strong>' + r.label + '</strong>：' + r.detail + '</span>'
-            + '</div>'
-          ).join('')
-        + '</div>'
-      : '<div style="margin-bottom:10px;font-size:11px;color:var(--green);">✓ 特記すべき介入根拠なし</div>';
-
-    return `<div class="coaching-card ${pc[a.priority]}" style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-        <div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${a.name.charAt(0)}</div>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:var(--navy)">${a.name}</div>
-          <div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${pl[a.priority]}　介入スコア <strong>${a.score}</strong>/100</div>
-        </div>
-        <span style="padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;${ec[a.emotion]}">${el[a.emotion]}</span>
-      </div>
-
-      ${reasonsHtml}
-
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
-        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">次の一手の具体性</div>
-          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.nextScore)}">${a.nextScore||'—'}/5</div>
-        </div>
-        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">サイクル接続</div>
-          <div style="font-size:11px;font-weight:700;color:${connColor[a.cycleConn]}">${connLabel[a.cycleConn]}</div>
-        </div>
-        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">テーマ深化</div>
-          <div style="font-size:11px;font-weight:700;color:${depthColor2[a.themeDepth]}">${depthLabel[a.themeDepth]}</div>
-        </div>
-        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px">
-          <div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">達成感</div>
-          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.latestScore)}">${a.latestScore||'—'}/5</div>
-        </div>
-      </div>
-
-      ${a.nextTxt ? `<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:4px">③ 次への一手</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${a.nextTxt}</div></div>` : '<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠ ③未記入（自己調整サイクルが閉じていない）</div>'}
-      ${a.curIntent ? `<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:4px">✊ 最新のチャレンジ宣言</div><div class="chip chip-d">${a.curIntent}</div></div>` : ''}
-
-      <div style="background:rgba(255,255,255,.85);border-radius:7px;padding:9px 12px;display:flex;align-items:flex-start;gap:8px">
-        <span style="font-size:14px;flex-shrink:0">💬</span>
-        <div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">推奨の声かけ</div>
-          <div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${a.hint}</div>
-    
-        </div>
-      </div>
-
-      ${(a.negWords.length || a.posWords.length) ? `<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">${a.negWords.length ? `<span style="font-size:10px;color:var(--red)">⚠ ${a.negWords.slice(0,3).join('・')}</span>` : ''}${a.posWords.length ? `<span style="font-size:10px;color:var(--green)">✓ ${a.posWords.slice(0,3).join('・')}</span>` : ''}</div>` : ''}
-    </div>`;
+  analyzed.sort((a,b)=>b.score-a.score);
+  function setKPI(textId,barId,value,max,unit){const el=document.getElementById(textId),bar=document.getElementById(barId);if(!el)return;const pct=max>0?Math.min(100,(value/max)*100):0;el.textContent=value!==null?value+unit:'—';if(bar)bar.style.width=(value!==null?pct:0)+'%';}
+  const withNext=analyzed.filter(a=>a.nextTxt),avgNextVal=withNext.length?parseFloat((withNext.reduce((s,a)=>s+a.nextScore,0)/withNext.length).toFixed(1)):null;
+  setKPI('ck-next','ck-next-bar',avgNextVal,5,'');document.getElementById('ck-next').textContent=avgNextVal!==null?avgNextVal.toFixed(1):'—';
+  const withConn=analyzed.filter(a=>a.cycleConn!=='unknown'),connected=withConn.filter(a=>a.cycleConn==='high'||a.cycleConn==='medium').length,cycleVal=withConn.length?Math.round(connected/withConn.length*100):null;
+  setKPI('ck-cycle','ck-cycle-bar',cycleVal,100,'%');
+  const withDepth=analyzed.filter(a=>a.themeDepth!=='unknown'),deepCount=withDepth.filter(a=>a.themeDepth==='deep'||a.themeDepth==='partial').length,spiralVal=withDepth.length?Math.round(deepCount/withDepth.length*100):null;
+  setKPI('ck-spiral','ck-spiral-bar',spiralVal,100,'%');
+  const pl={high:'🔴 対話が必要',medium:'🟡 対話を検討',low:'🟢 成長を見守る'},pc={high:'high',medium:'medium',low:'low'};
+  const ec={caution:'background:#FEE2E2;color:#DC2626',neutral:'background:var(--border-lt);color:var(--ink-muted)',positive:'background:var(--green-pale);color:var(--green)'};
+  const el={caution:'⚠ 要注意',neutral:'→ 通常',positive:'✓ ポジティブ'};
+  const connLabel={high:'🔗 高',medium:'🔗 中',low:'⚡ 低',unknown:'— 不足'},connColor={high:'var(--green)',medium:'var(--amber)',low:'var(--red)',unknown:'var(--ink-muted)'};
+  const depthLabel={deep:'📈 深化中',partial:'↔ 部分的',scattered:'🔀 分散',unknown:'— 不明'},depthColor2={deep:'var(--green)',partial:'var(--amber)',scattered:'var(--red)',unknown:'var(--ink-muted)'};
+  const barCol=v=>v<=2?'var(--red)':v===3?'var(--amber)':'var(--green)';
+  result.innerHTML=analyzed.map(a=>{
+    const reasonsHtml=a.reasons.length?'<div style="margin-bottom:10px;background:rgba(255,255,255,.7);border-radius:7px;padding:8px 12px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">介入根拠（スコア: '+a.score+'/100）</div>'+a.reasons.map(r=>'<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;font-size:11px;"><span style="background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px;">+'+r.weight+'</span><span style="color:var(--ink-soft)"><strong>'+r.label+'</strong>：'+r.detail+'</span></div>').join('')+'</div>':'<div style="margin-bottom:10px;font-size:11px;color:var(--green);">✓ 特記すべき介入根拠なし</div>';
+    return `<div class="coaching-card ${pc[a.priority]}" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${a.name.charAt(0)}</div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--navy)">${a.name}</div><div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${pl[a.priority]}　介入スコア <strong>${a.score}</strong>/100</div></div><span style="padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;${ec[a.emotion]}">${el[a.emotion]}</span></div>${reasonsHtml}<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px"><div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">次の一手の具体性</div><div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.nextScore)}">${a.nextScore||'—'}/5</div></div><div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">サイクル接続</div><div style="font-size:11px;font-weight:700;color:${connColor[a.cycleConn]}">${connLabel[a.cycleConn]}</div></div><div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">テーマ深化</div><div style="font-size:11px;font-weight:700;color:${depthColor2[a.themeDepth]}">${depthLabel[a.themeDepth]}</div></div><div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">達成感</div><div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.latestScore)}">${a.latestScore||'—'}/5</div></div></div>${a.nextTxt?`<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:4px">③ 次への一手</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${a.nextTxt}</div></div>`:'<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠ ③未記入（自己調整サイクルが閉じていない）</div>'}${a.curIntent?`<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:4px">✊ 最新のチャレンジ宣言</div><div class="chip chip-d">${a.curIntent}</div></div>`:''}<div style="background:rgba(255,255,255,.85);border-radius:7px;padding:9px 12px;display:flex;align-items:flex-start;gap:8px"><span style="font-size:14px;flex-shrink:0">💬</span><div><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">推奨の声かけ</div><div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${a.hint}</div></div></div>${(a.negWords.length||a.posWords.length)?`<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">${a.negWords.length?`<span style="font-size:10px;color:var(--red)">⚠ ${a.negWords.slice(0,3).join('・')}</span>`:''}${a.posWords.length?`<span style="font-size:10px;color:var(--green)">✓ ${a.posWords.slice(0,3).join('・')}</span>`:''}</div>`:''}</div>`;
   }).join('');
-
-  // サイクル接続マップ
-  const connBarStr = { high:'████████ 高', medium:'█████░░░ 中', low:'██░░░░░░ 低', unknown:'——　不明' };
-  cycleMap.innerHTML = `<div style="overflow-x:auto"><table class="tbl">
-    <thead><tr><th>部員</th><th>③ 次への一手（前回）</th><th></th><th>✊ 最新のチャレンジ宣言</th><th>接続</th></tr></thead>
-    <tbody>${analyzed.map(a => `<tr>
-      <td style="font-weight:600;font-size:12px;white-space:nowrap">${a.name}</td>
-      <td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nextTxt || '<span style="color:var(--ink-muted)">未記入</span>'}</td>
-      <td style="font-size:13px">→</td>
-      <td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.curIntent || '<span style="color:var(--ink-muted)">宣言なし</span>'}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${connColor[a.cycleConn]};white-space:nowrap">${connBarStr[a.cycleConn]}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
+  const connBarStr={high:'████████ 高',medium:'█████░░░ 中',low:'██░░░░░░ 低',unknown:'——　不明'};
+  cycleMap.innerHTML=`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>部員</th><th>③ 次への一手（前回）</th><th></th><th>✊ 最新のチャレンジ宣言</th><th>接続</th></tr></thead><tbody>${analyzed.map(a=>`<tr><td style="font-weight:600;font-size:12px;white-space:nowrap">${a.name}</td><td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nextTxt||'<span style="color:var(--ink-muted)">未記入</span>'}</td><td style="font-size:13px">→</td><td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.curIntent||'<span style="color:var(--ink-muted)">宣言なし</span>'}</td><td style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${connColor[a.cycleConn]};white-space:nowrap">${connBarStr[a.cycleConn]}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
-
-// analyzeBtn専用ダイレクトリスナー（イベント委譲のバックアップ）
-document.addEventListener('DOMContentLoaded', function(){
-  var btn = document.getElementById('analyzeBtn');
-  if(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      analyzeCoaching();
-    });
-  }
+document.addEventListener('DOMContentLoaded',function(){
+  var btn=document.getElementById('analyzeBtn');
+  if(btn){btn.addEventListener('click',function(e){e.stopPropagation();analyzeCoaching();});}
 });
 </script>
-<!-- サイドパネル -->
+
 <div id="sidePanel" style="position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--surface);box-shadow:-4px 0 24px rgba(15,32,68,.15);z-index:500;transition:right .25s ease;display:flex;flex-direction:column;overflow:hidden">
   <div style="background:var(--navy);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0">
     <div id="sp-avatar" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-    <div style="flex:1;min-width:0">
-      <div id="sp-name" style="font-size:16px;font-weight:700;color:#fff"></div>
-      <div id="sp-sub" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px"></div>
-    </div>
+    <div style="flex:1;min-width:0"><div id="sp-name" style="font-size:16px;font-weight:700;color:#fff"></div><div id="sp-sub" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px"></div></div>
     <button id="spClose" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
   </div>
   <div id="sp-body" style="flex:1;overflow-y:auto;padding:18px"></div>
