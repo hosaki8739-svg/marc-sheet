@@ -648,10 +648,8 @@ function fetchUserData(name) {
     if (json.status !== 'ok') { showToast('データの取得に失敗しました'); return; }
     // dataが空またはBARSが全部0の場合は復元しない
     const hasData = json.data && Object.keys(json.data).length > 0 && json.data['氏名'];
-    if (hasData) applyPrevData(json.data);
-    else if (!hasData) {
-      // 前回データなし→localStorageのキャッシュも使わない
-      showToast('新規登録です。各項目を入力してください。');
+    if (hasData) {
+      applyPrevData(json.data);
     }
     marc.declares = {};
     (json.declares || []).forEach(function(r) {
@@ -666,7 +664,8 @@ function fetchUserData(name) {
     marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) { return Object.assign({ date: d }, marc.logs[d]); });
     marc.loaded = true;
     renderLogUI();
-    showToast('📋 ' + name + ' さんのデータを復元しました');
+    // データが実際にある場合のみトーストを表示
+    if (hasData) showToast('📋 ' + name + ' さんのデータを復元しました');
   })
   .catch(function(err) {
     console.error('データ取得エラー:', err);
