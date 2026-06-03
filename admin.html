@@ -3,1221 +3,1070 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>剣道部 MARCシート</title>
+<title>MARC 顧問ダッシュボード</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;600;700;900&display=swap');
-
-  :root {
-    --ink:        #0d1117;
-    --ink-soft:   #3d4451;
-    --ink-muted:  #6b7280;
-    --bg:         #f9f7f4;
-    --bg-warm:    #f2efe9;
-    --surface:    #ffffff;
-    --surface-2:  #faf9f7;
-    --border:     #e8e2d9;
-    --border-soft:#f0ebe3;
-    --primary:    #1a3a6b;
-    --primary-lt: #2a5298;
-    --gold:       #b8960c;
-    --gold-lt:    #d4ad1a;
-    --gold-pale:  #fdf6dc;
-    --red:        #c0392b;
-    --shadow-sm:  0 1px 4px rgba(13,17,23,0.06), 0 1px 2px rgba(13,17,23,0.04);
-    --shadow-md:  0 4px 16px rgba(13,17,23,0.08), 0 2px 6px rgba(13,17,23,0.05);
-    --shadow-lg:  0 12px 40px rgba(13,17,23,0.12), 0 4px 12px rgba(13,17,23,0.06);
-    --radius-sm:  8px;
-    --radius-md:  14px;
-    --radius-lg:  20px;
-    --radius-xl:  28px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-    background: var(--bg);
-    min-height: 100vh;
-    padding: 28px 16px 48px;
-    color: var(--ink);
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-
-  .wrapper { max-width: 820px; margin: 0 auto; padding: 0 4px; }
-
-  input[type="text"], input[type="date"], input[type="email"], textarea, select {
-    font-size: 16px !important;
-    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
-  }
-
-  input[type="date"] { min-width: 0; width: 100%; -webkit-appearance: none; appearance: none; }
-  button { min-height: 44px; }
-
-  /* ===== HEADER ===== */
-  .header {
-    text-align: center; margin-bottom: 28px;
-    background: var(--surface); border-radius: var(--radius-xl);
-    padding: 40px 32px 32px; box-shadow: var(--shadow-md);
-    border: 1px solid var(--border-soft); position: relative; overflow: hidden;
-    animation: fadeDown 0.7s cubic-bezier(.22,1,.36,1) both;
-  }
-  .header::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, var(--primary) 0%, var(--gold) 50%, var(--primary) 100%);
-  }
-  .header-kamon { width: 52px; height: 52px; margin: 0 auto 14px; display: block; opacity: 0.85; }
-  .header-en { font-size: 10px; letter-spacing: 0.45em; color: var(--gold); margin-bottom: 10px; font-weight: 500; text-transform: uppercase; }
-  .header-title { font-family: 'Noto Serif JP', 'Georgia', serif; font-size: clamp(24px, 5vw, 34px); font-weight: 900; color: var(--ink); letter-spacing: 0.06em; margin-bottom: 8px; line-height: 1.2; }
-  .header-title span { color: var(--primary); }
-  .header-subtitle { font-size: 10px; color: var(--ink-muted); letter-spacing: 0.2em; margin-bottom: 20px; font-weight: 300; }
-  .progress-track { width: 100%; height: 3px; background: var(--border); border-radius: 999px; margin-top: 16px; overflow: hidden; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--gold)); border-radius: 999px; transition: width 0.5s cubic-bezier(.22,1,.36,1); width: 0%; }
-  .progress-label { font-size: 11px; color: var(--ink-muted); margin-top: 6px; letter-spacing: 0.1em; }
-
-  /* ===== SECTION ===== */
-  .section { background: var(--surface); border-radius: var(--radius-lg); margin-bottom: 14px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border-soft); animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both; transition: box-shadow 0.2s; }
-  .section:hover { box-shadow: var(--shadow-md); }
-  .section-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-lt) 100%); cursor: pointer; user-select: none; transition: filter 0.2s; }
-  .section-header:hover { filter: brightness(1.06); }
-  .section-number { width: 32px; height: 32px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif JP', serif; font-size: 13px; color: rgba(255,255,255,0.9); flex-shrink: 0; font-weight: 700; }
-  .section-title { font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.04em; flex: 1; }
-  .section-toggle { font-size: 16px; color: rgba(255,255,255,0.7); transition: transform 0.25s cubic-bezier(.22,1,.36,1); }
-  .section-toggle.open { transform: rotate(0deg); }
-  .section-toggle.closed { transform: rotate(-90deg); }
-  .section-body { padding: 22px 20px; background: var(--surface); }
-  .section-body.collapsed { display: none; }
-
-  /* ===== FIELDS ===== */
-  .field-group { margin-bottom: 18px; }
-  .field-label { display: block; font-size: 11px; font-weight: 700; color: var(--ink-soft); margin-bottom: 7px; letter-spacing: 0.08em; text-transform: uppercase; }
-  .field-hint { font-size: 12px; color: var(--ink-muted); margin-bottom: 7px; line-height: 1.6; font-weight: 300; }
-  .required { color: var(--red); margin-left: 2px; }
-
-  input[type=text], input[type=date], input[type=month], select, textarea {
-    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-    color: var(--ink); background: var(--surface); transition: all 0.2s; outline: none;
-    -webkit-appearance: none; line-height: 1.5;
-  }
-  input[type=text]:focus, input[type=date]:focus, input[type=month]:focus, select:focus, textarea:focus {
-    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,58,107,0.08); background: #fff;
-  }
-  textarea { resize: vertical; min-height: 80px; line-height: 1.75; }
-  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
-
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-  @media (max-width: 580px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-  @media (max-width: 480px) { .header-title { font-size: 22px; } .field-label { font-size: 13px; } textarea { min-height: 80px; } .submit-btn { font-size: 15px; padding: 16px; } }
-
-  /* ===== RANK SELECTOR ===== */
-  .rank-selector { display: flex; flex-wrap: wrap; gap: 8px; }
-  .rank-btn { padding: 7px 16px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--ink-soft); font-size: 13px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; transition: all 0.18s; font-weight: 500; }
-  .rank-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); background: rgba(26,58,107,0.04); }
-  .rank-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(26,58,107,0.25); }
-
-  /* ===== DIVIDER ===== */
-  .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
-  .divider-line { flex: 1; height: 1px; background: var(--border); }
-  .divider-text { font-size: 10px; letter-spacing: 0.2em; color: var(--ink-muted); white-space: nowrap; text-transform: uppercase; font-weight: 700; }
-
-  /* ===== SUBMIT ===== */
-  .submit-area { text-align: center; padding: 28px 20px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; background: var(--surface); border-radius: var(--radius-lg); margin-top: 8px; border: 1px solid var(--border-soft); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
-  .submit-area::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), var(--gold), var(--primary)); }
-  .submit-btn { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-lt) 100%); color: #fff; border: none; padding: 14px 36px; border-radius: 999px; font-family: 'Noto Sans JP', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 16px rgba(26,58,107,0.3); }
-  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,58,107,0.35); filter: brightness(1.05); }
-  .submit-btn:active { transform: translateY(0); }
-  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-  .save-btn { background: var(--surface); color: var(--primary); border: 1.5px solid var(--primary); padding: 13px 24px; border-radius: 999px; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .save-btn:hover { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(26,58,107,0.2); }
-  .print-btn { background: transparent; color: var(--ink-muted); border: 1px solid var(--border); padding: 13px 20px; border-radius: 999px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .print-btn:hover { background: var(--bg-warm); color: var(--ink-soft); }
-
-  /* ===== TOAST ===== */
-  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--ink); color: #fff; padding: 12px 24px; border-radius: 999px; font-size: 13px; box-shadow: var(--shadow-lg); transition: transform 0.3s cubic-bezier(.22,1,.36,1); z-index: 999; white-space: nowrap; font-weight: 500; }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  /* ===== CHAR COUNT ===== */
-  .char-count { font-size: 11px; color: var(--ink-muted); text-align: right; margin-top: 4px; }
-
-  /* ===== ANIMATIONS ===== */
-  @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* ===== PRINT ===== */
-  @media print { body { background: white; padding: 0; } .section { box-shadow: none; border: 1px solid #ddd; } .section-body.collapsed { display: block !important; } .submit-area, .save-btn, .print-btn, .add-row-btn, .del-btn { display: none !important; } .progress-track { display: none; } }
-
-  /* ===== TABS ===== */
-  .tab-bar { display: flex; background: var(--surface); border-radius: var(--radius-xl); padding: 6px; margin-bottom: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-soft); gap: 6px; position: sticky; top: 12px; z-index: 100; }
-  .tab-btn { flex: 1; padding: 12px 6px; border: none; border-radius: var(--radius-lg); background: transparent; font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700; color: var(--ink-muted); cursor: pointer; transition: all 0.22s cubic-bezier(.22,1,.36,1); letter-spacing: .02em; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
-  .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(26,58,107,0.25); }
-  .tab-btn:not(.active):hover { background: var(--bg-warm); color: var(--ink-soft); }
-  /* タブパネル表示制御はCSSクラスで統一（v6修正） */
-  .tab-panel { display: none; }
-  .tab-panel.tab-active { display: block; }
-
-  /* ===== TIMELINE ===== */
-  .timeline-card { position: relative; border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; transition: all .3s cubic-bezier(.22,1,.36,1); }
-  .timeline-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
-  .timeline-step-badge { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; transition: all .3s; }
-  .timeline-step-badge.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(26,58,107,0.3); }
-  .timeline-step-badge.locked { background: var(--bg-warm); color: var(--ink-muted); border: 2px solid var(--border); }
-  .timeline-step-badge.done { background: #059669; color: #fff; }
-  .timeline-title { flex: 1; }
-  .timeline-title-main { font-size: 14px; font-weight: 700; letter-spacing: .03em; }
-  .timeline-title-sub { font-size: 10px; letter-spacing: .05em; margin-top: 2px; }
-  .timeline-status-tag { font-size: 10px; font-weight: 700; letter-spacing: .08em; padding: 3px 10px; border-radius: 999px; }
-  .timeline-body { padding: 0 18px 18px; }
-  .timeline-body.locked-body { padding: 12px 18px; display: flex; align-items: center; gap: 10px; color: var(--ink-muted); font-size: 13px; }
-  .timeline-card.phase-active { border: 2px solid var(--primary); background: var(--surface); box-shadow: var(--shadow-md); }
-  .timeline-card.phase-locked { border: 1.5px solid var(--border); background: var(--bg-warm); opacity: .75; }
-  .timeline-card.phase-done { border: 2px solid #059669; background: #F0FDF4; box-shadow: var(--shadow-sm); }
-
-  .pre-submit-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-lt)); color: #fff; border: none; border-radius: var(--radius-md); font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; letter-spacing: .04em; margin-top: 14px; box-shadow: 0 3px 12px rgba(26,58,107,0.25); }
-  .pre-submit-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
-  .pre-submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-  .post-submit-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #059669, #047857); color: #fff; border: none; border-radius: var(--radius-md); font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; letter-spacing: .04em; margin-top: 14px; box-shadow: 0 3px 12px rgba(5,150,105,0.25); }
-  .post-submit-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
-  .post-submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-
-  .fulfillment-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:6px; }
-  .fulfillment-btn { padding:10px 4px; border:1.5px solid #dde4f0; border-radius:10px; background:#fff; color:#3d5278; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; text-align:center; line-height:1.4; transition:all .15s; -webkit-tap-highlight-color:transparent; touch-action:manipulation; display:block; width:100%; }
-  .fulfillment-btn:active { transform:scale(.97); }
-  .fulfillment-btn[data-val="1"].selected { background:#FEE2E2; border-color:#EF4444; color:#DC2626; font-weight:700; }
-  .fulfillment-btn[data-val="2"].selected { background:#FEF3C7; border-color:#F59E0B; color:#D97706; font-weight:700; }
-  .fulfillment-btn[data-val="3"].selected { background:#FEF9C3; border-color:#EAB308; color:#A16207; font-weight:700; }
-  .fulfillment-btn[data-val="4"].selected { background:#DCFCE7; border-color:#4ADE80; color:#16A34A; font-weight:700; }
-  .fulfillment-btn[data-val="5"].selected { background:#BBF7D0; border-color:#22C55E; color:#15803D; font-weight:700; }
-
-  /* BARS */
-  .bars-group { margin-bottom: 28px; }
-  .bars-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
-  .bars-group-icon { font-size: 16px; }
-  .bars-group-label { font-family: 'Noto Serif JP', serif; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
-  .bars-item { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; transition: box-shadow .2s; }
-  .bars-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
-  .bars-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
-  .bars-item-info { flex: 1; min-width: 200px; }
-  .bars-item-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: .04em; }
-  .bars-item-hint { font-size: 11px; color: var(--ink-muted); line-height: 1.65; font-weight: 300; }
-  .bars-stars { display: flex; gap: 4px; flex-shrink: 0; align-items: center; padding-top: 2px; }
-  .bars-star { font-size: 24px; color: var(--border); cursor: pointer; transition: all .15s; line-height: 1; user-select: none; }
-  .bars-star.lit { color: var(--gold); }
-  .bars-star:hover { transform: scale(1.2); }
-  .bars-anchor-panel { margin-top: 10px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
-  .bars-anchor-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border-soft); transition: background .15s; }
-  .bars-anchor-row:last-child { border-bottom: none; }
-  .bars-anchor-row.selected { background: var(--gold-pale); }
-  .bars-anchor-num { width: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--ink-muted); border-right: 1px solid var(--border-soft); background: var(--bg-warm); gap: 1px; }
-  .bars-anchor-num .mini-star { font-size: 9px; color: var(--border); line-height: 1; }
-  .bars-anchor-num .mini-star.lit { color: var(--gold); }
-  .bars-anchor-text { flex: 1; padding: 8px 12px; font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
-  .bars-anchor-row.selected .bars-anchor-text { color: var(--ink); font-weight: 500; }
-  .bars-selected-label { font-size: 11px; color: var(--ink-muted); margin-top: 8px; text-align: right; min-height: 16px; letter-spacing: .04em; }
-  .bars-selected-label span { color: var(--gold); font-weight: 700; }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@700;900&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --navy:#0f2044;--navy-mid:#1a3560;--navy-lt:#2a5298;--navy-pale:#e8eef8;
+  --gold:#c8952a;--gold-pale:#fdf3dc;
+  --green:#0a7c5c;--green-pale:#e6f5f0;
+  --red:#c0392b;--red-pale:#fdecea;
+  --amber:#c07000;--amber-pale:#fff3e0;
+  --ink:#0f2044;--ink-soft:#3d5278;--ink-muted:#7a8ea8;
+  --bg:#f2f5fa;--surface:#fff;--border:#dde4f0;--border-lt:#edf0f7;
+  --shadow:0 1px 3px rgba(15,32,68,.07),0 2px 8px rgba(15,32,68,.05);
+  --r:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+/* ===== TOAST ===== */
+.toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:8000;pointer-events:none}
+.toast{background:var(--navy);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap;opacity:0;transform:translateY(10px);transition:all .25s;margin-top:6px}
+.toast.show{opacity:1;transform:translateY(0)}
+/* ===== HEADER ===== */
+.hdr{background:var(--navy);height:52px;display:flex;align-items:center;padding:0 16px;gap:10px;box-shadow:0 2px 12px rgba(15,32,68,.3);position:sticky;top:0;z-index:100}
+.hdr-logo{font-family:'Noto Serif JP',serif;font-size:16px;font-weight:900;color:#fff;letter-spacing:.06em;flex:1;white-space:nowrap}
+.hdr-logo span{color:var(--gold)}
+.hdr-update{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);white-space:nowrap}
+.hdr-btn{padding:6px 14px;border-radius:999px;border:none;font-family:'Noto Sans JP',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:var(--gold);color:var(--navy);white-space:nowrap;flex-shrink:0;transition:all .2s}
+.hdr-btn:hover{filter:brightness(1.1)}.hdr-btn:disabled{opacity:.5;cursor:not-allowed}
+.hdr-print{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;flex-shrink:0}
+.alert-bar{padding:9px 16px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#fff}
+.alert-bar.amber{background:linear-gradient(90deg,#c07000,#e67e00)}.alert-bar.hidden{display:none}
+.tab-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;position:sticky;top:52px;z-index:90;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{padding:13px 16px;border:none;background:transparent;font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:600;color:var(--ink-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--navy)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.content{padding:16px;max-width:1100px;margin:0 auto}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);border-top:3px solid var(--navy-lt)}
+.kpi.gold{border-top-color:var(--gold)}.kpi.green{border-top-color:var(--green)}.kpi.red{border-top-color:var(--red)}
+.kpi-icon{font-size:16px;margin-bottom:5px;opacity:.7}
+.kpi-val{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--navy);line-height:1}
+.kpi.gold .kpi-val{color:var(--gold)}.kpi.green .kpi-val{color:var(--green)}.kpi.red .kpi-val{color:var(--red)}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-top:3px}
+.kpi-sub{font-size:10px;color:var(--ink-muted);margin-top:2px}
+.sbox{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+.sbox-hdr{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border-lt);gap:8px;flex-wrap:wrap}
+.sbox-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);flex:1;white-space:nowrap}
+.sbox-meta{font-size:10px;color:var(--ink-muted)}
+.sbox-body{padding:14px}
+.sort-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sort-label{font-size:10px;color:var(--ink-muted);font-weight:700}
+.sort-btn{padding:4px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--surface);font-family:'Noto Sans JP',sans-serif;font-size:11px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:all .15s}
+.sort-btn.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:var(--navy);color:rgba(255,255,255,.75);padding:9px 12px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border-lt)}
+.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:var(--bg)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-ok{color:var(--green)}.badge-no{color:var(--red);font-weight:700}
+.av-1{color:#DC2626;font-weight:700}.av-2{color:#D97706;font-weight:700}.av-3{color:#A16207;font-weight:700}.av-4{color:#16A34A;font-weight:700}.av-5{color:#15803D;font-weight:700}
+.trend-up{color:var(--green);font-weight:700}.trend-down{color:var(--red);font-weight:700}.trend-flat{color:var(--ink-muted)}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border-lt)}
+.card-hdr{background:var(--navy-mid);padding:11px 14px;display:flex;align-items:center;gap:10px}
+.card-hdr.reflect{background:linear-gradient(135deg,var(--green),#047857)}
+.card-av{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-name{font-size:13px;font-weight:700;color:#fff;flex:1}
+.card-meta{font-size:10px;color:rgba(255,255,255,.55);margin-top:1px}
+.card-body{padding:12px 14px}
+.chip{padding:7px 10px;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;display:block}
+.chip-d{background:var(--navy-pale);border-left:3px solid var(--navy-lt);color:var(--navy-mid);font-weight:500}
+.chip-s{background:#f8fafc;border-left:3px solid var(--border);color:var(--ink-soft)}
+.chip-w{background:var(--gold-pale);border-left:3px solid var(--gold);color:var(--ink-soft)}
+.clabel{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;margin-top:8px}
+.clabel:first-child{margin-top:0}
+.clabel-d{color:var(--navy-lt)}.clabel-s{color:var(--ink-muted)}.clabel-w{color:var(--gold)}
+.ap-1{background:#FEE2E2;color:#DC2626}.ap-2{background:#FEF3C7;color:#D97706}.ap-3{background:#FEF9C3;color:#A16207}.ap-4{background:#DCFCE7;color:#16A34A}.ap-5{background:#BBF7D0;color:#15803D}
+.achieve-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
+.md{display:grid;grid-template-columns:230px 1fr;gap:14px;align-items:start}
+.ml-box{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.ml-hdr{padding:9px 14px;background:var(--navy);color:rgba(255,255,255,.65);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.ml-item{display:flex;align-items:center;gap:9px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border-lt);transition:background .15s}
+.ml-item:last-child{border-bottom:none}.ml-item:hover{background:var(--bg)}.ml-item.active{background:var(--navy-pale)}
+.ml-name{font-size:12px;font-weight:600;color:var(--ink);flex:1}
+.ml-sub{font-size:10px;color:var(--ink-muted)}
+.ml-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.det-box{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.det-hdr{background:var(--navy);padding:14px 18px;display:flex;align-items:center;gap:12px}
+.det-av{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.det-name{font-size:16px;font-weight:700;color:#fff}
+.det-sub{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.det-body{padding:18px}
+.det-sec{margin-bottom:18px}.det-sec:last-child{margin-bottom:0}
+.det-sec-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border-lt)}
+.bars-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.brow{display:flex;align-items:center;gap:7px}
+.blbl{font-size:10px;color:var(--ink-soft);width:60px;flex-shrink:0}
+.btrack{flex:1;background:var(--border-lt);border-radius:999px;height:5px}
+.bfill{height:5px;border-radius:999px;background:var(--navy-lt);transition:width .5s}
+.bnum{font-size:9px;font-family:'DM Mono',monospace;color:var(--ink-muted);width:18px;text-align:right}
+.mtx-wrap{overflow-x:auto}
+.mtx{border-collapse:collapse;width:100%;min-width:400px}
+.mtx th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);padding:7px 3px;text-align:center;border-bottom:2px solid var(--border)}
+.mtx th.n{text-align:left;padding-left:12px;min-width:80px}
+.mtx td{padding:3px 2px;text-align:center}
+.mtx td.n{text-align:left;padding-left:12px;font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap;border-right:1px solid var(--border-lt)}
+.mtx tr:hover td{background:rgba(15,32,68,.02)}
+.mc{width:26px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin:0 auto}
+.mc-1{background:#FEE2E2;color:#DC2626}.mc-2{background:#FEF3C7;color:#D97706}.mc-3{background:#FEF9C3;color:#A16207}.mc-4{background:#DCFCE7;color:#16A34A}.mc-5{background:#BBF7D0;color:#15803D}
+.mc-ok{background:var(--navy-pale);color:var(--navy-lt)}.mc-nil{background:var(--border-lt);color:var(--ink-muted)}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-box{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px}
+.chart-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px}
+.chart-sub{font-size:10px;color:var(--ink-muted);margin-top:6px}
+.filter-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.flbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
+.finput{padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-family:'Noto Sans JP',sans-serif;color:var(--ink);background:var(--surface);outline:none}
+.finput:focus{border-color:var(--navy-lt)}
+.fbtn{padding:6px 12px;border-radius:7px;border:none;font-family:'Noto Sans JP',sans-serif;font-size:11px;font-weight:700;cursor:pointer}
+.fb-week{background:var(--navy-pale);color:var(--navy-mid)}.fb-clear{background:var(--border-lt);color:var(--ink-soft)}
+.empty{text-align:center;padding:36px 16px;color:var(--ink-muted)}
+.empty-icon{font-size:32px;margin-bottom:8px}.empty-text{font-size:12px;line-height:1.8}
+.spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--navy-lt);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.coaching-card{border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.coaching-card.high{border-left:4px solid var(--red);background:var(--red-pale)}
+.coaching-card.medium{border-left:4px solid var(--amber);background:var(--amber-pale)}
+.coaching-card.low{border-left:4px solid var(--green);background:var(--green-pale)}
+@media(max-width:768px){
+  .hdr{padding:0 12px;gap:8px}.hdr-logo{font-size:14px}.hdr-update{display:none}
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px}.kpi-val{font-size:22px}
+  .chart-row{grid-template-columns:1fr}.md{grid-template-columns:1fr}
+  .content{padding:10px}.cards-grid{grid-template-columns:1fr}.bars-grid{grid-template-columns:1fr}
+  .sbox-meta{display:none}
+}
+@media print{
+  .hdr .hdr-btn,.hdr .hdr-print,.tab-bar,.filter-row,.sort-bar,.auth-overlay,.toast-wrap{display:none!important}
+  body{background:#fff}
+  .card,.sbox,.kpi,.det-box,.chart-box,.ml-box{box-shadow:none;border:1px solid #ddd}
+}
 </style>
 </head>
 <body>
-<div class="wrapper">
 
-  <!-- HEADER -->
-  <div class="header">
-    <svg class="header-kamon" viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="30" stroke="#1a3a6b" stroke-width="1.5"/>
-      <circle cx="32" cy="32" r="24" stroke="#1a3a6b" stroke-width="0.5" stroke-dasharray="3 3"/>
-      <line x1="16" y1="48" x2="48" y2="16" stroke="#1a3a6b" stroke-width="2" stroke-linecap="round"/>
-      <line x1="16" y1="16" x2="48" y2="48" stroke="#1a3a6b" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="32" cy="32" r="4" fill="#1a3a6b"/>
-      <circle cx="32" cy="32" r="2" fill="#f9f7f4"/>
-    </svg>
-    <div class="header-en">KENDO CLUB — MARC SHEET</div>
-    <h1 class="header-title">剣道部 <span>MARC</span>シート</h1>
-    <div class="header-subtitle">思考とAIの架け橋</div>
-    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="progress-label" id="progressLabel">記入率 0%</div>
+<!-- ===== トースト ===== -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="hdr">
+  <div class="hdr-logo">⚔ <span>MARC</span></div>
+  <div class="hdr-update" id="hdrUpdate">未収集</div>
+  <button class="hdr-btn" id="collectBtn">🔄 データを収集</button>
+  <button class="hdr-print" onclick="window.print()">🖨</button>
+</div>
+
+<div class="alert-bar hidden" id="alertBar"></div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="recent">📋 直近の稽古</button>
+  <button class="tab-btn" data-tab="member">👤 部員別詳細</button>
+  <button class="tab-btn" data-tab="trend">📊 傾向・分析</button>
+  <button class="tab-btn" data-tab="coaching">🎤 コーチング支援</button>
+</div>
+
+<!-- 直近の稽古 -->
+<div class="tab-panel active" id="tab-recent">
+  <div class="content">
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-icon">✊</div>
+        <div class="kpi-val" id="k-declare">—</div>
+        <div class="kpi-label">チャレンジ宣言</div>
+        <div class="kpi-sub" id="k-declare-date">—</div>
+        <div style="margin-top:8px;background:rgba(42,82,152,0.12);border-radius:4px;height:5px;overflow:hidden">
+          <div id="k-declare-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div>
+        </div>
+        <div id="k-declare-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-icon">🔍</div>
+        <div class="kpi-val" id="k-reflect">—</div>
+        <div class="kpi-label">振り返り提出</div>
+        <div class="kpi-sub" id="k-reflect-rate">提出率 —%</div>
+        <div style="margin-top:8px;background:rgba(10,124,92,0.15);border-radius:4px;height:5px;overflow:hidden">
+          <div id="k-reflect-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div>
+        </div>
+        <div id="k-reflect-detail" style="font-size:9px;color:var(--ink-muted);margin-top:3px"></div>
+      </div>
+      <div class="kpi gold">
+        <div class="kpi-icon">⭐</div>
+        <div class="kpi-val" id="k-achieve">—</div>
+        <div class="kpi-label">平均達成感</div>
+        <div class="kpi-sub">/ 5.0</div>
+        <div style="margin-top:8px;display:flex;gap:2px">
+          <div id="k-achieve-s1" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s"></div>
+          <div id="k-achieve-s2" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.08s"></div>
+          <div id="k-achieve-s3" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.16s"></div>
+          <div id="k-achieve-s4" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.24s"></div>
+          <div id="k-achieve-s5" style="flex:1;height:5px;border-radius:2px;background:var(--border-lt);transition:background .4s 0.32s"></div>
+        </div>
+      </div>
+      <div class="kpi" id="k-missing-card"><div class="kpi-icon" id="k-missing-icon">⚠</div><div class="kpi-val" id="k-missing">—</div><div class="kpi-label" id="k-missing-label">振り返り未提出</div><div class="kpi-sub" id="k-missing-names" style="font-size:10px;line-height:1.4;word-break:break-all"></div></div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr">
+        <div class="sbox-title">部員ステータス</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="sbox-meta">稽古日：</span>
+          <select id="practiceSelect" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:'Noto Sans JP',sans-serif;color:var(--ink);background:var(--surface);outline:none;cursor:pointer"><option value="">— データを収集してください —</option></select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="statusTable">
+          <thead><tr><th></th><th>部員</th><th>学年</th><th>宣言</th><th>振り返り</th><th>達成感</th><th>前回比</th></tr></thead>
+          <tbody id="statusBody"><tr><td colspan="7"><div class="empty"><div class="spinner"></div>データを収集してください</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">直近の振り返り</div></div>
+      <div class="sbox-body">
+        <div class="cards-grid" id="recentCards"><div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">データを収集してください</div></div></div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <!-- TAB BAR -->
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('profile', this)">👤 自己理解（現在地）</button>
-    <button class="tab-btn" onclick="switchTab('log', this)">⚔ 稽古ログ（目的地）</button>
+<!-- 部員別詳細 -->
+<div class="tab-panel" id="tab-member">
+  <div class="content">
+    <div class="md">
+      <div>
+        <div class="sbox-hdr" style="background:var(--surface);border-radius:var(--r) var(--r) 0 0;border:1px solid var(--border-lt);border-bottom:none">
+          <div class="sort-bar">
+            <span class="sort-label">並び順</span>
+            <button class="sort-btn active" data-sort="grade">学年</button>
+            <button class="sort-btn" data-sort="name">名前</button>
+          </div>
+        </div>
+        <div class="ml-box" style="border-radius:0 0 var(--r) var(--r)">
+          <div id="memberListItems"><div class="empty"><div class="empty-text">データを収集してください</div></div></div>
+        </div>
+      </div>
+      <div class="det-box" id="memberDetail">
+        <div class="empty" style="padding:60px 20px"><div class="empty-icon">👈</div><div class="empty-text">左の部員を選択してください</div></div>
+      </div>
+    </div>
   </div>
+</div>
 
-  <!-- TAB: PROFILE -->
-  <div class="tab-panel tab-active" id="tab-profile">
-
-    <!-- 氏名・学年 -->
-    <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:16px 20px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-      <div style="flex:1;min-width:160px;">
-        <label class="field-label" style="margin-bottom:5px;">氏名<span class="required">*</span></label>
-        <div class="field-hint" style="margin-bottom:5px;">入力後1秒でデータを復元します</div>
-        <input type="text" id="nameInput" placeholder="山田 一郎" data-required oninput="onNameInput(this)" style="margin:0;">
-      </div>
-      <div style="width:120px;flex-shrink:0;">
-        <label class="field-label" style="margin-bottom:5px;">学年<span class="required">*</span></label>
-        <select id="gakuNenSelect" data-required onchange="updateProgress()" style="margin:0;">
-          <option value="">選択</option>
-          <option>1年</option><option>2年</option><option>3年</option>
-        </select>
-      </div>
-      <div style="width:100px;flex-shrink:0;">
-        <label class="field-label" style="margin-bottom:5px;">組</label>
-        <input type="text" id="kumiInput" placeholder="2組" style="margin:0;">
+<!-- 傾向・分析 -->
+<div class="tab-panel" id="tab-trend">
+  <div class="content">
+    <div class="chart-row">
+      <div class="chart-box"><div class="chart-title">達成感スコアの推移（稽古ごとのチーム平均）</div><canvas id="trendChart" style="max-height:180px"></canvas><div class="chart-sub">稽古を重ねるごとに達成感が上がっているか確認できます</div></div>
+      <div class="chart-box"><div class="chart-title">サイクル継続率（宣言→振り返りを完了した割合）</div><canvas id="cycleChart" style="max-height:180px"></canvas><div class="chart-sub">MARCサイクルを全員が回せているか確認できます</div></div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">部員マトリクス</div><div class="sbox-meta">セル色＝達成感 / ✓＝宣言のみ / —＝未記録</div></div>
+      <div class="sbox-body"><div class="mtx-wrap" id="matrixWrap"><div class="empty"><div class="empty-text">データを収集してください</div></div></div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><div class="chart-title">③「次への一手」具体性の推移（チーム平均）</div><canvas id="nextChart" style="max-height:180px"></canvas><div class="chart-sub">次の一手の具体性が上がるほど、自走型の学習者に近づいています</div></div>
+      <div class="chart-box"><div class="chart-title">部員別 自走度マップ（次の一手の具体性 × 達成感）</div><canvas id="autonomyChart" style="max-height:180px"></canvas><div class="chart-sub">右上が理想：具体的でサイクルも繋がっている</div></div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">稽古ごとの成長指標</div><div class="sbox-meta">宣言の具体性・達成感・③の質を稽古単位で追跡</div></div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="growthTable">
+          <thead><tr><th>稽古日</th><th>参加者</th><th>チャレンジ宣言</th><th>振り返り提出</th><th>平均達成感</th><th>平均次の一手の具体性</th><th>サイクル接続率</th></tr></thead>
+          <tbody id="growthTableBody"><tr><td colspan="7"><div class="empty"><div class="empty-text">データを収集してください</div></div></td></tr></tbody>
+        </table>
       </div>
     </div>
-
-    <!-- SECTION: 基本情報 -->
-    <div class="section">
-      <div class="section-header" onclick="toggleSection(this)">
-        <div class="section-number">一</div>
-        <div class="section-title">基本情報・自己理解</div>
-        <div class="section-toggle open">▾</div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">部員コンピテンシー比較</div><div class="sbox-meta">最大5名まで選択して比較</div></div>
+      <div class="sbox-body">
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px">比較する部員を選択（最大5名）</div>
+          <div id="radarSelectList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;"></div>
+        </div>
+        <div style="max-width:520px;margin:0 auto"><canvas id="allRadarChart" style="max-height:420px"></canvas></div>
       </div>
-      <div class="section-body">
-        <div class="grid-2">
-          <div class="field-group">
-            <label class="field-label">段位・級</label>
-            <select id="dankyuSelect">
-              <option value="">選択</option>
-              <option>無段</option><option>初段</option><option>二段</option><option>三段</option>
-              <option>1級</option><option>2級</option><option>3級</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">剣道歴</label>
-            <input type="text" id="kendoReki" placeholder="7年（小学1年から）">
-          </div>
-          <div class="field-group">
-            <label class="field-label">利き手・構え</label>
-            <select id="kikiteSelect">
-              <option value="">選択</option>
-              <option>右利き（上段）</option><option>右利き（中段）</option>
-              <option>左利き（中段）</option><option>二刀流</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">記入日</label>
-            <input type="date" id="recordDate" style="min-width:150px;width:100%;">
-          </div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">振り返り一覧</div></div>
+      <div class="sbox-body" style="padding-bottom:6px">
+        <div class="filter-row">
+          <div class="fg"><label class="flbl">開始日</label><input type="date" class="finput" id="dateFrom"></div>
+          <div style="display:flex;align-items:flex-end;color:var(--ink-muted);font-weight:700;padding-bottom:2px">〜</div>
+          <div class="fg"><label class="flbl">終了日</label><input type="date" class="finput" id="dateTo"></div>
+          <button class="fbtn fb-week" id="btnWeek">今週</button>
+          <button class="fbtn fb-clear" id="btnClear">クリア</button>
         </div>
+      </div>
+      <div class="sbox-body" style="padding-top:0"><div class="cards-grid" id="allCards"><div class="empty" style="grid-column:1/-1"><div class="empty-text">データを収集してください</div></div></div></div>
+    </div>
+  </div>
+</div>
 
-        <div class="field-group">
-          <label class="field-label">得意技（最大3つ）</label>
-          <div class="rank-selector" id="wazaSelector">
-            <button class="rank-btn" onclick="toggleWaza(this)">面</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">小手</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">胴</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">突き</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">引き面</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">出小手</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">逆胴</button>
-            <button class="rank-btn" onclick="toggleWaza(this)">払い面</button>
-          </div>
+<!-- コーチング支援 -->
+<div class="tab-panel" id="tab-coaching">
+  <div class="content">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+      <div class="kpi green" style="padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="kpi-icon" style="margin-bottom:0">🔄</span><span class="kpi-label" style="margin-top:0">サイクル接続率</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="kpi-val" id="ck-cycle" style="font-size:22px">—</span><span style="font-size:10px;color:var(--ink-muted)">目標 100%</span></div>
+        <div style="background:rgba(10,124,92,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden"><div id="ck-cycle-bar" style="height:100%;border-radius:4px;background:var(--green);transition:width .6s ease;width:0%"></div></div>
+        <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">③→次の宣言が繋がっている割合</div>
+      </div>
+      <div class="kpi gold" style="padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="kpi-icon" style="margin-bottom:0">✏</span><span class="kpi-label" style="margin-top:0">次の一手の具体性（平均）</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="kpi-val" id="ck-next" style="font-size:22px">—</span><span style="font-size:10px;color:var(--ink-muted)">目標 5.0</span></div>
+        <div style="background:rgba(200,149,42,0.15);border-radius:4px;height:10px;position:relative;overflow:hidden"><div id="ck-next-bar" style="height:100%;border-radius:4px;background:var(--gold);transition:width .6s ease;width:0%"></div></div>
+        <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">次への一手の質（1〜5）</div>
+      </div>
+      <div class="kpi" style="padding:16px 18px;border-top-color:var(--navy-lt)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="kpi-icon" style="margin-bottom:0">📈</span><span class="kpi-label" style="margin-top:0">テーマ深化率</span></div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px"><span class="kpi-val" id="ck-spiral" style="font-size:22px">—</span><span style="font-size:10px;color:var(--ink-muted)">目標 100%</span></div>
+        <div style="background:rgba(42,82,152,0.12);border-radius:4px;height:10px;position:relative;overflow:hidden"><div id="ck-spiral-bar" style="height:100%;border-radius:4px;background:var(--navy-lt);transition:width .6s ease;width:0%"></div></div>
+        <div style="font-size:9px;color:var(--ink-muted);margin-top:4px">同テーマを深めている部員の割合</div>
+      </div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr">
+        <div class="sbox-title">🎤 部員別コーチング診断</div>
+        <div class="sbox-meta">③「次への一手」を軸に自走度を4軸で評価</div>
+        <button class="hdr-btn" id="analyzeBtn" style="padding:7px 18px;font-size:12px">📊 分析する</button>
+      </div>
+      <div class="sbox-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px">
+          <div style="padding:10px 12px;background:var(--navy-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--navy-lt);margin-bottom:3px">🔄 サイクル接続</div>次の一手の内容が次のチャレンジ宣言に引き継がれているか</div>
+          <div style="padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--gold);margin-bottom:3px">✏ 次の一手の具体性</div>「もっと頑張る」でなく行動レベルで書けているか</div>
+          <div style="padding:10px 12px;background:var(--green-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--green);margin-bottom:3px">📈 テーマ深化</div>同じ課題を繰り返し深めているか・毎回バラバラか</div>
+          <div style="padding:10px 12px;background:var(--red-pale);border-radius:8px;font-size:11px;color:var(--ink-soft);line-height:1.7"><div style="font-weight:700;color:var(--red);margin-bottom:3px">⚠ 感情サイン</div>落ち込み・自信喪失・意欲低下のシグナル</div>
         </div>
-
-        <div class="divider"><div class="divider-line"></div><div class="divider-text">現状自己評価（BARS方式）</div><div class="divider-line"></div></div>
-
-        <div style="background:var(--gold-pale);border:1px solid rgba(184,150,12,0.25);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--ink-soft);line-height:1.7;">
-          <strong style="color:var(--gold);display:block;margin-bottom:4px;">★ の選び方について</strong>
-          星を選ぶとき「なんとなく自分は中くらい」という感覚ではなく、<strong>各レベルに書いてある「行動の説明」と照らし合わせて選んでください。</strong>正直な自己評価がAIの精度を高め、自分に合った稽古提案につながります。
-        </div>
-
-        <div id="barsEvalContainer"></div>
-
-        <div class="divider"><div class="divider-line"></div><div class="divider-text">今の課題と目標（1年後のイメージ）</div><div class="divider-line"></div></div>
-
-        <div class="field-group">
-          <label class="field-label" for="kadaikan">今の剣道で一番変えたいこと</label>
-          <div class="field-hint">
-            「うまくいかない」「試合でできない」「なぜかわからないけど苦手」——そういう感覚をそのまま書いてください。技術・精神・体力、どの角度からでも構いません。ここに書いた内容をもとに、AIが稽古の提案をします。<br>
-            <span style="color:var(--gold);font-weight:500;">例：「出ばなのタイミングが全然わからない。攻めているつもりなのに相手が動かない。」</span>
-          </div>
-          <textarea id="kadaikan" placeholder="" style="min-height:90px" oninput="updateProgress();document.getElementById('kadaikanCount').textContent=this.value.length+' / 200文字'"></textarea>
-          <div class="char-count" id="kadaikanCount">0 / 200文字</div>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="kojinMokuhyo">稽古を通して身につけたいこと</label>
-          <div class="field-hint">
-            <strong style="color:var(--primary);">1年後の自分をイメージして書いてください。</strong>「試合に勝つ」ではなく、<strong>「どんな剣道ができるようになりたいか」</strong>を書いてください。稽古の中で変えていける、具体的な行動・技術の言葉で書くほど、AIの提案が的確になります。<br>
-            <span style="color:var(--gold);font-weight:500;">例：「出ばな小手を意図して打てるようになる」「攻めで相手を動かしてから打つ剣道を身につける」</span>
-          </div>
-          <input type="text" id="kojinMokuhyo" placeholder="" oninput="updateProgress()">
-          <div class="field-hint" style="margin-top:6px;font-size:10px;color:var(--ink-muted);">
-            💡 「〜を身につける」「〜ができるようになる」という形で書くと、稽古の振り返りに使いやすくなります
-          </div>
+        <div id="coachingResult"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">「分析する」ボタンを押してください</div></div></div>
+      </div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">🔄 サイクル接続マップ</div><div class="sbox-meta">③（前回）→ チャレンジ宣言（今回）の接続を可視化</div></div>
+      <div class="sbox-body" id="cycleMapBody"><div class="empty"><div class="empty-text">「分析する」を押してください</div></div></div>
+    </div>
+    <div class="sbox">
+      <div class="sbox-hdr"><div class="sbox-title">声かけリファレンス</div></div>
+      <div class="sbox-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+          <div style="padding:12px 14px;background:var(--red-pale);border-radius:var(--r);border-left:3px solid var(--red)"><div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">🔴 対話が必要</div><div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が曖昧・サイクル切断・感情ネガティブ。<br>「次の稽古で一番試したいことは何？」と一緒に言語化する。</div></div>
+          <div style="padding:12px 14px;background:var(--amber-pale);border-radius:var(--r);border-left:3px solid var(--amber)"><div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:5px">🟡 対話を検討</div><div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」はあるがサイクルが弱い。<br>「先週書いた内容、今日の宣言に使えた？」と接続を意識させる。</div></div>
+          <div style="padding:12px 14px;background:var(--green-pale);border-radius:var(--r);border-left:3px solid var(--green)"><div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:5px">🟢 成長を見守る</div><div style="font-size:12px;color:var(--ink-soft);line-height:1.65">「次の稽古でどう変えるか」が具体的でサイクルも繋がっている。<br>「その成長、自分で気づいてる？」と自己認識を深める。</div></div>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- SUBMIT -->
-    <div class="submit-area">
-      <button class="submit-btn" onclick="submitForm('jiko')">✦ 自己理解シートを提出する</button>
-      <button class="save-btn" onclick="tempSave()">📋 一時保存</button>
-      <button class="print-btn" onclick="window.print()">🖨 印刷</button>
-    </div>
-
-    <div style="text-align:center;margin-top:12px;">
-      <button onclick="generatePrint()" style="background:none;border:1px solid var(--border);color:var(--ink-muted);padding:10px 20px;border-radius:999px;font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg-warm)'" onmouseout="this.style.background='none'">
-        📋 顧問用：振り返り一覧を生成
-      </button>
-    </div>
-
-  </div><!-- /tab-profile -->
-
-  <!-- TAB: WEEKLY LOG -->
-  <div class="tab-panel" id="tab-log">
-    <div id="logInputArea">
-      <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:140px;">
-          <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
-          <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">稽古を行った当日の日付を入力してください</div>
-          <input type="hidden" id="logDate" value="">
-          <div id="logDateDisplay" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:16px;color:var(--ink);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="openDatePicker()">
-            <span id="logDateText">今日の日付を選択</span>
-            <span style="font-size:12px;color:var(--ink-muted);">📅</span>
-          </div>
-          <input type="date" id="logDateNative" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" onchange="onNativeDateChange(this.value)">
-        </div>
-        <div style="flex-shrink:0;text-align:right;">
-          <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
-          <div id="logUserName" style="font-size:13px;font-weight:700;color:var(--primary);">—</div>
-          <div style="font-size:10px;color:var(--ink-muted);margin-top:4px;letter-spacing:.06em;">記録数</div>
-          <div id="logCount" style="font-size:14px;font-weight:700;color:var(--primary);">— 件</div>
-        </div>
-      </div>
-      <div id="dateDotList" style="margin-bottom:10px;"></div>
-
-      <div style="position:relative;">
-        <!-- PHASE 1 -->
-        <div class="timeline-card phase-active" id="phase1Card">
-          <div class="timeline-header">
-            <div class="timeline-step-badge active" id="phase1Badge">1</div>
-            <div class="timeline-title">
-              <div class="timeline-title-main" style="color:var(--primary);">稽古前 — チャレンジ宣言</div>
-              <div class="timeline-title-sub" style="color:var(--primary);">今の自分にとって、少し頑張れば届く内容になるよう記入</div>
-            </div>
-            <div class="timeline-status-tag" id="phase1StatusTag" style="background:var(--primary);color:#fff;">入力中</div>
-          </div>
-          <div class="timeline-body" id="phase1Body">
-            <div class="field-group">
-              <label class="field-label">次回の稽古で試したいこと<span class="required">*</span></label>
-              <div class="field-hint">
-                <strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br>
-                <span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span>
-              </div>
-              <input type="text" id="logIntent" placeholder="" oninput="autoSaveIntent(this.value)" style="border-color:var(--primary);">
-            </div>
-            <button class="pre-submit-btn" id="preSubmitBtn" onclick="submitPreLog()">✦ チャレンジを宣言する</button>
-          </div>
-        </div>
-
-        <div style="width:2px;height:16px;background:var(--border);margin:0 auto 0 23px;"></div>
-
-        <!-- PHASE 2 -->
-        <div class="timeline-card phase-locked" id="phase2Card">
-          <div class="timeline-header">
-            <div class="timeline-step-badge locked" id="phase2Badge">2</div>
-            <div class="timeline-title">
-              <div class="timeline-title-main" style="color:var(--ink-muted);">稽古後 — 振り返り</div>
-              <div class="timeline-title-sub" style="color:var(--ink-muted);">稽古後に記入・提出してください</div>
-            </div>
-            <div class="timeline-status-tag" id="phase2StatusTag" style="background:var(--bg-warm);color:var(--ink-muted);border:1px solid var(--border);">🔒 宣言後に解除</div>
-          </div>
-          <div class="timeline-body locked-body" id="phase2Body">
-            <span style="font-size:20px;">🔒</span>
-            <span>「チャレンジを宣言する」を送信すると入力できます</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="logHistory" style="margin-top:16px;"></div>
-  </div><!-- /tab-log -->
-
-</div><!-- /wrapper -->
-<div class="toast" id="toast"></div>
+<!-- サイドパネル -->
+<div id="sidePanel" style="position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--surface);box-shadow:-4px 0 24px rgba(15,32,68,.15);z-index:500;transition:right .25s ease;display:flex;flex-direction:column;overflow:hidden">
+  <div style="background:var(--navy);padding:16px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <div id="sp-avatar" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+    <div style="flex:1;min-width:0"><div id="sp-name" style="font-size:16px;font-weight:700;color:#fff"></div><div id="sp-sub" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px"></div></div>
+    <button id="spClose" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+  </div>
+  <div id="sp-body" style="flex:1;overflow-y:auto;padding:18px"></div>
+</div>
+<div id="spOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:499;display:none;opacity:0;transition:opacity .25s"></div>
 
 <script>
-// ============================================================
-//  設定値
-//  ★ WRITE_TOKEN は GAS の WRITE_TOKEN と同じ値を入れてください
-// ============================================================
-const GAS_URL     = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
-const WRITE_TOKEN = 'marc2025SagaKendo';
-const LS_NAME     = 'marc_user_name';
+// =====================================================
+//  MARC 顧問ダッシュボード v2
+//  修正点:
+//  1. showToast() 実装追加（ReferenceError修正）
+//  2. XSS対策: escapeHtml() 追加・全テキスト挿入箇所に適用
+//  3. data-dc/rf の JSON埋め込み → JS Map に変更
+//  4. collectAll → Promise.all で並列実行（速度改善）
+//  5. analyzeBtn の2重登録を解消
+//  6. renderTrend タブ切り替えで再描画しないようフラグ制御
+//  7. 簡易パスワード認証追加
+// =====================================================
 
-// ============================================================
-//  localStorage 安全ラッパー（プライベートブラウズ対応）
-// ============================================================
-const LS = {
-  get: function(key) {
-    try { return localStorage.getItem(key); } catch(e) { return null; }
-  },
-  set: function(key, val) {
-    try { localStorage.setItem(key, val); return true; } catch(e) {
-      showToast('⚠ ローカル保存に失敗しました（ストレージ容量不足の可能性）');
-      return false;
-    }
-  },
-  remove: function(key) {
-    try { localStorage.removeItem(key); } catch(e) {}
-  }
-};
+const GAS = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
 
-// ============================================================
-//  JST（日本時間）で今日の日付を YYYY-MM-DD 形式で返す
-// ============================================================
-function todayJST() {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-}
-
-// ============================================================
-//  データストア
-// ============================================================
-const marc = {
-  name: '', grade: '', kumi: '',
-  declares: {}, logs: {}, history: [],
-  loaded: false,
-  _fetchId: 0  // 並行リクエスト管理用
-};
-
-// ============================================================
-//  BARS 定義
-// ============================================================
-const barsGroups = [
-  { group:'打突の質', color:'#c0392b', icon:'⚔', items:[
-    { key:'kire', label:'打突の冴え', hint:'気・剣・体が一致した打突ができているかを評価します。声・踏み込み・竹刀が同時に出ているか、「パン！」という冴えた音が出ているかが目安です。', anchors:['打突が弱く、音が鳴らない。手だけで打っている状態。','踏み込みはあるが、手と足がバラバラになることが多い。','気剣体がほぼ一致している。冴えた音が時々出る。','安定して気剣体が一致し、冴えた打突が出せる。声も充実している。','どの場面でも冴えた一本が出せる。試合でも稽古でも質が変わらない。'] },
-    { key:'tenouchi', label:'手の内', hint:'打突の瞬間に手首のスナップ（絞り）が使えているかを評価します。竹刀の刃筋が正しく、相手の打突部位に刃部でしっかり当たっているかが目安です。', anchors:['竹刀を握りしめている。打突後も力が抜けない。刃筋が乱れる。','時々スナップが使えるが、一定していない。刃筋が乱れることが多い。','おおむね刃筋が正しく、手首のスナップが使えている。','冴えのある打突が安定して出せる。手の内が自然にできている。','どんな角度・距離からでも刃筋正しく冴えた打突が打てる。'] },
-    { key:'zanshin', label:'残心', hint:'打突した後も油断せず、相手の反撃に対応できる身構えと気構えを保てているかを評価します。', anchors:['打った後、すぐに構えが崩れる。次の動作への準備が遅い。','残心を意識しているが、体勢が崩れることが多い。','打突後に構えを取れる。間合いを切る動作がある程度できている。','打突後の残心が安定している。相手の反撃に対応できる体勢を常に取れる。','残心が打突と一体になっている。打った後も相手を制する気構えが出ている。'] }
-  ]},
-  { group:'戦術・判断', color:'#1a3a6b', icon:'🧭', items:[
-    { key:'maai', label:'間合い管理', hint:'一足一刀（相手に一歩踏み込めば打てる距離）の間合いを意識して動けているかを評価します。', anchors:['間合いを意識できていない。常に遠すぎるか近すぎる状態になる。','一足一刀の間合いは理解しているが、試合中に維持できない。','一足一刀の間合いを意識して動けている。相手に合わせた調整ができつつある。','相手の間合いも把握しながら、自分の打てる間合いを作って動ける。','間合いで相手を崩せる。意図的に間合いを支配して主導権を取れる。'] },
-    { key:'seme', label:'攻め', hint:'打つ前に竹刀や体で相手の中心を攻め、相手を動かしてから打てているかを評価します。', anchors:['攻めの意識がない。タイミングを計らず、ただ打ちにいっている状態。','攻めようとしているが、竹刀や体が攻めていない。形だけになっている。','中心を攻めることができる。相手が反応・動くことがある。','攻めで相手を崩してから打つパターンを持っている。','攻めだけで相手を動かせる。打たなくても主導権が取れている。'] },
-    { key:'kikai', label:'機会の見極め', hint:'「いつ打つか」のタイミング判断を評価します。', anchors:['タイミングがわからず、ランダムに打っている。機会を意識できていない。','出ばな・引き技などの種類は知っているが、実践で捉えられない。','相手の動きを見て打てることがある。出ばなを意識して稽古できている。','複数の機会（出ばな・居つき・引き）を状況に応じて使い分けられる。','機会を自分から作り出せる。相手を誘って打つパターンを複数持っている。'] },
-    { key:'footwork', label:'足さばき・体さばき', hint:'送り足・踏み込み足が正しくできているか、打突後に体勢が崩れないかを評価します。', anchors:['送り足が不安定。打突後に体勢が崩れる。足と手がバラバラになる。','基本の送り足はできているが、動きが硬い。踏み込みが弱い。','踏み込み・送り足がおおむねできている。方向転換もある程度スムーズ。','攻防の中で足さばきが安定している。踏み込みの強さと速さがある。','足さばきで相手を崩せる。どんな場面でも体勢が安定している。'] },
-    { key:'shiai', label:'試合運び', hint:'試合全体の流れを読みながら動けているかを評価します。', anchors:['試合中に何をすべきかわからず、ただ打ち合っている。場の流れが読めない。','先取りしたら守る・負けたら焦るなど、場面への対応が単純で固定的。','試合の流れを読んで動けることがある。引き際がわかってきた。','場の使い方・時間の使い方を意識できている。勝ちパターンを持っている。','試合全体を組み立てられる。相手・場面・残り時間に応じて戦い方を変えられる。'] }
-  ]},
-  { group:'心・気', color:'#028090', icon:'🔥', items:[
-    { key:'kisei', label:'気勢（声・気合）', hint:'稽古・試合を通じて充実した声・気合が出ているかを評価します。', anchors:['声が小さい、またはほとんど出ていない。気合が感じられない。','打突時には声が出るが、稽古全体での気合が続かない。','稽古を通じて声が出ている。打突に気合が乗っていることが多い。','常に充実した声が出ている。気合で相手を圧倒できることがある。','気合だけで場の雰囲気を変えられる。声と打突が完全に一体になっている。'] },
-    { key:'mental', label:'精神的強さ', hint:'プレッシャーのかかる場面でも自分の剣道が出せているかを評価します。', anchors:['プレッシャーで頭が真っ白になる。試合になると稽古の力が出ない。','緊張で体が硬くなる。稽古でできていたことが試合でできないことが多い。','ある程度のプレッシャーの中でも、自分の剣道がある程度出せる。','強い相手や重要な場面でも、冷静に判断して動ける。','プレッシャーが高いほど力が出る。大事な場面で自分のベストが出せる。'] }
-  ]}
-];
-
-// ============================================================
-//  BARS 描画
-// ============================================================
-const barsContainer = document.getElementById('barsEvalContainer');
-barsGroups.forEach(group => {
-  const gDiv = document.createElement('div');
-  gDiv.className = 'bars-group';
-  gDiv.innerHTML = `<div class="bars-group-header"><span class="bars-group-icon">${group.icon}</span><span class="bars-group-label" style="color:${group.color}">${group.group}</span></div>`;
-  group.items.forEach(item => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'bars-item';
-    itemDiv.dataset.key = item.key;
-    const anchorRows = item.anchors.map((text, i) => {
-      const level = i + 1;
-      const miniStars = [1,2,3,4,5].map(n => `<span class="mini-star${n <= level ? ' lit' : ''}">★</span>`).join('');
-      return `<div class="bars-anchor-row" data-level="${level}"><div class="bars-anchor-num">${miniStars}</div><div class="bars-anchor-text">${text}</div></div>`;
-    }).join('');
-    itemDiv.innerHTML = `
-      <div class="bars-item-top">
-        <div class="bars-item-info"><div class="bars-item-name">${item.label}</div><div class="bars-item-hint">${item.hint}</div></div>
-        <div class="bars-stars" data-key="${item.key}">${[1,2,3,4,5].map(n => `<span class="bars-star" data-v="${n}">★</span>`).join('')}</div>
-      </div>
-      <div class="bars-anchor-panel">${anchorRows}</div>
-      <div class="bars-selected-label" id="bars-label-${item.key}">← 上の行動説明を読んで、当てはまる★を選んでください</div>`;
-    const starsWrap = itemDiv.querySelector('.bars-stars');
-    starsWrap.querySelectorAll('.bars-star').forEach(star => {
-      star.addEventListener('click', () => {
-        const val = +star.dataset.v;
-        starsWrap.querySelectorAll('.bars-star').forEach((s, i) => s.classList.toggle('lit', i < val));
-        itemDiv.querySelectorAll('.bars-anchor-row').forEach(row => row.classList.toggle('selected', +row.dataset.level === val));
-        const labelEl = document.getElementById('bars-label-' + item.key);
-        const levelLabels = ['まだこれから', '基礎段階', '標準レベル', '得意分野', '武器・強み'];
-        labelEl.innerHTML = `現在の評価：<span>★${val} — ${levelLabels[val-1]}</span>`;
-        updateProgress();
-      });
-      star.addEventListener('mouseenter', () => {
-        const val = +star.dataset.v;
-        itemDiv.querySelectorAll('.bars-anchor-row').forEach(row => row.style.opacity = +row.dataset.level === val ? '1' : '0.5');
-      });
-      star.addEventListener('mouseleave', () => {
-        itemDiv.querySelectorAll('.bars-anchor-row').forEach(row => row.style.opacity = '1');
-      });
-    });
-    gDiv.appendChild(itemDiv);
-  });
-  barsContainer.appendChild(gDiv);
-});
-
-function getBarsValues() {
-  const result = {};
-  barsGroups.forEach(group => {
-    group.items.forEach(item => {
-      const stars = document.querySelectorAll(`.bars-stars[data-key="${item.key}"] .bars-star.lit`);
-      result['自己評価_' + item.key] = stars.length;
-    });
-  });
-  return result;
-}
-
-function setBarsValue(key, val) {
-  const starsWrap = document.querySelector(`.bars-stars[data-key="${key}"]`);
-  if (!starsWrap || !val) return;
-  const n = parseInt(val) || 0;
-  starsWrap.querySelectorAll('.bars-star').forEach((s, i) => s.classList.toggle('lit', i < n));
-  const itemDiv = starsWrap.closest('.bars-item');
-  if (itemDiv) itemDiv.querySelectorAll('.bars-anchor-row').forEach(row => row.classList.toggle('selected', +row.dataset.level === n));
-}
-
-// ============================================================
-//  WAZA
-// ============================================================
-function toggleWaza(btn) {
-  const active = document.querySelectorAll('#wazaSelector .rank-btn.active');
-  if (btn.classList.contains('active')) { btn.classList.remove('active'); }
-  else if (active.length < 3) { btn.classList.add('active'); }
-  else { showToast('得意技は最大3つまでです'); }
-}
-
-// ============================================================
-//  セクション折りたたみ
-// ============================================================
-function toggleSection(header) {
-  const body = header.nextElementSibling;
-  const toggle = header.querySelector('.section-toggle');
-  body.classList.toggle('collapsed');
-  toggle.classList.toggle('open');
-}
-
-// ============================================================
-//  進捗バー
-// ============================================================
-function updateProgress() {
-  const required = document.querySelectorAll('[data-required]');
-  let filled = 0;
-  required.forEach(el => { if (el.value.trim()) filled++; });
-  const pct = Math.round((filled / required.length) * 100);
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = '記入率 ' + pct + '%';
-}
-
-// ============================================================
-//  トースト通知
-// ============================================================
+// ── 修正1: showToast 実装 ──
 let _toastTimer = null;
-function showToast(msg) {
-  const t = document.getElementById('toast');
+function showToast(msg, dur) {
+  dur = dur || 2800;
+  const wrap = document.getElementById('toastWrap');
+  if (!wrap) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
   t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  wrap.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function(){
+    t.classList.remove('show');
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 300);
+  }, dur);
 }
 
-// ============================================================
-//  GAS POST 送信
-//  GAS WebApp は Access-Control-Allow-Origin を付与できないため
-//  no-cors が唯一の選択肢。レスポンスは読めないが送信自体は届く。
-//  送信後 2 秒待ってから GET で記録を確認し、成否を判定する。
-// ============================================================
-function sendToGAS(data, callback) {
-  const payload = Object.assign({}, data, { _token: WRITE_TOKEN });
-
-  fetch(GAS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload),
-  })
-  .then(function() {
-    // no-cors はレスポンスが読めない。
-    // 送信後に GET で実際にスプレッドシートへ記録されたか確認する。
-    const type = data['記録種別'] || '';
-    const name = data['氏名'] || marc.name || '';
-    if (!name) { callback(true); return; } // 氏名なし→確認不可→楽観的に成功扱い
-
-    setTimeout(function() {
-      const params = new URLSearchParams({ name: name });
-      if (marc.grade) params.set('grade', marc.grade);
-      if (marc.kumi)  params.set('kumi',  marc.kumi);
-
-      fetch(GAS_URL + '?' + params.toString(), { method: 'GET' })
-      .then(function(res) { return res.text(); })
-      .then(function(text) {
-        try {
-          const json = JSON.parse(text);
-          if (json.status !== 'ok') { callback(false); return; }
-
-          if (type === 'チャレンジ宣言') {
-            // 送信した稽古日の宣言が存在するか確認
-            const date = String(data['稽古日'] || '').slice(0,10);
-            const found = (json.declares || []).some(function(r) {
-              return String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10) === date;
-            });
-            callback(found);
-          } else if (type === '稽古ログ') {
-            const date = String(data['稽古日']||data['date']||'').slice(0,10);
-            const found = (json.logs || []).some(function(r) {
-              return String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10) === date;
-            });
-            callback(found);
-          } else {
-            // 自己理解など：氏名が返ってくれば成功とみなす
-            callback(!!(json.data && json.data['氏名']));
-          }
-        } catch(e) {
-          // JSONパース失敗→送信は届いた可能性が高いので楽観的成功
-          callback(true);
-        }
-      })
-      .catch(function() { callback(true); }); // GET失敗→楽観的成功
-    }, 2000); // GASの書き込み完了を2秒待つ
-  })
-  .catch(function(err) {
-    console.error('GAS送信エラー:', err);
-    callback(false);
-  });
+// ── 修正2: escapeHtml（XSS対策）──
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-// ============================================================
-//  GAS GET 取得（fetch + JSON に統一 / JSONPは互換のため残す）
-// ============================================================
-function fetchUserData(name, grade, kumi, fetchId) {
-  const params = new URLSearchParams({ name: name });
-  if (grade) params.set('grade', grade);
-  if (kumi)  params.set('kumi', kumi);
 
-  // タイムアウト付き fetch（20秒 — GASコールドスタート考慮）
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
 
-  // ローディング表示
-  showToast('⏳ データを読み込み中…');
+// ── データストア ──
+const store = { d:[], r:[], p:[] };
+let charts = {};
+let sortMode = 'grade';
+let trendRendered = false; // 修正6: 傾向タブの再描画フラグ
+const FL = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
+const AP = ['','ap-1','ap-2','ap-3','ap-4','ap-5'];
+const GRADE_ORDER = {'3年':1,'2年':2,'1年':3};
 
-  fetch(GAS_URL + '?' + params.toString(), {
-    method: 'GET',
-    signal: controller.signal,
-  })
-  .then(res => res.text())
-  .then(text => {
-    clearTimeout(timer);
-    // このリクエストが最新かチェック（並行リクエスト競合防止）
-    if (fetchId !== marc._fetchId) return;
-    try {
-      const json = JSON.parse(text);
-      if (json.status !== 'ok') return;
-      const hasData = json.data && Object.keys(json.data).length > 0 && json.data['氏名'];
-      if (hasData) applyPrevData(json.data);
-      marc.declares = {};
-      (json.declares || []).forEach(function(r) {
-        const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
-        if (d) marc.declares[d] = { intent: r['試したいこと']||r.intent||'' };
-      });
-      marc.logs = {};
-      (json.logs || []).forEach(function(r) {
-        const d = String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
-        if (d) marc.logs[d] = {
-          intent: r.intent||r['試したいこと']||'',
-          scene: r.scene||r['印象に残った場面']||'',
-          why: r.why||r['なぜそうなったか']||'',
-          next: r.next||r['次への一手']||'',
-          fulfillment: parseInt(String(r.fulfillment||'').replace('/5',''))||0
-        };
-      });
-      marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) {
-        return Object.assign({ date: d }, marc.logs[d]);
-      });
-      marc.loaded = true;
-      renderLogUI();
-      if (hasData) showToast('📋 ' + name + ' さんのデータを復元しました');
-      else showToast('データがまだありません。新規登録になります');
-    } catch(e) {
-      console.error('JSON解析エラー:', e, text.slice(0,200));
-    }
-  })
-  .catch(err => {
-    clearTimeout(timer);
-    if (err.name === 'AbortError') {
-      showToast('⚠ データ読み込みがタイムアウトしました。再度お試しください');
-    } else {
-      console.error('GAS取得エラー:', err);
-    }
-  });
+// 修正3: row データを JS Map で保持（data属性への大きなJSON埋め込みを廃止）
+const rowDataMap = new Map(); // key: name+date → {dc, rf}
+
+// ── ユーティリティ ──
+function nd(v){ return String(v||'').replace(/\//g,'-').slice(0,10); }
+function getName(r){ return r['氏名']||r.name||''; }
+function getScore(r){ return parseInt(String(r.fulfillment||r['充実度']||'').replace('/5',''))||0; }
+function getDate(r){ return nd(r.date||r['稽古日']); }
+function gradeNum(n){ const p=store.p.find(r=>getName(r)===n); return p?(GRADE_ORDER[p['学年']]||9):9; }
+function latestScore(n){ const rows=store.r.filter(r=>getName(r)===n).sort((a,b)=>getDate(b).localeCompare(getDate(a))); return rows.length?getScore(rows[0]):0; }
+function allNames(){ return [...new Set([...store.d,...store.r,...store.p].map(getName).filter(Boolean))]; }
+function sortedNames(){
+  const ns=allNames();
+  if(sortMode==='grade') return ns.sort((a,b)=>{ const d=gradeNum(a)-gradeNum(b); return d!==0?d:a.localeCompare(b,'ja'); });
+  if(sortMode==='name')  return ns.sort((a,b)=>a.localeCompare(b,'ja'));
+  if(sortMode==='achieve') return ns.sort((a,b)=>latestScore(a)-latestScore(b));
+  return ns;
+}
+function filterByRange(rows,from,to){
+  if(!from&&!to) return rows;
+  return rows.filter(r=>{ const d=getDate(r); return(!from||d>=from)&&(!to||d<=to); });
+}
+function latestPerMember(rows){
+  const seen=new Set(),out=[];
+  rows.slice().sort((a,b)=>getDate(b).localeCompare(getDate(a))).forEach(r=>{ const n=getName(r); if(!seen.has(n)){seen.add(n);out.push(r);} });
+  return out;
+}
+function latestPracticeDate(){
+  const rDates=store.r.map(getDate).filter(Boolean).sort();
+  if(rDates.length) return rDates[rDates.length-1];
+  const dDates=store.d.map(getDate).filter(Boolean).sort();
+  return dDates.length?dDates[dDates.length-1]:'';
+}
+function allPracticeDates(){ return [...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort().reverse(); }
+function setWeekRange(){
+  const today=new Date(),day=today.getDay();
+  const mon=new Date(today); mon.setDate(today.getDate()-(day===0?6:day-1));
+  document.getElementById('dateFrom').value=mon.toISOString().slice(0,10);
+  document.getElementById('dateTo').value=today.toISOString().slice(0,10);
 }
 
-// ============================================================
-//  前回データをフォームに反映
-// ============================================================
-function applyPrevData(data) {
-  const set = function(id, val) {
-    const el = document.getElementById(id);
-    if (el && val !== undefined && val !== '') el.value = val;
-  };
-  set('gakuNenSelect', data['学年']);
-  set('kumiInput',     data['組']);
-  set('dankyuSelect',  data['段位級']);
-  set('kendoReki',     data['剣道歴']);
-  set('kikiteSelect',  data['利き手構え']);
-  set('kadaikan',      data['今の課題感']);
-  set('kojinMokuhyo',  data['個人目標']);
-  if (data['得意技']) {
-    const wazas = String(data['得意技']).split(/[・,、]+/);
-    document.querySelectorAll('#wazaSelector .rank-btn').forEach(function(btn) {
-      if (wazas.some(function(w) { return btn.textContent.trim().includes(w.trim()); })) {
-        btn.classList.add('active');
-      }
-    });
-  }
-  ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(function(key) {
-    const v = parseInt(data['自己評価_'+key]) || 0;
-    if (v) setBarsValue(key, v);
-  });
-  setTimeout(updateProgress, 200);
-}
-
-// ============================================================
-//  フォームクリア（GASからデータ取得後のみ呼ばれるように変更）
-// ============================================================
-function clearProfileForm() {
-  ['gakuNenSelect','kumiInput','dankyuSelect','kendoReki','kikiteSelect','kadaikan','kojinMokuhyo']
-    .forEach(function(id) { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.querySelectorAll('#wazaSelector .rank-btn.active').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.bars-star.lit').forEach(s => s.classList.remove('lit'));
-  document.querySelectorAll('.bars-anchor-row.selected').forEach(r => r.classList.remove('selected'));
-  document.querySelectorAll('[id^="bars-label-"]').forEach(el => {
-    el.innerHTML = '← 上の行動説明を読んで、当てはまる★を選んでください';
-  });
-  updateProgress();
-}
-
-// ============================================================
-//  フォームデータ収集
-// ============================================================
-function collectFormData() {
-  const barsVals = getBarsValues();
-  const wazas = Array.from(document.querySelectorAll('#wazaSelector .rank-btn.active'))
-    .map(b => b.textContent.trim()).join('・');
-  return Object.assign({
-    氏名:       (document.getElementById('nameInput')?.value||'').trim(),
-    学年:       document.getElementById('gakuNenSelect')?.value||'',
-    組:         document.getElementById('kumiInput')?.value||'',
-    段位級:     document.getElementById('dankyuSelect')?.value||'',
-    剣道歴:     document.getElementById('kendoReki')?.value||'',
-    利き手構え: document.getElementById('kikiteSelect')?.value||'',
-    得意技:     wazas,
-    今の課題感: document.getElementById('kadaikan')?.value||'',
-    個人目標:   document.getElementById('kojinMokuhyo')?.value||'',
-    記録日時:   new Date().toLocaleString('ja-JP'),
-    記録種別:   '自己理解',
-  }, barsVals);
-}
-
-// ============================================================
-//  複合キー生成（同姓同名対応）
-// ============================================================
-function makeLocalKey(name, grade, kumi) {
-  const g = (grade || '').replace(/\s/g, '');
-  const k = (kumi  || '').replace(/\s/g, '');
-  return 'marc_profile_' + name + (g ? '_' + g : '') + (k ? '_' + k : '');
-}
-
-// ============================================================
-//  提出
-// ============================================================
-function submitForm(type) {
-  const name    = (document.getElementById('nameInput')?.value||'').trim();
-  const gakunen = document.getElementById('gakuNenSelect')?.value||'';
-  if (!name)    { showToast('⚠ 氏名を入力してください'); return; }
-  if (!gakunen) { showToast('⚠ 学年を選択してください'); return; }
-
-  const btn = document.querySelector('.submit-btn');
-  if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
-
-  const data = collectFormData();
-  sendToGAS(data, function(ok) {
-    if (ok) {
-      const lsKey = makeLocalKey(name, data['学年'], data['組']);
-      LS.set(lsKey, JSON.stringify(data));
-      showToast('✓ 自己理解シートを提出しました！');
-    } else {
-      showToast('⚠ 送信に失敗しました。一時保存して再度お試しください');
-    }
-    if (btn) { btn.textContent = '✦ 自己理解シートを提出する'; btn.disabled = false; }
-  });
-}
-
-// ============================================================
-//  一時保存
-// ============================================================
-function tempSave() {
-  const name = (document.getElementById('nameInput')?.value||'').trim();
-  if (!name) { showToast('⚠ 氏名を入力してから保存してください'); return; }
-  const data = collectFormData();
-  const lsKey = makeLocalKey(name, data['学年'], data['組']);
-  if (LS.set(lsKey, JSON.stringify(data))) {
-    showToast('📋 一時保存しました');
-  }
-}
-
-// ============================================================
-//  フェーズ判定
-// ============================================================
-function phaseFor(dateStr) {
-  const d = (dateStr||'').slice(0,10);
-  if (!d) return 'pre';
-  if (marc.logs[d]) return 'done';
-  if (marc.declares[d]) return 'post';
-  return 'pre';
-}
-
-function renderLogUI() {
-  const dateEl = document.getElementById('logDate');
-  let d = (dateEl && dateEl.value) ? dateEl.value.slice(0,10) : '';
-  if (!d) {
-    const pending = Object.keys(marc.declares).filter(x => !marc.logs[x]).sort().reverse();
-    if (pending.length) {
-      d = pending[0];
-      if (dateEl) dateEl.value = d;
-    }
-  }
-  renderPhaseUI(d);
-  renderDateDots(d);
-  renderHistory();
-  updateLogCount();
-}
-
-function onLogDateChange() { renderLogUI(); }
-
-function renderDateDots(currentDate) {
-  const container = document.getElementById('dateDotList');
-  if (!container) return;
-  const cur = currentDate || (document.getElementById('logDate')?.value||'').slice(0,10);
-  const pending = Object.keys(marc.declares).filter(d => !marc.logs[d]).sort().reverse();
-  const done    = Object.keys(marc.logs).sort().reverse();
-  if (!pending.length && !done.length) { container.innerHTML = ''; return; }
-  let html = '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#7a8ea8;margin-bottom:6px;text-transform:uppercase;">稽古日を選択</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  pending.forEach(function(d) {
-    const isCur = d === cur;
-    html += '<button onclick="selectDate(\'' + d + '\')" style="background:' + (isCur?'#0f2044':'#fdf3dc') + ';color:' + (isCur?'#fff':'#c8952a') + ';border:2px solid ' + (isCur?'#0f2044':'#c8952a') + ';padding:7px 14px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;line-height:1.3;text-align:left;"><div>' + d.slice(5).replace('-','/') + '</div><div style="font-size:9px;margin-top:2px;">宣言済み・振り返り未</div></button>';
-  });
-  done.slice(0,5).forEach(function(d) {
-    const isCur = d === cur;
-    html += '<button onclick="selectDate(\'' + d + '\')" style="background:' + (isCur?'#0f2044':'#e6f5f0') + ';color:' + (isCur?'#fff':'#0a7c5c') + ';border:2px solid ' + (isCur?'#0f2044':'#059669') + ';padding:7px 14px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;line-height:1.3;text-align:left;"><div>✓ ' + d.slice(5).replace('-','/') + '</div><div style="font-size:9px;margin-top:2px;">振り返り済み</div></button>';
-  });
-  container.innerHTML = html + '</div>';
-}
-
-function selectDate(d) {
-  const dateEl = document.getElementById('logDate');
-  if (dateEl) dateEl.value = d;
-  const display = document.getElementById('logDateText');
-  if (display) display.textContent = d.replace(/-/g, '/');
-  renderPhaseUI(d);
-  renderDateDots(d);
-  renderHistory();
-  updateLogCount();
-}
-
-function renderPhaseUI(dateStr) {
-  const d = (dateStr||'').slice(0,10);
-  const phase = phaseFor(d);
-  const p1Card  = document.getElementById('phase1Card');
-  const p1Badge = document.getElementById('phase1Badge');
-  const p1Tag   = document.getElementById('phase1StatusTag');
-  const p1Body  = document.getElementById('phase1Body');
-  const p2Card  = document.getElementById('phase2Card');
-  const p2Badge = document.getElementById('phase2Badge');
-  const p2Tag   = document.getElementById('phase2StatusTag');
-  const p2Body  = document.getElementById('phase2Body');
-  if (!p1Card) return;
-
-  if (phase === 'pre') {
-    p1Card.className = 'timeline-card phase-active';
-    p1Badge.className = 'timeline-step-badge active'; p1Badge.textContent = '1';
-    p1Tag.textContent = '入力中'; p1Tag.style.cssText = 'background:var(--primary);color:#fff;';
-    p1Body.className = 'timeline-body';
-    p1Body.innerHTML = '<div class="field-group"><label class="field-label">次回の稽古で試したいこと<span class="required">*</span></label><div class="field-hint"><strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br><span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span></div><input type="text" id="logIntent" placeholder="" oninput="autoSaveIntent(this.value)" style="border-color:var(--primary);"></div><button class="pre-submit-btn" id="preSubmitBtn" onclick="submitPreLog()">✦ チャレンジを宣言する</button>';
-    const saved = LS.get('marc_intent_draft');
-    const intentEl = document.getElementById('logIntent');
-    if (intentEl && saved) intentEl.value = saved;
-    p2Card.className = 'timeline-card phase-locked';
-    p2Badge.className = 'timeline-step-badge locked'; p2Badge.textContent = '2';
-    p2Tag.textContent = '🔒 宣言後に解除'; p2Tag.style.cssText = 'background:var(--bg-warm);color:var(--ink-muted);border:1px solid var(--border);';
-    p2Body.className = 'timeline-body locked-body';
-    p2Body.innerHTML = '<span style="font-size:20px;">🔒</span><span>「チャレンジを宣言する」を送信すると入力できます</span>';
-
-  } else if (phase === 'post') {
-    const decl   = marc.declares[d] || {};
-    const intent = decl.intent || '';
-    p1Card.className = 'timeline-card phase-done';
-    p1Badge.className = 'timeline-step-badge done'; p1Badge.textContent = '✓';
-    p1Tag.textContent = '宣言済み ✓'; p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
-    p1Body.className = 'timeline-body';
-    p1Body.innerHTML = '<div style="background:#ECFDF5;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">✓</span><div><div style="font-size:13px;font-weight:700;color:#059669;">チャレンジ宣言完了</div><div style="font-size:12px;color:#047857;margin-top:1px;">稽古日：' + d + '</div></div></div><div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:5px;">宣言した内容</div><div style="padding:10px 14px;background:#f0f4ff;border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">' + (intent || '—') + '</div><div style="margin-top:10px;font-size:11px;color:var(--ink-muted);">稽古後に振り返りを記入してください ↓</div>';
-    const editBtn = document.createElement('button');
-    editBtn.textContent = '✎ 宣言を修正する';
-    editBtn.style.cssText = 'margin-top:8px;font-size:11px;padding:5px 14px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer;font-family:inherit;';
-    editBtn.onclick = function() { editDeclaration(d); };
-    p1Body.appendChild(editBtn);
-    p2Card.className = 'timeline-card phase-active';
-    p2Badge.className = 'timeline-step-badge active'; p2Badge.textContent = '2';
-    p2Tag.textContent = '入力中'; p2Tag.style.cssText = 'background:#059669;color:#fff;';
-    p2Body.className = 'timeline-body';
-    p2Body.innerHTML = buildPhase2HTML(intent);
-
-  } else if (phase === 'done') {
-    const decl = marc.declares[d] || {};
-    const log  = marc.logs[d] || {};
-    p1Card.className = 'timeline-card phase-done';
-    p1Badge.className = 'timeline-step-badge done'; p1Badge.textContent = '✓';
-    p1Tag.textContent = '宣言済み ✓'; p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
-    p1Body.className = 'timeline-body';
-    p1Body.innerHTML = '<div style="padding:10px 14px;background:#f0f4ff;border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">' + (decl.intent || log.intent || '—') + '</div>';
-    p2Card.className = 'timeline-card phase-done';
-    p2Badge.className = 'timeline-step-badge done'; p2Badge.textContent = '✓';
-    p2Tag.textContent = '提出済み ✓'; p2Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
-    p2Body.className = 'timeline-body';
-    const fLabels = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
-    const fVal = log.fulfillment||0;
-    p2Body.innerHTML = '<div style="margin-bottom:8px;"><span style="font-weight:700;font-size:12px;color:#059669;">✓ 振り返り提出済み</span></div>' + (fVal ? '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">達成感：<strong>' + fLabels[fVal] + '</strong>（' + fVal + '/5）</div>' : '') + '<div style="font-size:12px;color:var(--ink-soft);line-height:1.7;"><div style="margin-bottom:4px;"><span style="font-weight:700;">①</span> ' + (log.scene||'—') + '</div><div style="margin-bottom:4px;"><span style="font-weight:700;">②</span> ' + (log.why||'—') + '</div>' + (log.next ? '<div><span style="font-weight:700;color:var(--primary);">③</span> ' + log.next + '</div>' : '') + '</div>';
-    const newBtn = document.createElement('button');
-    newBtn.textContent = '＋ 新しい稽古を記録する';
-    newBtn.style.cssText = 'margin-top:12px;padding:10px 20px;border-radius:999px;border:2px solid var(--primary);background:transparent;color:var(--primary);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;';
-    newBtn.onclick = function() { startNewLog(); };
-    p2Body.appendChild(newBtn);
-  }
-}
-
-function editDeclaration(d) {
-  const decl = marc.declares[d] || {};
-  const savedIntent = decl.intent || '';
-  delete marc.declares[d];
-  LS.set('marc_intent_draft', savedIntent);
-  renderPhaseUI(d);
-  const intentEl = document.getElementById('logIntent');
-  if (intentEl && savedIntent) intentEl.value = savedIntent;
-  showToast('宣言内容を修正できます。変更後に再送信してください。');
-}
-
-function buildPhase2HTML(intent) {
-  return '<div class="field-group"><label class="field-label">稽古での達成感<span class="required">*</span></label><div class="field-hint" style="margin-bottom:8px;">稽古前に申告したことに対して、どれくらいできたか。直感で選んでください。</div><div class="fulfillment-grid" id="fulfillmentGrid">' + ['できなかった','少しできた','まあまあ','かなり','完全に'].map(function(l,i){ return '<button class="fulfillment-btn" data-val="' + (i+1) + '" onclick="window.selectFulfillment(' + (i+1) + ')">' + l + '<br><span style="font-size:9px;opacity:.6;">' + (i+1) + '/5</span></button>'; }).join('') + '</div></div><div class="field-group"><label class="field-label">① 宣言したことを、稽古で試した結果は？<span class="required">*</span></label><div class="field-hint">できた場面・できなかった場面を具体的に。<br><span style="color:var(--gold);font-weight:500;">例：「2回試した。1回目は合わせられたが2回目は空振りした」</span></div><textarea id="logScene" style="min-height:88px"></textarea></div><div class="field-group"><label class="field-label">② なぜそうなったと思うか<span class="required">*</span></label><div class="field-hint">自分の動き・判断・準備の何が原因かを考えてください。</div><textarea id="logWhy" style="min-height:88px"></textarea></div><div class="field-group" style="margin-bottom:0;"><label class="field-label">③ 次の稽古でどう変えるか<span class="required">*</span></label><div class="field-hint">次のチャレンジ宣言につながる「次の一手」を書いてください。</div><textarea id="logNext" style="min-height:72px"></textarea></div><button class="post-submit-btn" onclick="submitLog()">✦ 振り返りを提出する</button>';
-}
-
-// fulfillmentVal はスコープを明示（グローバル汚染を最小化）
-let fulfillmentVal = 0;
-window.selectFulfillment = function(v) {
-  fulfillmentVal = v;
-  document.querySelectorAll('.fulfillment-btn').forEach(function(b) {
-    b.classList.toggle('selected', parseInt(b.dataset.val) === v);
-  });
-};
-
-// ============================================================
-//  チャレンジ宣言 送信
-// ============================================================
-function submitPreLog() {
-  const name   = marc.name;
-  const intent = (document.getElementById('logIntent')?.value||'').trim();
-  const date   = (document.getElementById('logDate')?.value||'').slice(0,10);
-  if (!name)   { showToast('⚠ 先に「自己理解」タブで氏名を入力してください'); return; }
-  if (!date)   { showToast('⚠ 稽古日を入力してください'); return; }
-  if (!intent) { showToast('⚠ チャレンジ内容を入力してください'); return; }
-  const btn = document.getElementById('preSubmitBtn');
-  if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
-  const data = { 記録種別:'チャレンジ宣言', 氏名:name, 学年:marc.grade, 組:marc.kumi, 稽古日:date, 試したいこと:intent, intent:intent, timestamp:new Date().toLocaleString('ja-JP') };
-  sendToGAS(data, function(ok) {
-    if (ok) {
-      marc.declares[date] = { intent: intent };
-      LS.remove('marc_intent_draft');
-      renderLogUI();
-      showToast('✓ チャレンジを宣言しました！');
-    } else {
-      showToast('⚠ 送信に失敗しました。再度お試しください');
-    }
-    if (btn) { btn.textContent = '✦ チャレンジを宣言する'; btn.disabled = false; }
-  });
-}
-
-// ============================================================
-//  振り返り 送信
-// ============================================================
-function submitLog() {
-  const name  = marc.name;
-  const date  = (document.getElementById('logDate')?.value||'').slice(0,10);
-  const scene = (document.getElementById('logScene')?.value||'').trim();
-  const why   = (document.getElementById('logWhy')?.value||'').trim();
-  const next  = (document.getElementById('logNext')?.value||'').trim();
-  const decl  = marc.declares[date] || {};
-  const intent= decl.intent || '';
-  if (!name)           { showToast('⚠ 氏名が設定されていません'); return; }
-  if (!fulfillmentVal) { showToast('⚠ 達成感を選んでください'); return; }
-  if (!scene)          { showToast('⚠ ①の結果を入力してください'); return; }
-  if (!why)            { showToast('⚠ ②の原因分析を入力してください'); return; }
-  if (!next)           { showToast('⚠ ③の次への一手を入力してください'); return; }
-  const btn = document.querySelector('.post-submit-btn');
-  if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
-  const data = { 記録種別:'稽古ログ', 氏名:name, 学年:marc.grade, 組:marc.kumi, 稽古日:date, date:date, name:name, intent:intent, 試したいこと:intent, scene:scene, why:why, next:next, fulfillment:fulfillmentVal+'/5', timestamp:new Date().toLocaleString('ja-JP') };
-  sendToGAS(data, function(ok) {
-    if (ok) {
-      marc.logs[date] = { intent:intent, scene:scene, why:why, next:next, fulfillment:fulfillmentVal };
-      marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) {
-        return Object.assign({ date:d }, marc.logs[d]);
-      });
-      // fulfillmentVal と DOM 状態を両方リセット
-      fulfillmentVal = 0;
-      document.querySelectorAll('.fulfillment-btn').forEach(b => b.classList.remove('selected'));
-      renderLogUI();
-      showToast('✓ 振り返りを提出しました！');
-    } else {
-      showToast('⚠ 送信に失敗しました。再度お試しください');
-    }
-    if (btn) { btn.textContent = '✦ 振り返りを提出する'; btn.disabled = false; }
-  });
-}
-
-function startNewLog() {
-  const today = todayJST();
-  const dateEl = document.getElementById('logDate');
-  if (dateEl) dateEl.value = today;
-  const display = document.getElementById('logDateText');
-  if (display) display.textContent = today.replace(/-/g, '/');
-  renderLogUI();
-}
-
-function autoSaveIntent(v) {
-  if (v && v.trim()) LS.set('marc_intent_draft', v.trim());
-}
-
-// ============================================================
-//  過去記録 描画
-// ============================================================
-function renderHistory() {
-  const container = document.getElementById('logHistory');
-  if (!container) return;
-  const entries = marc.history;
-  const fLabels = ['','できなかった','少しできた','まあまあ','かなり','完全に'];
-  const fColors = ['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
-  if (!entries || !entries.length) {
-    container.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><div style="flex:1;height:1px;background:var(--border);"></div><div style="font-size:10px;font-weight:700;color:var(--ink-muted);letter-spacing:.15em;">過去の記録</div><div style="flex:1;height:1px;background:var(--border);"></div></div><div style="text-align:center;padding:20px;color:var(--ink-muted);font-size:12px;">まだ記録がありません</div>';
+// ── イベント委譲 ──
+document.addEventListener('click', function(e){
+  const t=e.target;
+  // タブ切り替え
+  const tabBtn=t.closest('[data-tab]');
+  if(tabBtn&&tabBtn.classList.contains('tab-btn')){
+    const id=tabBtn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===tabBtn));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+id));
+    // 修正6: trendRenderedフラグで無駄な再描画を防ぐ
+    if(id==='trend' && !trendRendered && store.r.length) renderTrend();
     return;
   }
-  container.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><div style="flex:1;height:1px;background:var(--border);"></div><div style="font-size:10px;font-weight:700;color:var(--ink-muted);letter-spacing:.15em;">過去の記録</div><div style="flex:1;height:1px;background:var(--border);"></div></div>'
-    + entries.map(function(e, i) {
-      const f = e.fulfillment||0;
-      const isLatest = i === 0;
-      return '<div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:14px 18px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:12px;font-weight:700;color:var(--ink);">' + e.date + '</span>' + (isLatest ? '<span style="background:var(--primary);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">最新</span>' : '') + (f ? '<span style="color:' + fColors[f] + ';font-size:11px;font-weight:700;margin-left:auto;">' + fLabels[f] + '（' + f + '/5）</span>' : '') + '</div>' + (e.intent ? '<div style="padding:6px 10px;background:#f0f4ff;border-left:3px solid var(--primary);border-radius:0 6px 6px 0;font-size:12px;font-weight:600;color:var(--primary);margin-bottom:8px;">🎯 ' + e.intent + '</div>' : '') + '<div style="font-size:12px;color:var(--ink-soft);line-height:1.8;"><div><span style="font-weight:700;">①</span> ' + (e.scene||'—') + '</div><div><span style="font-weight:700;">②</span> ' + (e.why||'—') + '</div>' + (e.next ? '<div><span style="font-weight:700;color:var(--primary);">③</span> ' + e.next + '</div>' : '') + '</div></div>';
-    }).join('');
-}
-
-function updateLogCount() {
-  const el = document.getElementById('logCount');
-  if (el) el.textContent = Object.keys(marc.logs).length + ' 件';
-}
-
-function generatePrint() {
-  showToast('⏳ GASで一覧表を生成します。新しいタブが開きます。');
-  setTimeout(() => { window.open(GAS_URL + '?action=generatePrint', '_blank'); }, 500);
-}
-
-// ============================================================
-//  タブ切り替え（CSS class で統一 — v6修正）
-// ============================================================
-function switchTab(tab, el) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  // inlineスタイルではなくclassで制御
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-active'));
-  if (el) el.classList.add('active');
-  const panel = document.getElementById('tab-' + tab);
-  if (panel) panel.classList.add('tab-active');
-
-  if (tab === 'log') {
-    const nameEl = document.getElementById('nameInput');
-    if (nameEl && nameEl.value.trim()) {
-      marc.name  = nameEl.value.trim();
-      marc.grade = document.getElementById('gakuNenSelect')?.value || '';
-      marc.kumi  = document.getElementById('kumiInput')?.value || '';
-      LS.set(LS_NAME, marc.name);
-      const logName = document.getElementById('logUserName');
-      if (logName) { logName.textContent = marc.name; logName.style.color = 'var(--primary)'; }
-    }
-    renderLogUI();
+  // 収集ボタン
+  if(t.id==='collectBtn'){ collectAll(); return; }
+  // 修正5: analyzeBtnはここだけで処理（DOMContentLoadedの2重登録を廃止）
+  if(t.id==='analyzeBtn'){ analyzeCoaching(); return; }
+  // ソートボタン
+  const sortBtn=t.closest('[data-sort]');
+  if(sortBtn){ sortMode=sortBtn.dataset.sort; document.querySelectorAll('[data-sort]').forEach(b=>b.classList.toggle('active',b===sortBtn)); renderMemberList(); return; }
+  // 部員リスト
+  const mlItem=t.closest('.ml-item');
+  if(mlItem){ document.querySelectorAll('.ml-item').forEach(i=>i.classList.remove('active')); mlItem.classList.add('active'); showMemberDetail(mlItem.dataset.name); return; }
+  // 今週ボタン
+  if(t.id==='btnWeek'){ setWeekRange(); renderAllCards(); return; }
+  if(t.id==='btnClear'){ document.getElementById('dateFrom').value=''; document.getElementById('dateTo').value=''; renderAllCards(); return; }
+  // サイドパネル閉じる
+  if(t.id==='spClose'||t.id==='spOverlay'){ closeSidePanel(); return; }
+  // ステータス行クリック → サイドパネル（修正3: MapからJSONを取得）
+  const row=t.closest('.status-row');
+  if(row){
+    const key=row.dataset.rowkey;
+    const entry=key?rowDataMap.get(key):null;
+    if(entry) openSidePanel(entry.name, entry.grade, entry.dc, entry.rf);
+    document.querySelectorAll('.status-row').forEach(r=>r.style.background='');
+    row.style.background='var(--navy-pale)';
+    return;
   }
-}
-
-// ============================================================
-//  氏名入力（フォームクリアのタイミングを修正）
-// ============================================================
-function onNameInput(el) {
-  const v = el.value.trim();
-  marc.name = v;
-  LS.set(LS_NAME, v);
-  if (v.length >= 2) {
-    clearTimeout(window._nameTimer);
-    window._nameTimer = setTimeout(function() {
-      // フォームクリアはここでは行わない（タイプ中に消えるバグを防止）
-      // GASからデータが返ってきた後に上書きする形で applyPrevData を呼ぶ
-      marc.grade = document.getElementById('gakuNenSelect')?.value || '';
-      marc.kumi  = document.getElementById('kumiInput')?.value || '';
-      marc._fetchId++;
-      const currentId = marc._fetchId;
-      fetchUserData(v, marc.grade, marc.kumi, currentId);
-    }, 1000);
-  }
-}
-
-// ============================================================
-//  日付ピッカー
-// ============================================================
-function openDatePicker() {
-  const native = document.getElementById('logDateNative');
-  if (native) {
-    native.value = document.getElementById('logDate').value || todayJST();
-    if (native.showPicker) { native.showPicker(); } else { native.click(); }
-  }
-}
-
-function onNativeDateChange(val) {
-  if (!val) return;
-  const hidden  = document.getElementById('logDate');
-  const display = document.getElementById('logDateText');
-  if (hidden)  hidden.value = val;
-  if (display) display.textContent = val.replace(/-/g, '/');
-  onLogDateChange();
-}
-
-// ============================================================
-//  初期化
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  marc.name  = '';
-  marc.grade = '';
-  marc.kumi  = '';
-
-  const storedName = LS.get(LS_NAME) || '';
-  if (storedName) {
-    marc.name = storedName;
-    const ni = document.getElementById('nameInput');
-    if (ni) ni.value = storedName;
-    const lu = document.getElementById('logUserName');
-    if (lu) { lu.textContent = storedName; lu.style.color = 'var(--primary)'; }
-    // 初回ロード時は GAS からデータを取得
-    marc._fetchId++;
-    const initId = marc._fetchId;
-    fetchUserData(storedName, marc.grade, marc.kumi, initId);
-  }
-
-  // 日付を JSTで今日に設定
-  const today = todayJST();
-  const hiddenDate  = document.getElementById('logDate');
-  const displayDate = document.getElementById('logDateText');
-  if (hiddenDate)  hiddenDate.value = today;
-  if (displayDate) displayDate.textContent = today.replace(/-/g, '/');
-
-  renderLogUI();
 });
+document.getElementById('dateFrom').addEventListener('change', renderAllCards);
+document.getElementById('dateTo').addEventListener('change', renderAllCards);
+document.getElementById('practiceSelect').addEventListener('change', function(){ renderRecent(this.value); });
+
+// ── サイドパネル ──
+function openSidePanel(name, grade, dc, rf) {
+  const panel=document.getElementById('sidePanel'),overlay=document.getElementById('spOverlay');
+  if(!panel) return;
+  const intent=dc?(dc['試したいこと']||dc.intent||''):'';
+  const scene =rf?(rf.scene||rf['印象に残った場面']||''):'';
+  const why   =rf?(rf.why  ||rf['なぜそうなったか']||''):'';
+  const next  =rf?(rf.next ||rf['次への一手']||''):'';
+  const f     =rf?(parseInt(String(rf.fulfillment||'').replace('/5',''))||0):0;
+  const FC=['','#DC2626','#D97706','#A16207','#16A34A','#15803D'];
+  document.getElementById('sp-avatar').textContent=name.charAt(0);
+  document.getElementById('sp-name').textContent=name;
+  document.getElementById('sp-sub').textContent=grade+(f?'　達成感：'+FL[f]:'');
+  // 修正2: esc() でXSS対策
+  document.getElementById('sp-body').innerHTML=[
+    intent?`<div style="margin-bottom:16px;padding:12px 14px;background:var(--navy-pale);border-left:4px solid var(--navy-lt);border-radius:0 8px 8px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:5px">✊ チャレンジ宣言</div><div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.6">${esc(intent)}</div></div>`:'<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">チャレンジ宣言なし</div>',
+    f?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 12px;background:var(--gold-pale);border-radius:8px"><span style="font-size:18px">⭐</span><span style="font-size:13px;font-weight:700;color:${FC[f]}">${FL[f]}</span><span style="font-size:11px;color:var(--ink-muted)">${f}/5</span></div>`:'',
+    scene?`<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:5px">① 試した結果</div><div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${esc(scene)}</div></div>`:'',
+    why?`<div style="margin-bottom:14px"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:5px">② なぜそうなったか</div><div style="font-size:13px;color:var(--ink-soft);line-height:1.7">${esc(why)}</div></div>`:'',
+    next?`<div style="padding:12px 14px;background:#ECFDF5;border-left:4px solid var(--green);border-radius:0 8px 8px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:5px">③ 次への一手</div><div style="font-size:13px;font-weight:600;color:#065f46;line-height:1.7">${esc(next)}</div></div>`:'<div style="color:var(--ink-muted);font-size:12px;padding:8px 0">振り返り未提出</div>',
+  ].join('');
+  panel.style.right='0';
+  overlay.style.display='block';
+  setTimeout(function(){ overlay.style.opacity='1'; },10);
+}
+function closeSidePanel(){
+  const panel=document.getElementById('sidePanel'),overlay=document.getElementById('spOverlay');
+  if(!panel) return;
+  panel.style.right='-420px';
+  overlay.style.opacity='0';
+  setTimeout(function(){ overlay.style.display='none'; },250);
+}
+
+// ── JSONP ──
+function fetchGAS(params){
+  return new Promise(function(resolve,reject){
+    const cb='_marc_'+Date.now()+'_'+Math.floor(Math.random()*99999);
+    const sc=document.createElement('script');
+    let url=GAS+'?callback='+cb;
+    Object.entries(params).forEach(function([k,v]){ url+='&'+encodeURIComponent(k)+'='+encodeURIComponent(v); });
+    const timer=setTimeout(function(){ cleanup(); reject('timeout'); },15000);
+    function cleanup(){ clearTimeout(timer); delete window[cb]; try{document.head.removeChild(sc);}catch(e){} }
+    window[cb]=function(json){ cleanup(); json.status==='ok'?resolve(json.rows||[]):reject(json.message||'error'); };
+    sc.onerror=function(){ cleanup(); reject('load error'); };
+    sc.src=url; document.head.appendChild(sc);
+  });
+}
+
+// 修正4: Promise.all で並列実行
+async function collectAll(){
+  const btn=document.getElementById('collectBtn');
+  btn.disabled=true; btn.textContent='⏳ 収集中…';
+  showToast('データを収集しています…');
+  try{
+    const [d, r, p] = await Promise.all([
+      fetchGAS({action:'getAll',type:'チャレンジ宣言'}),
+      fetchGAS({action:'getAll',type:'稽古ログ'}),
+      fetchGAS({action:'getAll',type:'自己理解'})
+    ]);
+    store.d=d; store.r=r; store.p=p;
+    const now=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('hdrUpdate').textContent=now+' 収集';
+    trendRendered=false; // 修正6: データ更新でフラグリセット
+    renderRecent();
+    renderMemberList();
+    renderAlerts();
+    showToast('✓ データを収集しました（宣言'+d.length+'件・ログ'+r.length+'件）');
+  }catch(e){
+    showToast('⚠ 取得失敗: '+e, 4000);
+  }
+  btn.disabled=false; btn.textContent='🔄 データを収集';
+}
+
+// ── 直近の稽古 ──
+function renderRecent(selectedDate){
+  const latest=selectedDate||latestPracticeDate();
+  const sel=document.getElementById('practiceSelect');
+  const dates=allPracticeDates();
+  if(dates.length) sel.innerHTML=dates.map(d=>`<option value="${d}"${d===latest?' selected':''}>${d}${store.r.some(r=>getDate(r)===d)?' ✓':' （宣言のみ）'}</option>`).join('');
+  if(!latest) return;
+  const dL=store.d.filter(r=>getDate(r)===latest);
+  const rL=store.r.filter(r=>getDate(r)===latest);
+  document.getElementById('k-declare').textContent=dL.length;
+  document.getElementById('k-declare-date').textContent=latest;
+  const totalMembers=allNames().length;
+  const declarePct=totalMembers>0?Math.round(dL.length/totalMembers*100):0;
+  const declareBar=document.getElementById('k-declare-bar');
+  if(declareBar) declareBar.style.width=declarePct+'%';
+  const declareDetail=document.getElementById('k-declare-detail');
+  if(declareDetail) declareDetail.textContent=totalMembers>0?dL.length+'名 / '+totalMembers+'名が宣言':'';
+  document.getElementById('k-reflect').textContent=rL.length;
+  const reflectPct=dL.length?Math.round(rL.length/dL.length*100):0;
+  document.getElementById('k-reflect-rate').textContent=dL.length?'提出率 '+reflectPct+'%':'提出率 —%';
+  const reflectBar=document.getElementById('k-reflect-bar');
+  if(reflectBar) reflectBar.style.width=reflectPct+'%';
+  const reflectDetail=document.getElementById('k-reflect-detail');
+  if(reflectDetail) reflectDetail.textContent=dL.length?rL.length+'名 / '+dL.length+'名が提出':'';
+  const scores=rL.map(getScore).filter(s=>s>0);
+  const avgScore=scores.length?parseFloat((scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1)):null;
+  document.getElementById('k-achieve').textContent=avgScore!==null?avgScore.toFixed(1):'—';
+  const achieveColors=['#FCA5A5','#FCD34D','#FDE68A','#6EE7B7','#34D399'];
+  for(let i=1;i<=5;i++){
+    const seg=document.getElementById('k-achieve-s'+i);
+    if(!seg||avgScore===null){if(seg)seg.style.background='var(--border-lt)';continue;}
+    if(avgScore>=i) seg.style.background=achieveColors[i-1];
+    else if(avgScore>i-1){ const pct=Math.round((avgScore-(i-1))*100); seg.style.background='linear-gradient(90deg,'+achieveColors[i-1]+' '+pct+'%,var(--border-lt) '+pct+'%)'; }
+    else seg.style.background='var(--border-lt)';
+  }
+  const missing=allNames().filter(n=>new Set(dL.map(getName)).has(n)&&!new Set(rL.map(getName)).has(n));
+  const card=document.getElementById('k-missing-card'),icon=document.getElementById('k-missing-icon'),lbl=document.getElementById('k-missing-label'),nms=document.getElementById('k-missing-names'),mv=document.getElementById('k-missing');
+  mv.textContent=missing.length;
+  if(missing.length===0&&rL.length>0){ card.style.cssText='border-top:3px solid var(--green)'; icon.textContent='🎉'; mv.style.color='var(--green)'; lbl.textContent='全員が振り返り提出！'; nms.textContent='素晴らしいサイクルです'; nms.style.color='var(--green)'; }
+  else if(missing.length>0){ card.style.cssText='border-top:3px solid var(--red)'; icon.textContent='⚠'; mv.style.color='var(--red)'; lbl.textContent='振り返り未提出'; nms.textContent=missing.map(esc).join('・'); nms.style.color=''; }
+  else { card.style.cssText='border-top:3px solid var(--border)'; icon.textContent='📋'; mv.textContent='—'; mv.style.color='var(--ink-muted)'; lbl.textContent='振り返り未提出'; nms.textContent='まだ宣言がありません'; nms.style.color='var(--ink-muted)'; }
+  const rDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort();
+  const li=rDates.indexOf(latest);
+  const prevDate=li>0?rDates[li-1]:'';
+  const pMap={};
+  if(prevDate) store.r.filter(r=>getDate(r)===prevDate).forEach(r=>{ pMap[getName(r)]=getScore(r); });
+  const dMap={},rMap={};
+  dL.forEach(r=>{ if(!dMap[getName(r)]) dMap[getName(r)]=r; });
+  rL.forEach(r=>{ if(!rMap[getName(r)]) rMap[getName(r)]=r; });
+  const names=sortedNames();
+  const tbody=document.getElementById('statusBody');
+  if(!names.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">データがありません</div></div></td></tr>'; return; }
+  // 修正3: rowDataMapにデータを保存し、HTML属性にはキーのみ埋め込む
+  rowDataMap.clear();
+  tbody.innerHTML=names.map(function(name){
+    const p=store.p.find(r=>getName(r)===name);
+    const dc=dMap[name],rf=rMap[name];
+    const f=rf?getScore(rf):0,prev=pMap[name]||0;
+    const diff=f&&prev?f-prev:null;
+    let trendHtml='—';
+    if(diff!==null){
+      if(diff>=2) trendHtml='<span class="trend-up">↑</span>';
+      else if(diff===1) trendHtml='<span class="trend-up">↗</span>';
+      else if(diff===0) trendHtml='<span class="trend-flat">→</span>';
+      else if(diff===-1) trendHtml='<span class="trend-down">↘</span>';
+      else trendHtml='<span class="trend-down">↓</span>';
+    }
+    const grade=p?(p['学年']||'—'):'—';
+    const rowKey=name+'_'+latest;
+    rowDataMap.set(rowKey, {name, grade, dc:dc||null, rf:rf||null});
+    return `<tr class="status-row" data-rowkey="${esc(rowKey)}" style="cursor:pointer;transition:background .15s">
+      <td style="width:24px;color:var(--ink-muted);font-size:11px;text-align:center">›</td>
+      <td style="font-weight:600">${esc(name)}</td>
+      <td style="color:var(--ink-muted)">${esc(grade)}</td>
+      <td>${dc?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
+      <td>${rf?'<span class="badge badge-ok">済</span>':'<span class="badge badge-no">未提出</span>'}</td>
+      <td class="${f?'av-'+f:''}">${f?FL[f]:'—'}</td>
+      <td>${trendHtml}</td>
+    </tr>`;
+  }).join('');
+  const rcEl=document.getElementById('recentCards');
+  if(!rL.length){ rcEl.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">直近稽古の振り返りがありません</div></div>'; return; }
+  rcEl.innerHTML=rL.map(r=>buildCard(r)).join('');
+}
+
+// ── 部員別詳細 ──
+function renderMemberList(){
+  const names=sortedNames();
+  const el=document.getElementById('memberListItems');
+  if(!names.length){ el.innerHTML='<div class="empty"><div class="empty-text">データがありません</div></div>'; return; }
+  el.innerHTML=names.map(function(name){
+    const p=store.p.find(r=>getName(r)===name);
+    const f=latestScore(name);
+    const dotColor=f>=4?'var(--green)':f>=3?'var(--gold)':f>=1?'var(--red)':'var(--border)';
+    return `<div class="ml-item" data-name="${esc(name)}">
+      <div class="card-av" style="width:28px;height:28px;background:var(--navy-lt);font-size:11px">${esc(name.charAt(0))}</div>
+      <div style="flex:1;min-width:0"><div class="ml-name">${esc(name)}</div><div class="ml-sub">${esc(p?p['学年']||'':'')} ${esc(p?p['段位級']||'':'')}</div></div>
+      <div class="ml-dot" style="background:${dotColor}"></div>
+    </div>`;
+  }).join('');
+}
+
+function showMemberDetail(name){
+  const p=store.p.find(r=>getName(r)===name);
+  const reflects=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a))).slice(0,3);
+  const bk=[{k:'自己評価_kire',lb:'打突の冴え'},{k:'自己評価_tenouchi',lb:'手の内'},{k:'自己評価_zanshin',lb:'残心'},{k:'自己評価_maai',lb:'間合い'},{k:'自己評価_seme',lb:'攻め'},{k:'自己評価_kikai',lb:'機会'},{k:'自己評価_footwork',lb:'足さばき'},{k:'自己評価_shiai',lb:'試合運び'},{k:'自己評価_kisei',lb:'気勢'},{k:'自己評価_mental',lb:'精神力'}];
+  const barsHtml=p?'<div class="bars-grid">'+bk.map(b=>{ const v=parseInt(p[b.k])||0; return `<div class="brow"><div class="blbl">${b.lb}</div><div class="btrack"><div class="bfill" style="width:${v/5*100}%"></div></div><div class="bnum">${v}/5</div></div>`; }).join('')+'</div>':'';
+  const histHtml=reflects.length?reflects.map(r=>{
+    const f=getScore(r);
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border-lt)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted)">${getDate(r)}</span>
+        ${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}
+      </div>
+      ${r.intent||r['試したいこと']?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${esc(r.intent||r['試したいこと'])}</div>`:''}
+      <div class="clabel clabel-s" style="margin-top:6px">① 試した結果</div>
+      <div class="chip chip-s">${esc(r.scene||r['印象に残った場面']||'—')}</div>
+      <div class="clabel clabel-w" style="margin-top:6px">② なぜそうなったか</div>
+      <div class="chip chip-w">${esc(r.why||r['なぜそうなったか']||'—')}</div>
+      ${r.next||r['次への一手']?`<div class="clabel" style="color:var(--green);margin-top:6px">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${esc(r.next||r['次への一手'])}</div>`:''}
+    </div>`;
+  }).join(''):'<div class="empty"><div class="empty-text">振り返りデータなし</div></div>';
+  const radarLabels=['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき・体さばき','試合運び','気勢','精神的強さ'];
+  const radarKeys=['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
+  const radarData=p?radarKeys.map(k=>parseInt(p['自己評価_'+k])||0):Array(10).fill(0);
+  document.getElementById('memberDetail').innerHTML=`<div class="det-hdr"><div class="det-av">${esc(name.charAt(0))}</div><div><div class="det-name">${esc(name)}</div><div class="det-sub">${p?`${esc(p['学年']||'')} / ${esc(p['段位級']||'')} / 剣道歴${esc(p['剣道歴']||'—')} / 得意：${esc(p['得意技']||'—')}`:'プロフィールなし'}</div></div></div><div class="det-body">${p?`<div class="det-sec"><div class="det-sec-title">自己評価（BARS）</div><canvas id="memberRadarChart" style="max-height:240px;margin-bottom:10px"></canvas>${barsHtml}</div><div class="det-sec"><div class="det-sec-title">課題感</div><div class="chip chip-w">${esc(p['今の課題感']||'—')}</div></div><div class="det-sec"><div class="det-sec-title">個人目標</div><div class="chip chip-d">🎯 ${esc(p['個人目標']||'—')}</div></div>`:''}<div class="det-sec"><div class="det-sec-title">振り返り履歴（最新3件）</div>${histHtml}</div></div>`;
+  requestAnimationFrame(function(){
+    const rc=document.getElementById('memberRadarChart');
+    if(!rc) return;
+    if(charts.memberRadar) charts.memberRadar.destroy();
+    charts.memberRadar=new Chart(rc,{type:'radar',data:{labels:radarLabels,datasets:[{data:radarData,backgroundColor:'rgba(200,149,42,0.25)',borderColor:'rgba(200,149,42,0.9)',borderWidth:2,pointBackgroundColor:'rgba(200,149,42,0.9)',pointRadius:4}]},options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:9},display:false},pointLabels:{font:{size:10,family:"'Noto Sans JP',sans-serif"},color:'#3d5278'},grid:{color:'rgba(0,0,0,0.08)'},angleLines:{color:'rgba(0,0,0,0.08)'}}},plugins:{legend:{display:false}}}});
+  });
+}
+
+// ── 傾向・分析（修正6: フラグ制御）──
+function renderTrend(){
+  renderTrendChart(); renderCycleChart(); renderNextChart(); renderAutonomyChart();
+  renderGrowthTable(); renderMatrix(); renderAllRadar(); renderAllCards();
+  trendRendered=true;
+}
+
+function renderAllRadar(){
+  const radarLabels=['打突の質','手の内','残心','間合い管理','攻め','機会の見極め','足さばき','試合運び','気勢','精神的強さ'];
+  const radarKeys=['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'];
+  const borderColors=['#c8952a','#0a7c5c','#2a5298','#c0392b','#8e44ad'];
+  const bgColors=['rgba(200,149,42,.2)','rgba(10,124,92,.2)','rgba(42,82,152,.2)','rgba(192,57,43,.2)','rgba(142,68,173,.2)'];
+  const MAX_SELECT=5;
+  const names=sortedNames();
+  const listEl=document.getElementById('radarSelectList');
+  const ctx=document.getElementById('allRadarChart');
+  if(!listEl) return;
+  if(!store.p||!store.p.length){
+    listEl.innerHTML='<div style="font-size:12px;color:var(--ink-muted);">自己理解データがありません</div>';
+    if(ctx){ ctx.style.display='none'; }
+    return;
+  }
+  if(ctx){ ctx.style.display=''; }
+  listEl.innerHTML='';
+  if(!names.length){ listEl.innerHTML='<div style="font-size:12px;color:var(--ink-muted);">データを収集してください</div>'; return; }
+  names.forEach(function(name){
+    const item=document.createElement('label');
+    item.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-soft);transition:all .15s;user-select:none;';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.value=name;
+    cb.style.cssText='width:14px;height:14px;cursor:pointer;accent-color:var(--navy);';
+    cb.addEventListener('change',function(){
+      const checked=listEl.querySelectorAll('input:checked');
+      if(checked.length>MAX_SELECT){ cb.checked=false; showToast('⚠ 最大5名まで選択できます'); return; }
+      updateRadarColors(); drawAllRadar();
+    });
+    const span=document.createElement('span'); span.textContent=name;
+    item.appendChild(cb); item.appendChild(span); listEl.appendChild(item);
+  });
+  updateRadarColors(); drawAllRadar();
+  function updateRadarColors(){
+    let idx=0;
+    Array.from(listEl.children).forEach(function(item){
+      const cb=item.querySelector('input');
+      if(cb&&cb.checked){ const col=borderColors[idx%borderColors.length]; item.style.borderColor=col; item.style.background=col; item.style.color='#fff'; idx++; }
+      else{ item.style.borderColor='var(--border)'; item.style.background=''; item.style.color='var(--ink-soft)'; }
+    });
+  }
+  function drawAllRadar(){
+    const datasets=[];
+    let idx=0;
+    Array.from(listEl.children).forEach(function(item){
+      const cb=item.querySelector('input');
+      if(!cb||!cb.checked) return;
+      const name=cb.value;
+      const p=store.p.find(function(r){return getName(r)===name;});
+      if(!p) return;
+      const data=radarKeys.map(function(k){return parseInt(p['自己評価_'+k])||0;});
+      const col=borderColors[idx%borderColors.length],bg=bgColors[idx%bgColors.length]; idx++;
+      datasets.push({label:name,data:data,backgroundColor:bg,borderColor:col,borderWidth:2.5,pointBackgroundColor:col,pointRadius:4,pointHoverRadius:6});
+    });
+    const ctx=document.getElementById('allRadarChart');
+    if(!ctx) return;
+    if(charts.allRadar) charts.allRadar.destroy();
+    if(!datasets.length){ charts.allRadar=null; return; }
+    charts.allRadar=new Chart(ctx,{type:'radar',data:{labels:radarLabels,datasets:datasets},options:{responsive:true,scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false},pointLabels:{font:{size:11,family:"'Noto Sans JP',sans-serif"},color:'#3d5278'},grid:{color:'rgba(0,0,0,0.08)'},angleLines:{color:'rgba(0,0,0,0.08)'}}},plugins:{legend:{position:'bottom',labels:{font:{size:12,family:"'Noto Sans JP',sans-serif"},padding:14,boxWidth:14}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+radarLabels[ctx.dataIndex]+' '+ctx.raw+'/5';}}}}}});
+  }
+}
+
+function renderTrendChart(){
+  const byDate={};
+  store.r.forEach(r=>{ const dt=getDate(r),f=getScore(r); if(!dt||!f) return; if(!byDate[dt]){byDate[dt]={sum:0,cnt:0};} byDate[dt].sum+=f; byDate[dt].cnt++; });
+  const dates=Object.keys(byDate).sort(),avgs=dates.map(d=>(byDate[d].sum/byDate[d].cnt).toFixed(2));
+  const ctx=document.getElementById('trendChart');
+  if(charts.trend) charts.trend.destroy();
+  charts.trend=new Chart(ctx,{type:'line',data:{labels:dates.map(d=>d.slice(5)),datasets:[{label:'チーム平均',data:avgs,borderColor:'#0a7c5c',backgroundColor:'rgba(10,124,92,.1)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#0a7c5c',fill:true,tension:.3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderCycleChart(){
+  const dates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort();
+  const rates=dates.map(dt=>{ const dc=new Set(store.d.filter(r=>getDate(r)===dt).map(getName)),rf=new Set(store.r.filter(r=>getDate(r)===dt).map(getName)); if(!dc.size) return 0; return Math.round([...dc].filter(n=>rf.has(n)).length/dc.size*100); });
+  const ctx=document.getElementById('cycleChart');
+  if(charts.cycle) charts.cycle.destroy();
+  charts.cycle=new Chart(ctx,{type:'bar',data:{labels:dates.map(d=>d.slice(5)),datasets:[{data:rates,backgroundColor:rates.map(r=>r>=80?'#6EE7B7':r>=50?'#FCD34D':'#FCA5A5'),borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{stepSize:20,callback:v=>v+'%',font:{size:10}},grid:{color:'#f0f4fa'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderNextChart(){
+  const byDate={};
+  store.r.forEach(r=>{ const dt=getDate(r),nx=r.next||r['次への一手']||''; if(!dt) return; if(!byDate[dt]){byDate[dt]={sum:0,cnt:0};} if(nx){byDate[dt].sum+=calcNextScore(nx);byDate[dt].cnt++;} });
+  const dates=Object.keys(byDate).sort();
+  const avgs=dates.map(d=>byDate[d].cnt?(byDate[d].sum/byDate[d].cnt).toFixed(2):null);
+  const ctx=document.getElementById('nextChart');
+  if(charts.next) charts.next.destroy();
+  charts.next=new Chart(ctx,{type:'line',data:{labels:dates.map(d=>d.slice(5)),datasets:[{label:'③平均具体性',data:avgs,borderColor:'#c8952a',backgroundColor:'rgba(200,149,42,.1)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#c8952a',fill:true,tension:.3,spanGaps:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f0f4fa'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderAutonomyChart(){
+  const names=allNames();
+  const points=names.map(function(name){
+    const rows=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a)));
+    if(!rows.length) return null;
+    const latest=rows[0];
+    const nextTxt=latest.next||latest['次への一手']||'';
+    const nextScore=calcNextScore(nextTxt);
+    const score=getScore(latest);
+    const latestDecl=store.d.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a)));
+    const curIntent=latestDecl.length?(latestDecl[0].intent||latestDecl[0]['試したいこと']||''):'';
+    const conn=calcCycleConn(nextTxt,curIntent);
+    const connScore=conn==='high'?3:conn==='medium'?2:conn==='low'?1:0;
+    return {name,x:nextScore||0,y:score||0,conn:connScore,r:6+connScore*2};
+  }).filter(Boolean);
+  const ctx=document.getElementById('autonomyChart');
+  if(charts.autonomy) charts.autonomy.destroy();
+  const bgColors=points.map(p=>{ if(p.x>=4&&p.y>=4) return 'rgba(10,124,92,0.7)'; if(p.x<=2||p.y<=2) return 'rgba(192,57,43,0.7)'; return 'rgba(200,149,42,0.7)'; });
+  charts.autonomy=new Chart(ctx,{type:'bubble',data:{datasets:[{label:'部員',data:points.map(p=>({x:p.x,y:p.y,r:p.r,name:p.name})),backgroundColor:bgColors,borderColor:'rgba(255,255,255,0.8)',borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const d=ctx.raw;return d.name+' (③:'+d.x+'/達成感:'+d.y+')';}}}},scales:{x:{min:0,max:5,title:{display:true,text:'次の一手の具体性',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}},y:{min:0,max:5,title:{display:true,text:'達成感',font:{size:10}},ticks:{stepSize:1,font:{size:9}},grid:{color:'#f0f4fa'}}}}});
+}
+
+function renderGrowthTable(){
+  const dates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort().reverse();
+  const tbody=document.getElementById('growthTableBody');
+  if(!dates.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">データがありません</div></div></td></tr>'; return; }
+  const sortedDates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort();
+  tbody.innerHTML=dates.map(function(dt){
+    const dRows=store.d.filter(r=>getDate(r)===dt);
+    const rRows=store.r.filter(r=>getDate(r)===dt);
+    const scores=rRows.map(getScore).filter(s=>s>0);
+    const avgScore=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
+    const nextScores=rRows.map(r=>{ const nx=r.next||r['次への一手']||''; return nx?calcNextScore(nx):null; }).filter(s=>s!==null);
+    const avgNext=nextScores.length?(nextScores.reduce((a,b)=>a+b,0)/nextScores.length).toFixed(1):'—';
+    const prevIdx=sortedDates.indexOf(dt)-1;
+    let connRate='—';
+    if(prevIdx>=0){
+      const prevDt=sortedDates[prevIdx];
+      const prevReflects=store.r.filter(r=>getDate(r)===prevDt);
+      if(prevReflects.length>0){
+        let connected=0;
+        dRows.forEach(dc=>{ const n=getName(dc); const prevR=prevReflects.find(r=>getName(r)===n); if(prevR){ const prevNext=prevR.next||prevR['次への一手']||''; const curIntent=dc.intent||dc['試したいこと']||''; const conn=calcCycleConn(prevNext,curIntent,getScore(prevR)||0); if(conn==='high'||conn==='medium') connected++; } });
+        const base=dRows.filter(dc=>prevReflects.some(r=>getName(r)===getName(dc))).length;
+        connRate=base?Math.round(connected/base*100)+'%':'—';
+      }
+    }
+    const rateColor=v=>parseInt(v)>=70?'var(--green)':parseInt(v)>=40?'var(--amber)':'var(--red)';
+    return `<tr><td style="font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap">${dt}</td><td style="text-align:center">${dRows.length}名</td><td style="text-align:center"><span class="badge badge-ok">${dRows.length}件</span></td><td style="text-align:center"><span class="badge ${rRows.length===dRows.length?'badge-ok':'badge-no'}">${rRows.length}件</span></td><td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${avgScore!=='—'?'var(--gold)':'var(--ink-muted)'}">${avgScore}</td><td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${avgNext!=='—'?'var(--green)':'var(--ink-muted)'}">${avgNext}/5</td><td style="text-align:center;font-family:'DM Mono',monospace;font-weight:700;color:${connRate!=='—'?rateColor(connRate):'var(--ink-muted)'}">${connRate}</td></tr>`;
+  }).join('');
+}
+
+function renderMatrix(){
+  const wrap=document.getElementById('matrixWrap');
+  const dates=[...new Set([...store.d,...store.r].map(getDate).filter(Boolean))].sort().reverse().slice(0,8);
+  const names=sortedNames();
+  if(!dates.length||!names.length){ wrap.innerHTML='<div class="empty"><div class="empty-text">データがありません</div></div>'; return; }
+  const rMap={},dMap={};
+  store.r.forEach(r=>{ const n=getName(r),dt=getDate(r),f=getScore(r); if(!rMap[n])rMap[n]={}; if(!rMap[n][dt]||f>rMap[n][dt])rMap[n][dt]=f; });
+  store.d.forEach(r=>{ const n=getName(r),dt=getDate(r); if(!dMap[n])dMap[n]={}; dMap[n][dt]=true; });
+  let h='<table class="mtx"><thead><tr><th class="n">部員</th>'+dates.map(dt=>'<th>'+dt.slice(5)+'</th>').join('')+'</tr></thead><tbody>';
+  names.forEach(name=>{ h+=`<tr><td class="n">${esc(name)}</td>`+dates.map(dt=>{ const s=rMap[name]?.[dt],dk=dMap[name]?.[dt]; if(s) return `<td><div class="mc mc-${s}">${s}</div></td>`; if(dk) return `<td><div class="mc mc-ok">✓</div></td>`; return `<td><div class="mc mc-nil">—</div></td>`; }).join('')+'</tr>'; });
+  h+='</tbody></table>'; wrap.innerHTML=h;
+}
+
+function renderAllCards(){
+  const from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
+  const rows=filterByRange(store.r,from,to).slice().sort((a,b)=>getDate(b).localeCompare(getDate(a)));
+  const el=document.getElementById('allCards');
+  if(!rows.length){ el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-text">該当データがありません</div></div>'; return; }
+  el.innerHTML=rows.map(r=>buildCard(r)).join('');
+}
+
+// 修正2: buildCard でも esc() を適用
+function buildCard(row){
+  const n=esc(getName(row)),dt=getDate(row);
+  const s=esc(row.scene||row['印象に残った場面']||'—');
+  const w=esc(row.why||row['なぜそうなったか']||'—');
+  const nx=esc(row.next||row['次への一手']||'');
+  const i=esc(row.intent||row['試したいこと']||'');
+  const f=getScore(row);
+  return `<div class="card">
+    <div class="card-hdr reflect">
+      <div class="card-av">${n.charAt(0)}</div>
+      <div style="flex:1;min-width:0"><div class="card-name">${n}</div><div class="card-meta">${dt}</div></div>
+      ${f?`<span class="achieve-pill ${AP[f]}">${FL[f]}</span>`:''}
+    </div>
+    <div class="card-body">
+      ${i?`<div class="clabel clabel-d">✊ チャレンジ宣言</div><div class="chip chip-d">${i}</div>`:''}
+      <div class="clabel clabel-s">① 試した結果</div><div class="chip chip-s">${s}</div>
+      <div class="clabel clabel-w">② なぜそうなったか</div><div class="chip chip-w">${w}</div>
+      ${nx?`<div class="clabel" style="color:var(--green)">③ 次の稽古でどう変えるか</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${nx}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function renderAlerts(){
+  const low=latestPerMember(store.r).filter(r=>{ const f=getScore(r); return f>0&&f<=2; });
+  const bar=document.getElementById('alertBar');
+  if(low.length){ bar.className='alert-bar amber'; bar.innerHTML='⚠ 達成感が低い部員がいます：'+low.map(r=>esc(getName(r))).join('・')+'　→ コーチング支援タブで詳細を確認できます'; }
+  else{ bar.className='alert-bar hidden'; bar.innerHTML=''; }
+}
+
+// ── コーチング分析（キーワード辞書等は変更なし）──
+const NEG_WORDS=['わからない','わからなかった','できない','できなかった','難しい','難しかった','焦','苦手','うまくいかない','消極的','自信がない','迷','崩れた','失敗','反撃','取り返された'];
+const POS_WORDS=['気づいた','わかった','できた','つかめた','感じた','変わった','改善','つながった','余裕','落ち着','手応え','決まった'];
+const CAUSAL_WORDS=['から','ので','ため','なぜなら','原因','理由','ことで','することで','意識して','意識したら'];
+const ACTION_WORDS=['意識する','試す','使う','取り組む','確認する','心がける','繰り返す','やってみる'];
+const SPECIFIC_WORDS=['瞬間','直後','直前','ときに','場合','たら','足を','手を','体を','間合い','竹刀','踏み込み','引き','出ばな','小手','面','胴'];
+
+function analyzeText(text){
+  if(!text) return{neg:0,pos:0,causal:0,action:0,specific:0,len:0};
+  return{neg:NEG_WORDS.filter(w=>text.includes(w)).length,pos:POS_WORDS.filter(w=>text.includes(w)).length,causal:CAUSAL_WORDS.filter(w=>text.includes(w)).length,action:ACTION_WORDS.filter(w=>text.includes(w)).length,specific:SPECIFIC_WORDS.filter(w=>text.includes(w)).length,len:text.length};
+}
+function calcNextScore(text){
+  if(!text) return 0;
+  const a=analyzeText(text);
+  let s=0;
+  if(a.len>=30)s++;if(a.len>=60)s++;if(a.action>=1)s++;if(a.specific>=1)s++;if(a.action>=1&&a.specific>=1)s++;
+  return Math.max(1,Math.min(5,s));
+}
+function calcCycleConn(nextText,nextIntent,latestScore){
+  latestScore=latestScore||0;
+  if(!nextText) return'unknown';if(!nextIntent) return'unknown';
+  const keywords=[];
+  for(let i=0;i<nextText.length-1;i++){const w2=nextText.slice(i,i+2),w3=nextText.slice(i,i+3);if(/[一-鿿぀-ゟ]{2}/.test(w2))keywords.push(w2);if(/[一-鿿぀-ゟ]{3}/.test(w3))keywords.push(w3);}
+  const hits=keywords.filter(w=>nextIntent.includes(w)).length;
+  const sameTheme=hits>=2,score=latestScore||0;
+  if(score>=4) return'high';
+  else if(score>=3) return sameTheme?'high':'medium';
+  else if(score>=1) return sameTheme?'high':'low';
+  return sameTheme?'medium':'low';
+}
+function calcThemeDepth(name){
+  const rows=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(a).localeCompare(getDate(b)));
+  if(rows.length<2) return'unknown';
+  let deepening=0,total=0;
+  for(let i=0;i<rows.length-1;i++){
+    const nx=rows[i].next||rows[i]['次への一手']||'';
+    const ni=rows[i+1].intent||rows[i+1]['試したいこと']||'';
+    if(nx&&ni){total++;const conn=calcCycleConn(nx,ni,getScore(rows[i])||0);if(conn==='high'||conn==='medium')deepening++;}
+  }
+  if(total===0) return'unknown';
+  const rate=deepening/total;
+  if(rate>=0.7) return'deep';if(rate>=0.4) return'partial';return'scattered';
+}
+function calcEmotion(scene,why){
+  const a=analyzeText((scene||'')+(why||''));
+  if(a.neg>=3||(a.neg>=1&&a.pos===0)) return'caution';
+  if(a.pos>=2||(a.pos>=1&&a.causal>=1)) return'positive';
+  return'neutral';
+}
+function calcInterventionScore(data){
+  let score=0;const reasons=[];
+  const missRatio=data.totalDeclare>0?data.missCount/data.totalDeclare:0;
+  if(missRatio>=0.5){score+=30;reasons.push({weight:30,label:'参加行動',detail:`宣言${data.totalDeclare}回中${data.missCount}回振り返り未提出（${Math.round(missRatio*100)}%）`});}
+  else if(missRatio>=0.25){score+=15;reasons.push({weight:15,label:'参加行動',detail:`振り返り未提出が${Math.round(missRatio*100)}%（要注意水準）`});}
+  const f=data.latestScore,prev=data.prevScore;
+  if(f>0&&prev>0){const diff=f-prev;if(diff<=-2){score+=25;reasons.push({weight:25,label:'達成感トレンド',detail:`前回${prev}→今回${f}（${diff}点の急落）`});}else if(diff===-1){score+=12;reasons.push({weight:12,label:'達成感トレンド',detail:`前回${prev}→今回${f}（1点低下）`});}}
+  if(f>0&&f<=2){score+=10;reasons.push({weight:10,label:'達成感水準',detail:`最新スコアが${f}/5（低水準）`});}
+  const ns=data.nextScore;
+  if(ns===0){score+=25;reasons.push({weight:25,label:'言語化',detail:'③「次への一手」が未記入（自己調整サイクルが閉じていない）'});}
+  else if(ns<=2){score+=15;reasons.push({weight:15,label:'言語化',detail:`次の一手の具体性が${ns}/5（「もっと頑張る」レベル）`});}
+  else if(ns===3){score+=5;reasons.push({weight:5,label:'言語化',detail:`次の一手の具体性が${ns}/5（もう少し掘り下げが必要）`});}
+  if(data.emotion==='caution'){score+=20;reasons.push({weight:20,label:'感情サイン',detail:`ネガティブワード検出（${data.negWords.slice(0,3).join('・')}）`});}
+  return{score:Math.min(100,score),reasons};
+}
+function priorityFromScore(score){if(score>=50)return'high';if(score>=25)return'medium';return'low';}
+function coachingHint2(data,priority){
+  if(data.missCount>=2) return'「最近稽古どう？振り返り書けてる？」（参加を確認）';
+  if(data.nextScore===0) return'「次の稽古で一番試したいこと、一緒に考えよう」';
+  if(data.emotion==='caution') return'「最近稽古で気になることある？」（話を聞く）';
+  if(data.cycleConn==='low') return'「先週書いた次の一手、今日の宣言に使えた？」';
+  if(data.nextScore<=2) return'「次の一手をもっと具体的な動作に書いてみよう」';
+  if(priority==='low') return'「その気づき、自分でも感じてた？」（承認）';
+  return'「次の一手の内容を次の宣言に繋げてみよう」';
+}
+
+function analyzeCoaching(){
+  const result=document.getElementById('coachingResult');
+  const cycleMap=document.getElementById('cycleMapBody');
+  const latest=latestPerMember(store.r);
+  if(!latest.length){ result.innerHTML='<div class="empty"><div class="empty-text">振り返りデータがありません。まずデータを収集してください。</div></div>'; return; }
+  const latestDeclare={};
+  latestPerMember(store.d).forEach(r=>{ latestDeclare[getName(r)]=r; });
+  const reflectDates=[...new Set(store.r.map(getDate).filter(Boolean))].sort();
+  const prevScoreMap={};
+  if(reflectDates.length>=2){ const pd=reflectDates[reflectDates.length-2]; store.r.filter(r=>getDate(r)===pd).forEach(r=>{ prevScoreMap[getName(r)]=getScore(r); }); }
+  const analyzed=latest.map(r=>{
+    const name=getName(r),scene=r.scene||r['印象に残った場面']||'',why=r.why||r['なぜそうなったか']||'',nextTxt=r.next||r['次への一手']||'';
+    const curDecl=latestDeclare[name];
+    const curIntent=curDecl?(curDecl.intent||curDecl['試したいこと']||''):'';
+    const declDates=[...new Set(store.d.filter(r2=>getName(r2)===name).map(r2=>getDate(r2)))];
+    const logDates=[...new Set(store.r.filter(r2=>getName(r2)===name).map(r2=>getDate(r2)))];
+    const totalDeclare=declDates.length,totalLog=logDates.length,missCount=Math.max(0,totalDeclare-totalLog);
+    const latestScore=getScore(r),prevScore=prevScoreMap[name]||0;
+    const nextScore=calcNextScore(nextTxt),cycleConn=calcCycleConn(nextTxt,curIntent,latestScore);
+    const themeDepth=calcThemeDepth(name),emotion=calcEmotion(scene,why);
+    const negWords=NEG_WORDS.filter(w=>(scene+why).includes(w)),posWords=POS_WORDS.filter(w=>(scene+why).includes(w));
+    const data={name,scene,why,nextTxt,curIntent,totalDeclare,missCount,latestScore,prevScore,nextScore,cycleConn,themeDepth,emotion,negWords,posWords};
+    const{score,reasons}=calcInterventionScore(data);
+    const priority=priorityFromScore(score),hint=coachingHint2(data,priority);
+    return{...data,score,reasons,priority,hint};
+  });
+  analyzed.sort((a,b)=>b.score-a.score);
+  function setKPI(textId,barId,value,max,unit){
+    const el=document.getElementById(textId),bar=document.getElementById(barId);
+    if(!el) return;
+    const pct=max>0?Math.min(100,(value/max)*100):0;
+    el.textContent=value!==null?value+unit:'—';
+    if(bar) bar.style.width=(value!==null?pct:0)+'%';
+  }
+  const withNext=analyzed.filter(a=>a.nextTxt);
+  const avgNextVal=withNext.length?parseFloat((withNext.reduce((s,a)=>s+a.nextScore,0)/withNext.length).toFixed(1)):null;
+  setKPI('ck-next','ck-next-bar',avgNextVal,5,'');
+  document.getElementById('ck-next').textContent=avgNextVal!==null?avgNextVal.toFixed(1):'—';
+  const withConn=analyzed.filter(a=>a.cycleConn!=='unknown'),connected=withConn.filter(a=>a.cycleConn==='high'||a.cycleConn==='medium').length;
+  const cycleVal=withConn.length?Math.round(connected/withConn.length*100):null;
+  setKPI('ck-cycle','ck-cycle-bar',cycleVal,100,'%');
+  const withDepth=analyzed.filter(a=>a.themeDepth!=='unknown'),deepCount=withDepth.filter(a=>a.themeDepth==='deep'||a.themeDepth==='partial').length;
+  const spiralVal=withDepth.length?Math.round(deepCount/withDepth.length*100):null;
+  setKPI('ck-spiral','ck-spiral-bar',spiralVal,100,'%');
+  const pl={high:'🔴 対話が必要',medium:'🟡 対話を検討',low:'🟢 成長を見守る'};
+  const pc={high:'high',medium:'medium',low:'low'};
+  const ec={caution:'background:#FEE2E2;color:#DC2626',neutral:'background:var(--border-lt);color:var(--ink-muted)',positive:'background:var(--green-pale);color:var(--green)'};
+  const el2={caution:'⚠ 要注意',neutral:'→ 通常',positive:'✓ ポジティブ'};
+  const connLabel={high:'🔗 高',medium:'🔗 中',low:'⚡ 低',unknown:'— 不足'};
+  const connColor={high:'var(--green)',medium:'var(--amber)',low:'var(--red)',unknown:'var(--ink-muted)'};
+  const depthLabel={deep:'📈 深化中',partial:'↔ 部分的',scattered:'🔀 分散',unknown:'— 不明'};
+  const depthColor2={deep:'var(--green)',partial:'var(--amber)',scattered:'var(--red)',unknown:'var(--ink-muted)'};
+  const barCol=v=>v<=2?'var(--red)':v===3?'var(--amber)':'var(--green)';
+  result.innerHTML=analyzed.map(a=>{
+    const reasonsHtml=a.reasons.length?'<div style="margin-bottom:10px;background:rgba(255,255,255,.7);border-radius:7px;padding:8px 12px;"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">介入根拠（スコア: '+a.score+'/100）</div>'+a.reasons.map(r=>'<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;font-size:11px;"><span style="background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px;">+'+r.weight+'</span><span style="color:var(--ink-soft)"><strong>'+r.label+'</strong>：'+esc(r.detail)+'</span></div>').join('')+'</div>':'<div style="margin-bottom:10px;font-size:11px;color:var(--green);">✓ 特記すべき介入根拠なし</div>';
+    return `<div class="coaching-card ${pc[a.priority]}" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${esc(a.name.charAt(0))}</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--navy)">${esc(a.name)}</div><div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${pl[a.priority]}　介入スコア <strong>${a.score}</strong>/100</div></div>
+        <span style="padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;${ec[a.emotion]}">${el2[a.emotion]}</span>
+      </div>
+      ${reasonsHtml}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">次の一手の具体性</div><div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.nextScore)}">${a.nextScore||'—'}/5</div></div>
+        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">サイクル接続</div><div style="font-size:11px;font-weight:700;color:${connColor[a.cycleConn]}">${connLabel[a.cycleConn]}</div></div>
+        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">テーマ深化</div><div style="font-size:11px;font-weight:700;color:${depthColor2[a.themeDepth]}">${depthLabel[a.themeDepth]}</div></div>
+        <div style="text-align:center;background:rgba(255,255,255,.6);border-radius:7px;padding:8px 4px"><div style="font-size:9px;color:var(--ink-muted);margin-bottom:4px">達成感</div><div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${barCol(a.latestScore)}">${a.latestScore||'—'}/5</div></div>
+      </div>
+      ${a.nextTxt?`<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:4px">③ 次への一手</div><div class="chip" style="background:var(--green-pale);border-left:3px solid var(--green);color:var(--ink-soft)">${esc(a.nextTxt)}</div></div>`:'<div style="font-size:11px;color:var(--red);margin-bottom:8px">⚠ ③未記入（自己調整サイクルが閉じていない）</div>'}
+      ${a.curIntent?`<div style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-lt);margin-bottom:4px">✊ 最新のチャレンジ宣言</div><div class="chip chip-d">${esc(a.curIntent)}</div></div>`:''}
+      <div style="background:rgba(255,255,255,.85);border-radius:7px;padding:9px 12px;display:flex;align-items:flex-start;gap:8px">
+        <span style="font-size:14px;flex-shrink:0">💬</span>
+        <div><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">推奨の声かけ</div><div style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.5">${esc(a.hint)}</div></div>
+      </div>
+      ${(a.negWords.length||a.posWords.length)?`<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">${a.negWords.length?`<span style="font-size:10px;color:var(--red)">⚠ ${esc(a.negWords.slice(0,3).join('・'))}</span>`:''}${a.posWords.length?`<span style="font-size:10px;color:var(--green)">✓ ${esc(a.posWords.slice(0,3).join('・'))}</span>`:''}</div>`:''}
+    </div>`;
+  }).join('');
+  const connBarStr={high:'████████ 高',medium:'█████░░░ 中',low:'██░░░░░░ 低',unknown:'——　不明'};
+  cycleMap.innerHTML=`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>部員</th><th>③ 次への一手（前回）</th><th></th><th>✊ 最新のチャレンジ宣言</th><th>接続</th></tr></thead><tbody>${analyzed.map(a=>`<tr><td style="font-weight:600;font-size:12px;white-space:nowrap">${esc(a.name)}</td><td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nextTxt?esc(a.nextTxt):'<span style="color:var(--ink-muted)">未記入</span>'}</td><td style="font-size:13px">→</td><td style="font-size:11px;color:var(--ink-soft);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.curIntent?esc(a.curIntent):'<span style="color:var(--ink-muted)">宣言なし</span>'}</td><td style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:${connColor[a.cycleConn]};white-space:nowrap">${connBarStr[a.cycleConn]}</td></tr>`).join('')}</tbody></table></div>`;
+}
 </script>
 </body>
 </html>
