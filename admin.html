@@ -434,16 +434,11 @@ function getName(r){ return r['氏名']||r.name||''; }
 function getScore(r){ return parseInt(String(r.fulfillment||r['充実度']||'').replace('/5',''))||0; }
 function getDate(r){ return nd(r.date||r['稽古日']); }
 // 自己理解データは複数回提出される可能性があるため、最新1件を返す
+// GASは新しいデータを末尾に追記するため、配列の最後の要素が最新
 function latestProfile(name){
   const rows = store.p.filter(r => getName(r) === name);
   if (!rows.length) return null;
-  // timestamp または 記入日 で降順ソートして最新を返す
-  rows.sort(function(a, b){
-    const ta = String(a.timestamp || a['記録日時'] || a['記入日'] || '');
-    const tb = String(b.timestamp || b['記録日時'] || b['記入日'] || '');
-    return tb.localeCompare(ta);
-  });
-  return rows[0];
+  return rows[rows.length - 1];
 }
 function gradeNum(n){ const p=latestProfile(n); return p?(GRADE_ORDER[p['学年']]||9):9; }
 function latestScore(n){ const rows=store.r.filter(r=>getName(r)===n).sort((a,b)=>getDate(b).localeCompare(getDate(a))); return rows.length?getScore(rows[0]):0; }
