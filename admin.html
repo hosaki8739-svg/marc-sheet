@@ -433,7 +433,19 @@ function nd(v){ return String(v||'').replace(/\//g,'-').slice(0,10); }
 function getName(r){ return r['氏名']||r.name||''; }
 function getScore(r){ return parseInt(String(r.fulfillment||r['充実度']||'').replace('/5',''))||0; }
 function getDate(r){ return nd(r.date||r['稽古日']); }
-function gradeNum(n){ const p=store.p.find(r=>getName(r)===n); return p?(GRADE_ORDER[p['学年']]||9):9; }
+// 自己理解データは複数回提出される可能性があるため、最新1件を返す
+function latestProfile(name){
+  const rows = store.p.filter(r => getName(r) === name);
+  if (!rows.length) return null;
+  // timestamp または 記入日 で降順ソートして最新を返す
+  rows.sort(function(a, b){
+    const ta = String(a.timestamp || a['記録日時'] || a['記入日'] || '');
+    const tb = String(b.timestamp || b['記録日時'] || b['記入日'] || '');
+    return tb.localeCompare(ta);
+  });
+  return rows[0];
+}
+function gradeNum(n){ const p=latestProfile(n); return p?(GRADE_ORDER[p['学年']]||9):9; }
 function latestScore(n){ const rows=store.r.filter(r=>getName(r)===n).sort((a,b)=>getDate(b).localeCompare(getDate(a))); return rows.length?getScore(rows[0]):0; }
 function allNames(){ return [...new Set([...store.d,...store.r,...store.p].map(getName).filter(Boolean))]; }
 function sortedNames(){
@@ -637,7 +649,7 @@ function renderRecent(selectedDate){
   // 修正3: rowDataMapにデータを保存し、HTML属性にはキーのみ埋め込む
   rowDataMap.clear();
   tbody.innerHTML=names.map(function(name){
-    const p=store.p.find(r=>getName(r)===name);
+    const p=latestProfile(name);
     const dc=dMap[name],rf=rMap[name];
     const f=rf?getScore(rf):0,prev=pMap[name]||0;
     const diff=f&&prev?f-prev:null;
@@ -673,7 +685,7 @@ function renderMemberList(){
   const el=document.getElementById('memberListItems');
   if(!names.length){ el.innerHTML='<div class="empty"><div class="empty-text">データがありません</div></div>'; return; }
   el.innerHTML=names.map(function(name){
-    const p=store.p.find(r=>getName(r)===name);
+    const p=latestProfile(name);
     const f=latestScore(name);
     const dotColor=f>=4?'var(--green)':f>=3?'var(--gold)':f>=1?'var(--red)':'var(--border)';
     return `<div class="ml-item" data-name="${esc(name)}">
@@ -685,7 +697,7 @@ function renderMemberList(){
 }
 
 function showMemberDetail(name){
-  const p=store.p.find(r=>getName(r)===name);
+  const p=latestProfile(name);
   const reflects=store.r.filter(r=>getName(r)===name).sort((a,b)=>getDate(b).localeCompare(getDate(a))).slice(0,3);
   const bk=[{k:'自己評価_kire',lb:'打突の冴え'},{k:'自己評価_tenouchi',lb:'手の内'},{k:'自己評価_zanshin',lb:'残心'},{k:'自己評価_maai',lb:'間合い'},{k:'自己評価_seme',lb:'攻め'},{k:'自己評価_kikai',lb:'機会'},{k:'自己評価_footwork',lb:'足さばき'},{k:'自己評価_shiai',lb:'試合運び'},{k:'自己評価_kisei',lb:'気勢'},{k:'自己評価_mental',lb:'精神力'}];
   const barsHtml=p?'<div class="bars-grid">'+bk.map(b=>{ const v=parseInt(p[b.k])||0; return `<div class="brow"><div class="blbl">${b.lb}</div><div class="btrack"><div class="bfill" style="width:${v/5*100}%"></div></div><div class="bnum">${v}/5</div></div>`; }).join('')+'</div>':'';
@@ -770,7 +782,7 @@ function renderAllRadar(){
       const cb=item.querySelector('input');
       if(!cb||!cb.checked) return;
       const name=cb.value;
-      const p=store.p.find(function(r){return getName(r)===name;});
+      const p=latestProfile(name);
       if(!p) return;
       const data=radarKeys.map(function(k){return parseInt(p['自己評価_'+k])||0;});
       const col=borderColors[idx%borderColors.length],bg=bgColors[idx%bgColors.length]; idx++;
