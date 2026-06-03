@@ -36,7 +36,7 @@
   html { scroll-behavior: smooth; }
 
   body {
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
     background: var(--bg);
     min-height: 100vh;
     padding: 28px 16px 48px;
@@ -49,7 +49,7 @@
 
   input[type="text"], input[type="date"], input[type="email"], textarea, select {
     font-size: 16px !important;
-    font-family: 'Noto Sans JP', sans-serif !important;
+    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
   }
 
   input[type="date"] { min-width: 0; width: 100%; -webkit-appearance: none; appearance: none; }
@@ -69,7 +69,7 @@
   }
   .header-kamon { width: 52px; height: 52px; margin: 0 auto 14px; display: block; opacity: 0.85; }
   .header-en { font-size: 10px; letter-spacing: 0.45em; color: var(--gold); margin-bottom: 10px; font-weight: 500; text-transform: uppercase; }
-  .header-title { font-family: 'Noto Serif JP', serif; font-size: clamp(24px, 5vw, 34px); font-weight: 900; color: var(--ink); letter-spacing: 0.06em; margin-bottom: 8px; line-height: 1.2; }
+  .header-title { font-family: 'Noto Serif JP', 'Georgia', serif; font-size: clamp(24px, 5vw, 34px); font-weight: 900; color: var(--ink); letter-spacing: 0.06em; margin-bottom: 8px; line-height: 1.2; }
   .header-title span { color: var(--primary); }
   .header-subtitle { font-size: 10px; color: var(--ink-muted); letter-spacing: 0.2em; margin-bottom: 20px; font-weight: 300; }
   .progress-track { width: 100%; height: 3px; background: var(--border); border-radius: 999px; margin-top: 16px; overflow: hidden; }
@@ -153,8 +153,9 @@
   .tab-btn { flex: 1; padding: 12px 6px; border: none; border-radius: var(--radius-lg); background: transparent; font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700; color: var(--ink-muted); cursor: pointer; transition: all 0.22s cubic-bezier(.22,1,.36,1); letter-spacing: .02em; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
   .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(26,58,107,0.25); }
   .tab-btn:not(.active):hover { background: var(--bg-warm); color: var(--ink-soft); }
+  /* タブパネル表示制御はCSSクラスで統一（v6修正） */
   .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+  .tab-panel.tab-active { display: block; }
 
   /* ===== TIMELINE ===== */
   .timeline-card { position: relative; border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; transition: all .3s cubic-bezier(.22,1,.36,1); }
@@ -244,13 +245,13 @@
   </div>
 
   <!-- TAB: PROFILE -->
-  <div class="tab-panel active" id="tab-profile">
+  <div class="tab-panel tab-active" id="tab-profile">
 
     <!-- 氏名・学年 -->
     <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);padding:16px 20px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
       <div style="flex:1;min-width:160px;">
         <label class="field-label" style="margin-bottom:5px;">氏名<span class="required">*</span></label>
-        <div class="field-hint" style="margin-bottom:5px;">入力後1秒で前回データを復元</div>
+        <div class="field-hint" style="margin-bottom:5px;">入力後1秒でデータを復元します</div>
         <input type="text" id="nameInput" placeholder="山田 一郎" data-required oninput="onNameInput(this)" style="margin:0;">
       </div>
       <div style="width:120px;flex-shrink:0;">
@@ -372,7 +373,12 @@
         <div style="flex:1;min-width:140px;">
           <label class="field-label" style="margin-bottom:5px;">稽古日<span class="required">*</span></label>
           <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">稽古を行った当日の日付を入力してください</div>
-          <input type="date" id="logDate" style="margin:0;width:100%;min-width:0;" onchange="onLogDateChange()">
+          <input type="hidden" id="logDate" value="">
+          <div id="logDateDisplay" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:16px;color:var(--ink);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="openDatePicker()">
+            <span id="logDateText">今日の日付を選択</span>
+            <span style="font-size:12px;color:var(--ink-muted);">📅</span>
+          </div>
+          <input type="date" id="logDateNative" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" onchange="onNativeDateChange(this.value)">
         </div>
         <div style="flex-shrink:0;text-align:right;">
           <div style="font-size:10px;color:var(--ink-muted);letter-spacing:.06em;margin-bottom:2px;">記録者</div>
@@ -434,7 +440,52 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== BARS =====
+// ============================================================
+//  設定値
+//  ★ WRITE_TOKEN は GAS の WRITE_TOKEN と同じ値を入れてください
+// ============================================================
+const GAS_URL     = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
+const WRITE_TOKEN = 'ここに秘密トークンを入力'; // GAS側と同じ値
+const LS_NAME     = 'marc_user_name';
+
+// ============================================================
+//  localStorage 安全ラッパー（プライベートブラウズ対応）
+// ============================================================
+const LS = {
+  get: function(key) {
+    try { return localStorage.getItem(key); } catch(e) { return null; }
+  },
+  set: function(key, val) {
+    try { localStorage.setItem(key, val); return true; } catch(e) {
+      showToast('⚠ ローカル保存に失敗しました（ストレージ容量不足の可能性）');
+      return false;
+    }
+  },
+  remove: function(key) {
+    try { localStorage.removeItem(key); } catch(e) {}
+  }
+};
+
+// ============================================================
+//  JST（日本時間）で今日の日付を YYYY-MM-DD 形式で返す
+// ============================================================
+function todayJST() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+}
+
+// ============================================================
+//  データストア
+// ============================================================
+const marc = {
+  name: '', grade: '', kumi: '',
+  declares: {}, logs: {}, history: [],
+  loaded: false,
+  _fetchId: 0  // 並行リクエスト管理用
+};
+
+// ============================================================
+//  BARS 定義
+// ============================================================
 const barsGroups = [
   { group:'打突の質', color:'#c0392b', icon:'⚔', items:[
     { key:'kire', label:'打突の冴え', hint:'気・剣・体が一致した打突ができているかを評価します。声・踏み込み・竹刀が同時に出ているか、「パン！」という冴えた音が出ているかが目安です。', anchors:['打突が弱く、音が鳴らない。手だけで打っている状態。','踏み込みはあるが、手と足がバラバラになることが多い。','気剣体がほぼ一致している。冴えた音が時々出る。','安定して気剣体が一致し、冴えた打突が出せる。声も充実している。','どの場面でも冴えた一本が出せる。試合でも稽古でも質が変わらない。'] },
@@ -454,7 +505,9 @@ const barsGroups = [
   ]}
 ];
 
-// BARS描画
+// ============================================================
+//  BARS 描画
+// ============================================================
 const barsContainer = document.getElementById('barsEvalContainer');
 barsGroups.forEach(group => {
   const gDiv = document.createElement('div');
@@ -520,7 +573,9 @@ function setBarsValue(key, val) {
   if (itemDiv) itemDiv.querySelectorAll('.bars-anchor-row').forEach(row => row.classList.toggle('selected', +row.dataset.level === n));
 }
 
-// ===== WAZA =====
+// ============================================================
+//  WAZA
+// ============================================================
 function toggleWaza(btn) {
   const active = document.querySelectorAll('#wazaSelector .rank-btn.active');
   if (btn.classList.contains('active')) { btn.classList.remove('active'); }
@@ -528,7 +583,9 @@ function toggleWaza(btn) {
   else { showToast('得意技は最大3つまでです'); }
 }
 
-// ===== SECTION TOGGLE =====
+// ============================================================
+//  セクション折りたたみ
+// ============================================================
 function toggleSection(header) {
   const body = header.nextElementSibling;
   const toggle = header.querySelector('.section-toggle');
@@ -536,7 +593,9 @@ function toggleSection(header) {
   toggle.classList.toggle('open');
 }
 
-// ===== PROGRESS =====
+// ============================================================
+//  進捗バー
+// ============================================================
 function updateProgress() {
   const required = document.querySelectorAll('[data-required]');
   let filled = 0;
@@ -546,26 +605,197 @@ function updateProgress() {
   document.getElementById('progressLabel').textContent = '記入率 ' + pct + '%';
 }
 
-// ===== TOAST =====
+// ============================================================
+//  トースト通知
+// ============================================================
+let _toastTimer = null;
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ===== GAS ENDPOINT =====
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
-const LS_NAME = 'marc_user_name';
+// ============================================================
+//  GAS POST 送信
+//  GAS WebApp は Access-Control-Allow-Origin を付与できないため
+//  no-cors が唯一の選択肢。レスポンスは読めないが送信自体は届く。
+//  送信後 2 秒待ってから GET で記録を確認し、成否を判定する。
+// ============================================================
+function sendToGAS(data, callback) {
+  const payload = Object.assign({}, data, { _token: WRITE_TOKEN });
 
-// ===== DATA STORE =====
-const marc = {
-  name: '', declares: {}, logs: {}, history: [], loaded: false
-};
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+  })
+  .then(function() {
+    // no-cors はレスポンスが読めない。
+    // 送信後に GET で実際にスプレッドシートへ記録されたか確認する。
+    const type = data['記録種別'] || '';
+    const name = data['氏名'] || marc.name || '';
+    if (!name) { callback(true); return; } // 氏名なし→確認不可→楽観的に成功扱い
 
-function saveName(v) { if(v) localStorage.setItem(LS_NAME, v); }
+    setTimeout(function() {
+      const params = new URLSearchParams({ name: name });
+      if (marc.grade) params.set('grade', marc.grade);
+      if (marc.kumi)  params.set('kumi',  marc.kumi);
 
-// ===== FORM DATA COLLECTION =====
+      fetch(GAS_URL + '?' + params.toString(), { method: 'GET' })
+      .then(function(res) { return res.text(); })
+      .then(function(text) {
+        try {
+          const json = JSON.parse(text);
+          if (json.status !== 'ok') { callback(false); return; }
+
+          if (type === 'チャレンジ宣言') {
+            // 送信した稽古日の宣言が存在するか確認
+            const date = String(data['稽古日'] || '').slice(0,10);
+            const found = (json.declares || []).some(function(r) {
+              return String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10) === date;
+            });
+            callback(found);
+          } else if (type === '稽古ログ') {
+            const date = String(data['稽古日']||data['date']||'').slice(0,10);
+            const found = (json.logs || []).some(function(r) {
+              return String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10) === date;
+            });
+            callback(found);
+          } else {
+            // 自己理解など：氏名が返ってくれば成功とみなす
+            callback(!!(json.data && json.data['氏名']));
+          }
+        } catch(e) {
+          // JSONパース失敗→送信は届いた可能性が高いので楽観的成功
+          callback(true);
+        }
+      })
+      .catch(function() { callback(true); }); // GET失敗→楽観的成功
+    }, 2000); // GASの書き込み完了を2秒待つ
+  })
+  .catch(function(err) {
+    console.error('GAS送信エラー:', err);
+    callback(false);
+  });
+}
+
+// ============================================================
+//  GAS GET 取得（fetch + JSON に統一 / JSONPは互換のため残す）
+// ============================================================
+function fetchUserData(name, grade, kumi, fetchId) {
+  const params = new URLSearchParams({ name: name });
+  if (grade) params.set('grade', grade);
+  if (kumi)  params.set('kumi', kumi);
+
+  // タイムアウト付き fetch（20秒 — GASコールドスタート考慮）
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+
+  // ローディング表示
+  showToast('⏳ データを読み込み中…');
+
+  fetch(GAS_URL + '?' + params.toString(), {
+    method: 'GET',
+    signal: controller.signal,
+  })
+  .then(res => res.text())
+  .then(text => {
+    clearTimeout(timer);
+    // このリクエストが最新かチェック（並行リクエスト競合防止）
+    if (fetchId !== marc._fetchId) return;
+    try {
+      const json = JSON.parse(text);
+      if (json.status !== 'ok') return;
+      const hasData = json.data && Object.keys(json.data).length > 0 && json.data['氏名'];
+      if (hasData) applyPrevData(json.data);
+      marc.declares = {};
+      (json.declares || []).forEach(function(r) {
+        const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
+        if (d) marc.declares[d] = { intent: r['試したいこと']||r.intent||'' };
+      });
+      marc.logs = {};
+      (json.logs || []).forEach(function(r) {
+        const d = String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
+        if (d) marc.logs[d] = {
+          intent: r.intent||r['試したいこと']||'',
+          scene: r.scene||r['印象に残った場面']||'',
+          why: r.why||r['なぜそうなったか']||'',
+          next: r.next||r['次への一手']||'',
+          fulfillment: parseInt(String(r.fulfillment||'').replace('/5',''))||0
+        };
+      });
+      marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) {
+        return Object.assign({ date: d }, marc.logs[d]);
+      });
+      marc.loaded = true;
+      renderLogUI();
+      if (hasData) showToast('📋 ' + name + ' さんのデータを復元しました');
+      else showToast('データがまだありません。新規登録になります');
+    } catch(e) {
+      console.error('JSON解析エラー:', e, text.slice(0,200));
+    }
+  })
+  .catch(err => {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      showToast('⚠ データ読み込みがタイムアウトしました。再度お試しください');
+    } else {
+      console.error('GAS取得エラー:', err);
+    }
+  });
+}
+
+// ============================================================
+//  前回データをフォームに反映
+// ============================================================
+function applyPrevData(data) {
+  const set = function(id, val) {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== '') el.value = val;
+  };
+  set('gakuNenSelect', data['学年']);
+  set('kumiInput',     data['組']);
+  set('dankyuSelect',  data['段位級']);
+  set('kendoReki',     data['剣道歴']);
+  set('kikiteSelect',  data['利き手構え']);
+  set('kadaikan',      data['今の課題感']);
+  set('kojinMokuhyo',  data['個人目標']);
+  if (data['得意技']) {
+    const wazas = String(data['得意技']).split(/[・,、]+/);
+    document.querySelectorAll('#wazaSelector .rank-btn').forEach(function(btn) {
+      if (wazas.some(function(w) { return btn.textContent.trim().includes(w.trim()); })) {
+        btn.classList.add('active');
+      }
+    });
+  }
+  ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(function(key) {
+    const v = parseInt(data['自己評価_'+key]) || 0;
+    if (v) setBarsValue(key, v);
+  });
+  setTimeout(updateProgress, 200);
+}
+
+// ============================================================
+//  フォームクリア（GASからデータ取得後のみ呼ばれるように変更）
+// ============================================================
+function clearProfileForm() {
+  ['gakuNenSelect','kumiInput','dankyuSelect','kendoReki','kikiteSelect','kadaikan','kojinMokuhyo']
+    .forEach(function(id) { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.querySelectorAll('#wazaSelector .rank-btn.active').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.bars-star.lit').forEach(s => s.classList.remove('lit'));
+  document.querySelectorAll('.bars-anchor-row.selected').forEach(r => r.classList.remove('selected'));
+  document.querySelectorAll('[id^="bars-label-"]').forEach(el => {
+    el.innerHTML = '← 上の行動説明を読んで、当てはまる★を選んでください';
+  });
+  updateProgress();
+}
+
+// ============================================================
+//  フォームデータ収集
+// ============================================================
 function collectFormData() {
   const barsVals = getBarsValues();
   const wazas = Array.from(document.querySelectorAll('#wazaSelector .rank-btn.active'))
@@ -585,7 +815,18 @@ function collectFormData() {
   }, barsVals);
 }
 
-// ===== SUBMIT FORM =====
+// ============================================================
+//  複合キー生成（同姓同名対応）
+// ============================================================
+function makeLocalKey(name, grade, kumi) {
+  const g = (grade || '').replace(/\s/g, '');
+  const k = (kumi  || '').replace(/\s/g, '');
+  return 'marc_profile_' + name + (g ? '_' + g : '') + (k ? '_' + k : '');
+}
+
+// ============================================================
+//  提出
+// ============================================================
 function submitForm(type) {
   const name    = (document.getElementById('nameInput')?.value||'').trim();
   const gakunen = document.getElementById('gakuNenSelect')?.value||'';
@@ -598,82 +839,32 @@ function submitForm(type) {
   const data = collectFormData();
   sendToGAS(data, function(ok) {
     if (ok) {
-      localStorage.setItem('marc_profile_' + name, JSON.stringify(data));
+      const lsKey = makeLocalKey(name, data['学年'], data['組']);
+      LS.set(lsKey, JSON.stringify(data));
       showToast('✓ 自己理解シートを提出しました！');
     } else {
-      showToast('⚠ 送信に失敗しました。再度お試しください');
+      showToast('⚠ 送信に失敗しました。一時保存して再度お試しください');
     }
     if (btn) { btn.textContent = '✦ 自己理解シートを提出する'; btn.disabled = false; }
   });
 }
 
-// ===== TEMP SAVE =====
+// ============================================================
+//  一時保存
+// ============================================================
 function tempSave() {
   const name = (document.getElementById('nameInput')?.value||'').trim();
   if (!name) { showToast('⚠ 氏名を入力してから保存してください'); return; }
   const data = collectFormData();
-  localStorage.setItem('marc_profile_' + name, JSON.stringify(data));
-  showToast('📋 一時保存しました');
-}
-
-// ===== APPLY PREV DATA =====
-function applyPrevData(data) {
-  const set = function(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== '') el.value = val; };
-  set('gakuNenSelect', data['学年']);
-  set('kumiInput',     data['組']);
-  set('dankyuSelect',  data['段位級']);
-  set('kendoReki',     data['剣道歴']);
-  set('kikiteSelect',  data['利き手構え']);
-  set('kadaikan',      data['今の課題感']);
-  set('kojinMokuhyo',  data['個人目標']);
-  if (data['得意技']) {
-    const wazas = String(data['得意技']).split(/[・,、]+/);
-    document.querySelectorAll('#wazaSelector .rank-btn').forEach(function(btn) {
-      if (wazas.some(function(w){ return btn.textContent.trim().includes(w.trim()); })) btn.classList.add('active');
-    });
+  const lsKey = makeLocalKey(name, data['学年'], data['組']);
+  if (LS.set(lsKey, JSON.stringify(data))) {
+    showToast('📋 一時保存しました');
   }
-  ['kire','tenouchi','zanshin','maai','seme','kikai','footwork','shiai','kisei','mental'].forEach(function(key) {
-    const v = parseInt(data['自己評価_'+key])||0;
-    if (v) setBarsValue(key, v);
-  });
-  setTimeout(updateProgress, 200);
 }
 
-// ===== FETCH USER DATA =====
-function fetchUserData(name) {
-  const url = GAS_URL + '?name=' + encodeURIComponent(name);
-  fetch(url, { method: 'GET', mode: 'cors' })
-  .then(function(res) { return res.json(); })
-  .then(function(json) {
-    if (json.status !== 'ok') { showToast('データの取得に失敗しました'); return; }
-    // dataが空またはBARSが全部0の場合は復元しない
-    const hasData = json.data && Object.keys(json.data).length > 0 && json.data['氏名'];
-    if (hasData) {
-      applyPrevData(json.data);
-    }
-    marc.declares = {};
-    (json.declares || []).forEach(function(r) {
-      const d = String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10);
-      if (d) marc.declares[d] = { intent: r['試したいこと']||r.intent||'' };
-    });
-    marc.logs = {};
-    (json.logs || []).forEach(function(r) {
-      const d = String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10);
-      if (d) marc.logs[d] = { intent:r.intent||r['試したいこと']||'', scene:r.scene||r['印象に残った場面']||'', why:r.why||r['なぜそうなったか']||'', next:r.next||r['次への一手']||'', fulfillment:parseInt(String(r.fulfillment||'').replace('/5',''))||0 };
-    });
-    marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) { return Object.assign({ date: d }, marc.logs[d]); });
-    marc.loaded = true;
-    renderLogUI();
-    // データが実際にある場合のみトーストを表示
-    if (hasData) showToast('📋 ' + name + ' さんのデータを復元しました');
-  })
-  .catch(function(err) {
-    console.error('データ取得エラー:', err);
-    showToast('データの取得に失敗しました');
-  });
-}
-
-// ===== PHASE =====
+// ============================================================
+//  フェーズ判定
+// ============================================================
 function phaseFor(dateStr) {
   const d = (dateStr||'').slice(0,10);
   if (!d) return 'pre';
@@ -684,43 +875,63 @@ function phaseFor(dateStr) {
 
 function renderLogUI() {
   const dateEl = document.getElementById('logDate');
-  const d = (dateEl && dateEl.value) ? dateEl.value.slice(0,10) : '';
+  let d = (dateEl && dateEl.value) ? dateEl.value.slice(0,10) : '';
+  if (!d) {
+    const pending = Object.keys(marc.declares).filter(x => !marc.logs[x]).sort().reverse();
+    if (pending.length) {
+      d = pending[0];
+      if (dateEl) dateEl.value = d;
+    }
+  }
   renderPhaseUI(d);
-  renderDateDots();
+  renderDateDots(d);
   renderHistory();
   updateLogCount();
 }
 
 function onLogDateChange() { renderLogUI(); }
 
-function renderDateDots() {
+function renderDateDots(currentDate) {
   const container = document.getElementById('dateDotList');
   if (!container) return;
-  const pending = Object.keys(marc.declares).filter(function(d){ return !marc.logs[d]; }).sort().reverse();
-  if (!pending.length) { container.innerHTML = ''; return; }
-  const d = pending[0];
-  const currentDate = (document.getElementById('logDate')?.value||'').slice(0,10);
-  const bg = d === currentDate ? 'var(--primary)' : '#c8952a';
-  container.innerHTML = '<button onclick="selectDate(\'' + d + '\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;border:none;background:' + bg + ';color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">' + d.slice(5) + ' 宣言済み</button>';
+  const cur = currentDate || (document.getElementById('logDate')?.value||'').slice(0,10);
+  const pending = Object.keys(marc.declares).filter(d => !marc.logs[d]).sort().reverse();
+  const done    = Object.keys(marc.logs).sort().reverse();
+  if (!pending.length && !done.length) { container.innerHTML = ''; return; }
+  let html = '<div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#7a8ea8;margin-bottom:6px;text-transform:uppercase;">稽古日を選択</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+  pending.forEach(function(d) {
+    const isCur = d === cur;
+    html += '<button onclick="selectDate(\'' + d + '\')" style="background:' + (isCur?'#0f2044':'#fdf3dc') + ';color:' + (isCur?'#fff':'#c8952a') + ';border:2px solid ' + (isCur?'#0f2044':'#c8952a') + ';padding:7px 14px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;line-height:1.3;text-align:left;"><div>' + d.slice(5).replace('-','/') + '</div><div style="font-size:9px;margin-top:2px;">宣言済み・振り返り未</div></button>';
+  });
+  done.slice(0,5).forEach(function(d) {
+    const isCur = d === cur;
+    html += '<button onclick="selectDate(\'' + d + '\')" style="background:' + (isCur?'#0f2044':'#e6f5f0') + ';color:' + (isCur?'#fff':'#0a7c5c') + ';border:2px solid ' + (isCur?'#0f2044':'#059669') + ';padding:7px 14px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;line-height:1.3;text-align:left;"><div>✓ ' + d.slice(5).replace('-','/') + '</div><div style="font-size:9px;margin-top:2px;">振り返り済み</div></button>';
+  });
+  container.innerHTML = html + '</div>';
 }
 
 function selectDate(d) {
   const dateEl = document.getElementById('logDate');
   if (dateEl) dateEl.value = d;
-  renderLogUI();
+  const display = document.getElementById('logDateText');
+  if (display) display.textContent = d.replace(/-/g, '/');
+  renderPhaseUI(d);
+  renderDateDots(d);
+  renderHistory();
+  updateLogCount();
 }
 
 function renderPhaseUI(dateStr) {
   const d = (dateStr||'').slice(0,10);
   const phase = phaseFor(d);
-  const p1Card = document.getElementById('phase1Card');
+  const p1Card  = document.getElementById('phase1Card');
   const p1Badge = document.getElementById('phase1Badge');
-  const p1Tag = document.getElementById('phase1StatusTag');
-  const p1Body = document.getElementById('phase1Body');
-  const p2Card = document.getElementById('phase2Card');
+  const p1Tag   = document.getElementById('phase1StatusTag');
+  const p1Body  = document.getElementById('phase1Body');
+  const p2Card  = document.getElementById('phase2Card');
   const p2Badge = document.getElementById('phase2Badge');
-  const p2Tag = document.getElementById('phase2StatusTag');
-  const p2Body = document.getElementById('phase2Body');
+  const p2Tag   = document.getElementById('phase2StatusTag');
+  const p2Body  = document.getElementById('phase2Body');
   if (!p1Card) return;
 
   if (phase === 'pre') {
@@ -729,7 +940,7 @@ function renderPhaseUI(dateStr) {
     p1Tag.textContent = '入力中'; p1Tag.style.cssText = 'background:var(--primary);color:#fff;';
     p1Body.className = 'timeline-body';
     p1Body.innerHTML = '<div class="field-group"><label class="field-label">次回の稽古で試したいこと<span class="required">*</span></label><div class="field-hint"><strong>「〜の時、〜する」の形で書くと、稽古中に自然に思い出せます。</strong><br><span style="color:var(--primary);font-weight:600;">✓ 「相手が出てきた瞬間に、小手を合わせる」</span></div><input type="text" id="logIntent" placeholder="" oninput="autoSaveIntent(this.value)" style="border-color:var(--primary);"></div><button class="pre-submit-btn" id="preSubmitBtn" onclick="submitPreLog()">✦ チャレンジを宣言する</button>';
-    const saved = localStorage.getItem('marc_intent_draft');
+    const saved = LS.get('marc_intent_draft');
     const intentEl = document.getElementById('logIntent');
     if (intentEl && saved) intentEl.value = saved;
     p2Card.className = 'timeline-card phase-locked';
@@ -739,13 +950,13 @@ function renderPhaseUI(dateStr) {
     p2Body.innerHTML = '<span style="font-size:20px;">🔒</span><span>「チャレンジを宣言する」を送信すると入力できます</span>';
 
   } else if (phase === 'post') {
-    const decl = marc.declares[d] || {};
+    const decl   = marc.declares[d] || {};
     const intent = decl.intent || '';
     p1Card.className = 'timeline-card phase-done';
     p1Badge.className = 'timeline-step-badge done'; p1Badge.textContent = '✓';
     p1Tag.textContent = '宣言済み ✓'; p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
     p1Body.className = 'timeline-body';
-    p1Body.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:13px;font-weight:700;color:#059669;">✓ チャレンジ宣言完了</span><span style="font-size:10px;color:var(--ink-muted);">' + d + '</span></div><div style="padding:10px 14px;background:#f0f4ff;border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">' + (intent || '—') + '</div><div style="margin-top:10px;font-size:11px;color:var(--ink-muted);">稽古後に振り返りを記入してください ↓</div>';
+    p1Body.innerHTML = '<div style="background:#ECFDF5;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">✓</span><div><div style="font-size:13px;font-weight:700;color:#059669;">チャレンジ宣言完了</div><div style="font-size:12px;color:#047857;margin-top:1px;">稽古日：' + d + '</div></div></div><div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:5px;">宣言した内容</div><div style="padding:10px 14px;background:#f0f4ff;border-left:4px solid var(--primary);border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--primary);line-height:1.6;">' + (intent || '—') + '</div><div style="margin-top:10px;font-size:11px;color:var(--ink-muted);">稽古後に振り返りを記入してください ↓</div>';
     const editBtn = document.createElement('button');
     editBtn.textContent = '✎ 宣言を修正する';
     editBtn.style.cssText = 'margin-top:8px;font-size:11px;padding:5px 14px;border:1px solid #ccc;border-radius:999px;background:transparent;color:#888;cursor:pointer;font-family:inherit;';
@@ -759,7 +970,7 @@ function renderPhaseUI(dateStr) {
 
   } else if (phase === 'done') {
     const decl = marc.declares[d] || {};
-    const log = marc.logs[d] || {};
+    const log  = marc.logs[d] || {};
     p1Card.className = 'timeline-card phase-done';
     p1Badge.className = 'timeline-step-badge done'; p1Badge.textContent = '✓';
     p1Tag.textContent = '宣言済み ✓'; p1Tag.style.cssText = 'background:#ECFDF5;color:#059669;';
@@ -784,7 +995,7 @@ function editDeclaration(d) {
   const decl = marc.declares[d] || {};
   const savedIntent = decl.intent || '';
   delete marc.declares[d];
-  localStorage.setItem('marc_intent_draft', savedIntent);
+  LS.set('marc_intent_draft', savedIntent);
   renderPhaseUI(d);
   const intentEl = document.getElementById('logIntent');
   if (intentEl && savedIntent) intentEl.value = savedIntent;
@@ -795,13 +1006,18 @@ function buildPhase2HTML(intent) {
   return '<div class="field-group"><label class="field-label">稽古での達成感<span class="required">*</span></label><div class="field-hint" style="margin-bottom:8px;">稽古前に申告したことに対して、どれくらいできたか。直感で選んでください。</div><div class="fulfillment-grid" id="fulfillmentGrid">' + ['できなかった','少しできた','まあまあ','かなり','完全に'].map(function(l,i){ return '<button class="fulfillment-btn" data-val="' + (i+1) + '" onclick="window.selectFulfillment(' + (i+1) + ')">' + l + '<br><span style="font-size:9px;opacity:.6;">' + (i+1) + '/5</span></button>'; }).join('') + '</div></div><div class="field-group"><label class="field-label">① 宣言したことを、稽古で試した結果は？<span class="required">*</span></label><div class="field-hint">できた場面・できなかった場面を具体的に。<br><span style="color:var(--gold);font-weight:500;">例：「2回試した。1回目は合わせられたが2回目は空振りした」</span></div><textarea id="logScene" style="min-height:88px"></textarea></div><div class="field-group"><label class="field-label">② なぜそうなったと思うか<span class="required">*</span></label><div class="field-hint">自分の動き・判断・準備の何が原因かを考えてください。</div><textarea id="logWhy" style="min-height:88px"></textarea></div><div class="field-group" style="margin-bottom:0;"><label class="field-label">③ 次の稽古でどう変えるか<span class="required">*</span></label><div class="field-hint">次のチャレンジ宣言につながる「次の一手」を書いてください。</div><textarea id="logNext" style="min-height:72px"></textarea></div><button class="post-submit-btn" onclick="submitLog()">✦ 振り返りを提出する</button>';
 }
 
+// fulfillmentVal はスコープを明示（グローバル汚染を最小化）
 let fulfillmentVal = 0;
 window.selectFulfillment = function(v) {
   fulfillmentVal = v;
-  document.querySelectorAll('.fulfillment-btn').forEach(function(b) { b.classList.toggle('selected', parseInt(b.dataset.val) === v); });
+  document.querySelectorAll('.fulfillment-btn').forEach(function(b) {
+    b.classList.toggle('selected', parseInt(b.dataset.val) === v);
+  });
 };
 
-// ===== SUBMIT CHALLENGE =====
+// ============================================================
+//  チャレンジ宣言 送信
+// ============================================================
 function submitPreLog() {
   const name   = marc.name;
   const intent = (document.getElementById('logIntent')?.value||'').trim();
@@ -811,15 +1027,23 @@ function submitPreLog() {
   if (!intent) { showToast('⚠ チャレンジ内容を入力してください'); return; }
   const btn = document.getElementById('preSubmitBtn');
   if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
-  const data = { 記録種別:'チャレンジ宣言', 氏名:name, 稽古日:date, 試したいこと:intent, intent:intent, timestamp:new Date().toLocaleString('ja-JP') };
+  const data = { 記録種別:'チャレンジ宣言', 氏名:name, 学年:marc.grade, 組:marc.kumi, 稽古日:date, 試したいこと:intent, intent:intent, timestamp:new Date().toLocaleString('ja-JP') };
   sendToGAS(data, function(ok) {
-    if (ok) { marc.declares[date] = { intent: intent }; localStorage.removeItem('marc_intent_draft'); renderLogUI(); showToast('✓ チャレンジを宣言しました！'); }
-    else { showToast('⚠ 送信に失敗しました。再度お試しください'); }
+    if (ok) {
+      marc.declares[date] = { intent: intent };
+      LS.remove('marc_intent_draft');
+      renderLogUI();
+      showToast('✓ チャレンジを宣言しました！');
+    } else {
+      showToast('⚠ 送信に失敗しました。再度お試しください');
+    }
     if (btn) { btn.textContent = '✦ チャレンジを宣言する'; btn.disabled = false; }
   });
 }
 
-// ===== SUBMIT LOG =====
+// ============================================================
+//  振り返り 送信
+// ============================================================
 function submitLog() {
   const name  = marc.name;
   const date  = (document.getElementById('logDate')?.value||'').slice(0,10);
@@ -835,47 +1059,41 @@ function submitLog() {
   if (!next)           { showToast('⚠ ③の次への一手を入力してください'); return; }
   const btn = document.querySelector('.post-submit-btn');
   if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
-  const data = { 記録種別:'稽古ログ', 氏名:name, 稽古日:date, date:date, name:name, intent:intent, 試したいこと:intent, scene:scene, why:why, next:next, fulfillment:fulfillmentVal+'/5', timestamp:new Date().toLocaleString('ja-JP') };
+  const data = { 記録種別:'稽古ログ', 氏名:name, 学年:marc.grade, 組:marc.kumi, 稽古日:date, date:date, name:name, intent:intent, 試したいこと:intent, scene:scene, why:why, next:next, fulfillment:fulfillmentVal+'/5', timestamp:new Date().toLocaleString('ja-JP') };
   sendToGAS(data, function(ok) {
     if (ok) {
       marc.logs[date] = { intent:intent, scene:scene, why:why, next:next, fulfillment:fulfillmentVal };
-      marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) { return Object.assign({ date:d }, marc.logs[d]); });
+      marc.history = Object.keys(marc.logs).sort().reverse().map(function(d) {
+        return Object.assign({ date:d }, marc.logs[d]);
+      });
+      // fulfillmentVal と DOM 状態を両方リセット
       fulfillmentVal = 0;
+      document.querySelectorAll('.fulfillment-btn').forEach(b => b.classList.remove('selected'));
       renderLogUI();
       showToast('✓ 振り返りを提出しました！');
-    } else { showToast('⚠ 送信に失敗しました。再度お試しください'); }
+    } else {
+      showToast('⚠ 送信に失敗しました。再度お試しください');
+    }
     if (btn) { btn.textContent = '✦ 振り返りを提出する'; btn.disabled = false; }
   });
 }
 
-// ===== GAS SEND (POST) =====
-function sendToGAS(data, callback) {
-  fetch(GAS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(data),
-  })
-  .then(function() {
-    // no-corsはレスポンスが読めないが送信は成功している
-    callback(true);
-  })
-  .catch(function(err) {
-    console.error('GAS送信エラー:', err);
-    callback(false);
-  });
-}
-
 function startNewLog() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayJST();
   const dateEl = document.getElementById('logDate');
   if (dateEl) dateEl.value = today;
+  const display = document.getElementById('logDateText');
+  if (display) display.textContent = today.replace(/-/g, '/');
   renderLogUI();
 }
 
-function autoSaveIntent(v) { if (v && v.trim()) localStorage.setItem('marc_intent_draft', v.trim()); }
+function autoSaveIntent(v) {
+  if (v && v.trim()) LS.set('marc_intent_draft', v.trim());
+}
 
-// ===== HISTORY =====
+// ============================================================
+//  過去記録 描画
+// ============================================================
 function renderHistory() {
   const container = document.getElementById('logHistory');
   if (!container) return;
@@ -904,18 +1122,24 @@ function generatePrint() {
   setTimeout(() => { window.open(GAS_URL + '?action=generatePrint', '_blank'); }, 500);
 }
 
-// ===== TAB SWITCH =====
+// ============================================================
+//  タブ切り替え（CSS class で統一 — v6修正）
+// ============================================================
 function switchTab(tab, el) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  // inlineスタイルではなくclassで制御
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-active'));
   if (el) el.classList.add('active');
   const panel = document.getElementById('tab-' + tab);
-  if (panel) panel.style.display = 'block';
+  if (panel) panel.classList.add('tab-active');
+
   if (tab === 'log') {
     const nameEl = document.getElementById('nameInput');
     if (nameEl && nameEl.value.trim()) {
-      marc.name = nameEl.value.trim();
-      if (marc.name) localStorage.setItem(LS_NAME, marc.name);
+      marc.name  = nameEl.value.trim();
+      marc.grade = document.getElementById('gakuNenSelect')?.value || '';
+      marc.kumi  = document.getElementById('kumiInput')?.value || '';
+      LS.set(LS_NAME, marc.name);
       const logName = document.getElementById('logUserName');
       if (logName) { logName.textContent = marc.name; logName.style.color = 'var(--primary)'; }
     }
@@ -923,54 +1147,75 @@ function switchTab(tab, el) {
   }
 }
 
-// ===== NAME INPUT =====
+// ============================================================
+//  氏名入力（フォームクリアのタイミングを修正）
+// ============================================================
 function onNameInput(el) {
   const v = el.value.trim();
   marc.name = v;
-  saveName(v);
+  LS.set(LS_NAME, v);
   if (v.length >= 2) {
     clearTimeout(window._nameTimer);
     window._nameTimer = setTimeout(function() {
-      // フォームをクリアしてからフェッチ（前の人のデータが残らないように）
-      clearProfileForm();
-      fetchUserData(v);
+      // フォームクリアはここでは行わない（タイプ中に消えるバグを防止）
+      // GASからデータが返ってきた後に上書きする形で applyPrevData を呼ぶ
+      marc.grade = document.getElementById('gakuNenSelect')?.value || '';
+      marc.kumi  = document.getElementById('kumiInput')?.value || '';
+      marc._fetchId++;
+      const currentId = marc._fetchId;
+      fetchUserData(v, marc.grade, marc.kumi, currentId);
     }, 1000);
   }
 }
 
-function clearProfileForm() {
-  const ids = ['gakuNenSelect','kumiInput','dankyuSelect','kendoReki','kikiteSelect','kadaikan','kojinMokuhyo'];
-  ids.forEach(function(id) { const el = document.getElementById(id); if(el) el.value = ''; });
-  // 得意技リセット
-  document.querySelectorAll('#wazaSelector .rank-btn.active').forEach(function(b){ b.classList.remove('active'); });
-  // BARS リセット
-  document.querySelectorAll('.bars-star.lit').forEach(function(s){ s.classList.remove('lit'); });
-  document.querySelectorAll('.bars-anchor-row.selected').forEach(function(r){ r.classList.remove('selected'); });
-  document.querySelectorAll('[id^="bars-label-"]').forEach(function(el){ el.innerHTML = '← 上の行動説明を読んで、当てはまる★を選んでください'; });
-  updateProgress();
+// ============================================================
+//  日付ピッカー
+// ============================================================
+function openDatePicker() {
+  const native = document.getElementById('logDateNative');
+  if (native) {
+    native.value = document.getElementById('logDate').value || todayJST();
+    if (native.showPicker) { native.showPicker(); } else { native.click(); }
+  }
 }
 
-// ===== INIT =====
+function onNativeDateChange(val) {
+  if (!val) return;
+  const hidden  = document.getElementById('logDate');
+  const display = document.getElementById('logDateText');
+  if (hidden)  hidden.value = val;
+  if (display) display.textContent = val.replace(/-/g, '/');
+  onLogDateChange();
+}
+
+// ============================================================
+//  初期化
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  const dateBar = document.getElementById('logDate')?.closest('div[style]');
-  if (dateBar && !document.getElementById('dateDotList')) {
-    const dot = document.createElement('div');
-    dot.id = 'dateDotList';
-    dot.style.cssText = 'margin-top:8px;flex-basis:100%;';
-    dateBar.appendChild(dot);
-  }
-  // ページロード時は名前フィールドを空にする（別の人が使う場合の誤復元を防ぐ）
-  marc.name = '';
-  const storedName = localStorage.getItem('marc_user_name') || '';
+  marc.name  = '';
+  marc.grade = '';
+  marc.kumi  = '';
+
+  const storedName = LS.get(LS_NAME) || '';
   if (storedName) {
-    // ログタブの記録者表示のみ更新（フォームは空のまま）
     marc.name = storedName;
+    const ni = document.getElementById('nameInput');
+    if (ni) ni.value = storedName;
     const lu = document.getElementById('logUserName');
     if (lu) { lu.textContent = storedName; lu.style.color = 'var(--primary)'; }
+    // 初回ロード時は GAS からデータを取得
+    marc._fetchId++;
+    const initId = marc._fetchId;
+    fetchUserData(storedName, marc.grade, marc.kumi, initId);
   }
-  const dateEl2 = document.getElementById('logDate');
-  const today2 = new Date().toISOString().slice(0,10);
-  if (dateEl2) { dateEl2.value = today2; }
+
+  // 日付を JSTで今日に設定
+  const today = todayJST();
+  const hiddenDate  = document.getElementById('logDate');
+  const displayDate = document.getElementById('logDateText');
+  if (hiddenDate)  hiddenDate.value = today;
+  if (displayDate) displayDate.textContent = today.replace(/-/g, '/');
+
   renderLogUI();
 });
 </script>
