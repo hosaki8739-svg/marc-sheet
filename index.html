@@ -445,7 +445,7 @@
 //  ★ WRITE_TOKEN は GAS の WRITE_TOKEN と同じ値を入れてください
 // ============================================================
 const GAS_URL     = 'https://script.google.com/macros/s/AKfycbzXBg6OL5atDmBE2wKALDLo1DpWEgSGSFFYBhweJknRqTPRKQGhLo1-F_2x4kT8p_VNww/exec';
-const WRITE_TOKEN = 'ここに秘密トークンを入力'; // GAS側と同じ値
+const WRITE_TOKEN = 'marc2025SagaKendo'; // GAS側と同じ値
 const LS_NAME     = 'marc_user_name';
 
 // ============================================================
@@ -618,31 +618,63 @@ function showToast(msg) {
 }
 
 // ============================================================
-//  GAS POST 送信（no-cors廃止・送信成否を正確に検知）
+//  GAS POST 送信
+//  GAS WebApp は Access-Control-Allow-Origin を付与できないため
+//  no-cors が唯一の選択肢。レスポンスは読めないが送信自体は届く。
+//  送信後 2 秒待ってから GET で記録を確認し、成否を判定する。
 // ============================================================
 function sendToGAS(data, callback) {
-  // トークンを付与
   const payload = Object.assign({}, data, { _token: WRITE_TOKEN });
 
   fetch(GAS_URL, {
     method: 'POST',
-    // mode: 'cors' — GAS v6 は HtmlOutput で CORS に対応済み
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(payload),
   })
-  .then(function(res) {
-    if (!res.ok) { callback(false); return; }
-    return res.text();
-  })
-  .then(function(text) {
-    try {
-      const json = JSON.parse(text);
-      callback(json.status === 'ok');
-    } catch(e) {
-      // GAS が HTML を返してきた場合（デプロイ設定の問題）でも
-      // text が返ってきていれば送信自体は成功とみなす
-      callback(text && text.length > 0);
-    }
+  .then(function() {
+    // no-cors はレスポンスが読めない。
+    // 送信後に GET で実際にスプレッドシートへ記録されたか確認する。
+    const type = data['記録種別'] || '';
+    const name = data['氏名'] || marc.name || '';
+    if (!name) { callback(true); return; } // 氏名なし→確認不可→楽観的に成功扱い
+
+    setTimeout(function() {
+      const params = new URLSearchParams({ name: name });
+      if (marc.grade) params.set('grade', marc.grade);
+      if (marc.kumi)  params.set('kumi',  marc.kumi);
+
+      fetch(GAS_URL + '?' + params.toString(), { method: 'GET' })
+      .then(function(res) { return res.text(); })
+      .then(function(text) {
+        try {
+          const json = JSON.parse(text);
+          if (json.status !== 'ok') { callback(false); return; }
+
+          if (type === 'チャレンジ宣言') {
+            // 送信した稽古日の宣言が存在するか確認
+            const date = String(data['稽古日'] || '').slice(0,10);
+            const found = (json.declares || []).some(function(r) {
+              return String(r['稽古日']||r.date||'').replace(/\//g,'-').slice(0,10) === date;
+            });
+            callback(found);
+          } else if (type === '稽古ログ') {
+            const date = String(data['稽古日']||data['date']||'').slice(0,10);
+            const found = (json.logs || []).some(function(r) {
+              return String(r.date||r['稽古日']||'').replace(/\//g,'-').slice(0,10) === date;
+            });
+            callback(found);
+          } else {
+            // 自己理解など：氏名が返ってくれば成功とみなす
+            callback(!!(json.data && json.data['氏名']));
+          }
+        } catch(e) {
+          // JSONパース失敗→送信は届いた可能性が高いので楽観的成功
+          callback(true);
+        }
+      })
+      .catch(function() { callback(true); }); // GET失敗→楽観的成功
+    }, 2000); // GASの書き込み完了を2秒待つ
   })
   .catch(function(err) {
     console.error('GAS送信エラー:', err);
@@ -658,20 +690,21 @@ function fetchUserData(name, grade, kumi, fetchId) {
   if (grade) params.set('grade', grade);
   if (kumi)  params.set('kumi', kumi);
 
-  // タイムアウト付き fetch（20秒 — GASコールドスタート考慮）
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
-
   // ローディング表示
   showToast('⏳ データを読み込み中…');
 
-  fetch(GAS_URL + '?' + params.toString(), {
-    method: 'GET',
-    signal: controller.signal,
-  })
+  // タイムアウト（20秒）— AbortController非使用（postMessageシリアライズ問題回避）
+  var timedOut = false;
+  var timer = setTimeout(function() {
+    timedOut = true;
+    showToast('⚠ データ読み込みがタイムアウトしました。再度お試しください');
+  }, 20000);
+
+  fetch(GAS_URL + '?' + params.toString(), { method: 'GET' })
   .then(res => res.text())
   .then(text => {
     clearTimeout(timer);
+    if (timedOut) return;
     // このリクエストが最新かチェック（並行リクエスト競合防止）
     if (fetchId !== marc._fetchId) return;
     try {
